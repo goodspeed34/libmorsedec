@@ -1,0 +1,35 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH MD_GET_CHANNEL_COUNT 3 "2026-10-16" "libmorsedec 0.2.0" "Library Functions Manual"
+.SH NAME
+md_get_channel_count \- count the currently tracked channels
+.SH SYNOPSIS
+.nf
+#include <morsedec.h>
+
+size_t md_get_channel_count(const morsedec_decoder_t *decoder);
+.fi
+.SH DESCRIPTION
+Count the currently tracked channels.
+.SH FUNCTION PARAMETERS
+.TP
+.I decoder
+Decoder handle. Calls using this handle must be serialized, including queries.
+.SH RETURN VALUE
+Returns the number of tracked channels, or zero for a NULL decoder. This query
+has no errno-based failure return.
+.SH REMARKS
+Use indices 0 through count-1 with md_get_channel(). An index is an
+enumeration position, not a stable identity. Channels can be created,
+reordered, merged or retired during processing. Serialize enumeration with
+mutation of the handle. The result is bounded by config.max_channels.
+.SH THREAD SAFETY
+Serialize all calls that access the same handle, including getters. Different
+handles may process concurrently after construction. These functions are not
+specified as async-signal-safe.
+.SH VERSION
+This md_ entry point is available since libmorsedec 0.2.0 (shared-library ABI
+1).
+.SH SEE ALSO
+.BR libmorsedec (3),
+.BR md_get_channel (3),
+.BR md_get_characters (3)

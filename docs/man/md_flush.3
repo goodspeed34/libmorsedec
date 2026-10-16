@@ -1,0 +1,48 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH MD_FLUSH 3 "2026-10-16" "libmorsedec 0.2.0" "Library Functions Manual"
+.SH NAME
+md_flush \- drain pending decoding and seal the stream
+.SH SYNOPSIS
+.nf
+#include <morsedec.h>
+
+int md_flush(morsedec_decoder_t *decoder);
+.fi
+.SH DESCRIPTION
+Drain pending decoding and seal the stream.
+.SH FUNCTION PARAMETERS
+.TP
+.I decoder
+Decoder handle. Calls using this handle must be serialized, including queries.
+.SH RETURN VALUE
+Returns MORSEDEC_SUCCESS (1) on success, or MORSEDEC_FAILURE (0) and sets
+errno on failure. Do not inspect errno after success.
+.SH ERRORS
+.TP
+.B EINVAL
+decoder is NULL.
+.SH REMARKS
+Pads a partial sample hop, feeds approximately one second of silence through
+the pipeline, and commits pending output. External-spectrum mode instead
+receives zero-power frames. Query final snapshots after return. Repeated calls
+succeed without adding more frames or output. The frame count includes
+synthetic drain frames, so derived times can exceed the actual input duration.
+.PP
+All processing calls fail after flush, including zero-count sample calls. Call
+md_reset() before feeding another stream. Frequency pin/unpin operations also
+fail on a flushed handle. Queries remain available. Flushing does not delete
+the handle.
+.SH THREAD SAFETY
+Serialize all calls that access the same handle, including getters. Different
+handles may process concurrently after construction. These functions are not
+specified as async-signal-safe.
+.SH VERSION
+This md_ entry point is available since libmorsedec 0.2.0 (shared-library ABI
+1).
+.SH SEE ALSO
+.BR libmorsedec (3),
+.BR md_get_characters (3),
+.BR md_get_text (3),
+.BR md_get_frame_count (3),
+.BR md_reset (3),
+.BR md_delete (3)

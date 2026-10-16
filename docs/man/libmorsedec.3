@@ -1,0 +1,568 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH LIBMORSEDEC 3 "2026-10-16" "libmorsedec 0.2.0" "Library Functions Manual"
+.SH NAME
+libmorsedec \- streaming multichannel Morse code decoding library
+.SH SYNOPSIS
+.nf
+#include <morsedec.h>
+
+cc program.c $(pkg-config --cflags --libs morsedec)
+.fi
+.PP
+For static linking, request the transitive FFTW3 and math dependencies:
+.PP
+.nf
+cc program.c $(pkg-config --cflags --libs --static morsedec)
+.fi
+.SH DESCRIPTION
+.B libmorsedec
+is a C11 library that discovers and tracks CW carriers and decodes their
+Morse elements, characters and word boundaries.
+Each decoder has independent stream state and bounded per-channel messages.
+The application supplies mono audio, complex I/Q samples, or calibrated
+linear-power spectra, then polls channel and message snapshots.
+.PP
+The library does not open audio or SDR devices, read files, resample input,
+start background threads, or deliver callbacks.
+Processing is synchronous in the caller's thread.
+The FFT frontend uses FFTW3 double precision.
+The public header supports C and C++ linkage.
+.SH FUNCTION INDEX
+Every public function has its own section 3 manual page.
+.SS Configuration and lifetime
+.TP
+.BR md_config_init (3)
+Initialize the configuration with audio defaults.
+.TP
+.BR md_new (3)
+Construct a mono audio decoder.
+.TP
+.BR md_new_iq (3)
+Construct an I+jQ decoder with signed IF frequencies.
+.TP
+.BR md_delete (3)
+Release a handle and its FFT plan and buffers.
+.TP
+.BR md_reset (3)
+Discard stream state while preserving configuration and storage.
+.SS Streaming input
+.TP
+.BR md_process (3)
+Feed normalized mono float samples.
+.TP
+.BR md_process_s16 (3)
+Feed mono signed 16-bit samples.
+.TP
+.BR md_process_iq (3)
+Feed normalized float I,Q pairs.
+.TP
+.BR md_process_iq_s16 (3)
+Feed signed 16-bit I,Q pairs.
+.TP
+.BR md_process_spectrum (3)
+Feed one calibrated retained-power frame per call.
+.TP
+.BR md_flush (3)
+Drain pending output and seal the stream.
+.SS Geometry and channels
+.TP
+.BR md_get_geometry (3)
+Copy the actual FFT grid and frame timing.
+.TP
+.BR md_get_channel_count (3)
+Count tracked channels.
+.TP
+.BR md_get_channel (3)
+Copy a channel summary by enumeration position.
+.TP
+.BR md_get_state (3)
+Query the current channel's decoder state.
+.TP
+.BR md_get_frequency (3)
+Query the current channel's frequency or signed IF offset.
+.TP
+.BR md_get_snr (3)
+Query the current channel's relative SNR estimate.
+.TP
+.BR md_get_wpm (3)
+Query the current channel's Morse speed estimate.
+.TP
+.BR md_get_frame_count (3)
+Count completed spectrum frames, including flush padding.
+.SS Frequency selection
+.TP
+.BR md_pin_frequency (3)
+Select and pin a frequency, including 0 Hz IF.
+.TP
+.BR md_unpin_frequency (3)
+Release the current pin.
+.TP
+.BR md_set_frequency (3)
+Pin a nonzero frequency, or unpin when the argument is zero.
+.SS Messages
+.TP
+.BR md_get_characters (3)
+Borrow a read-only message snapshot with character metadata.
+.TP
+.BR md_get_text (3)
+Copy a NUL-terminated text snapshot into caller storage.
+.SH CONFIGURATION
+Initialize a
+.B struct morsedec_config
+with
+.BR md_config_init (3)
+before changing selected fields.
+A wholly zero-initialized structure is not a valid configuration.
+Both constructors copy the structure; the caller retains ownership.
+Configuration cannot be changed on an existing handle.
+.TP
+.B uint32_t sample_rate
+Input mono samples per second, or complex pairs per second for I/Q.
+Default 48000; must be nonzero.
+There is no internal resampling.
+.TP
+.B size_t fft_size
+Even FFT length N, at least 64 and no greater than INT_MAX.
+Zero selects 2*floor(sample_rate*0.064+0.5), approximately 128 ms.
+Default zero.
+.TP
+.B size_t hop_size
+Input samples or pairs per spectrum frame.
+Must be at least one, no greater than N, and represent 5 through 20 ms.
+Zero selects floor(sample_rate*0.010625+0.5).
+Default zero.
+.TP
+.B double min_frequency
+Retained lower band edge in Hz.
+Audio requires a nonnegative edge; I/Q permits signed offsets from 0 Hz IF,
+no lower than -sample_rate/2.
+Default 200 from md_config_init().
+.TP
+.B double max_frequency
+Exclusive retained upper edge in Hz, greater than min_frequency and no greater
+than sample_rate/2.
+Both edges must be finite.
+Default 1200.
+.TP
+.B size_t max_channels
+Number of preallocated channel slots; must be positive.
+Default 32.
+No additional slots are allocated during streaming.
+.TP
+.B double initial_wpm
+Zero selects the duration model's default priors, approximately 23 WPM.
+A finite value from 5 through 80 shifts those priors toward the requested
+speed.
+This is not a fixed speed or a guaranteed supported decode range.
+Default zero.
+.PP
+The rounded band must contain at least 32 retained bins.
+The decoder needs ten bins of guard space at each edge for tracking and
+spectral-shape analysis, so include margins around desired signals.
+At the default spacing of 7.8125 Hz, each margin is 78.125 Hz.
+.PP
+.B md_new(NULL)
+uses the audio defaults above.
+.B md_new_iq(NULL)
+uses the same defaults except for min_frequency=-1200.
+For an explicit I/Q configuration, set the desired signed edges yourself;
+md_config_init() always initializes audio defaults.
+.SH DATA TYPES
+.SS Decoder handle
+.B morsedec_decoder_t
+is an opaque owned handle.
+Only md_new() and md_new_iq() create it; only md_delete() releases it.
+Internal helpers share the md_ prefix but are not public interfaces.
+Use only functions declared in morsedec.h.
+.SS Geometry
+.B struct morsedec_geometry
+is a caller-owned copy returned by md_get_geometry().
+Its fields are:
+.TP
+.B uint32_t sample_rate
+Effective samples or complex pairs per second.
+.TP
+.B size_t fft_size, hop_size, spectrum_size
+Actual FFT length, hop length and retained bin count.
+.TP
+.B double first_frequency
+Frequency of retained bin zero in Hz; signed IF offset for I/Q.
+.TP
+.B double bin_spacing
+sample_rate/fft_size in Hz.
+Bin j is first_frequency+j*bin_spacing.
+.TP
+.B double frame_seconds
+hop_size/sample_rate in seconds.
+.PP
+Requested edges map to bin numbers using floor(frequency*N/sample_rate+0.5).
+The upper edge is excluded.
+The I/Q grid includes negative Nyquist when requested, and excludes positive
+Nyquist so the same complex bin is not represented twice.
+Query geometry to obtain the actual rounded band.
+.SS Channel summary
+.B struct morsedec_channel
+is a caller-owned copy returned by md_get_channel().
+.TP
+.B uint64_t id
+Stable nonzero identity until the channel retires or the decoder is reset.
+IDs are not enumeration indices and are not reused across resets of a handle.
+IDs from different handles are independent.
+.TP
+.B enum morsedec_state state
+Decoder state listed below.
+.TP
+.B double frequency
+Tracked FFT-bin center in Hz.
+For I/Q, a signed offset from the stream IF center at 0 Hz.
+.TP
+.B double snr
+Internal signal-to-noise estimate in dB, derived from confident delayed marks.
+It is not a calibrated RF measurement and may be unrepresentative at startup.
+.TP
+.B double wpm
+Current duration-model speed estimate using the PARIS timing convention.
+.TP
+.B double key_probability
+Current soft keying observation probability, between zero and one.
+.TP
+.B double strength
+Internal dimensionless envelope-strength indicator, not dB or RF power.
+.TP
+.B size_t character_count
+Number of records in the current bounded message snapshot.
+.SS Decoder states
+.TP
+.B MORSEDEC_STATE_NONE
+No current channel. Returned by md_get_state(), not a live channel summary.
+.TP
+.B MORSEDEC_STATE_PAUSE
+Automatically selected channel in a pause or acquisition state.
+.TP
+.B MORSEDEC_STATE_DECODING
+Automatically selected channel in a decoding state.
+.TP
+.B MORSEDEC_STATE_LOCKED_PAUSE
+Pinned channel in a pause or acquisition state.
+.TP
+.B MORSEDEC_STATE_LOCKED_DECODING
+Pinned channel in a decoding state.
+.PP
+State describes the channel decoder, not instantaneous key-up or key-down.
+A paused channel can have a nonempty message.
+.SS Character record
+.B struct morsedec_character
+contains the following fields:
+.TP
+.B unsigned char character
+Latin-1 character byte.
+Prosigns use lowercase pairs such as ar and sk, with one record per byte.
+An undecodable run may produce an asterisk.
+.TP
+.B enum morsedec_word_type word_type
+Word interpretation label: MORSEDEC_WORD_GENERIC, MORSEDEC_WORD_DICTIONARY,
+MORSEDEC_WORD_REPORT, MORSEDEC_WORD_PROSIGN, MORSEDEC_WORD_QRL,
+or MORSEDEC_WORD_CALLSIGN.
+Labels may be revised by later observations.
+.TP
+.B uint64_t ordinal
+Position on the source channel timebase, not a character count or array index.
+The implementation reserves 256 positions per source frame for multiple
+characters from a prosign.
+Use the ordinal together with the handle and channel ID to apply revisions.
+.TP
+.B int low_snr
+Nonzero when the decoded character includes low-SNR evidence.
+.TP
+.B double word_space_probability
+Word-boundary evidence; 2.0 is a forced boundary marker, not a probability.
+.TP
+.B int word_end
+Number of spaces after the character: zero, one, or two.
+.SH STREAMING MODEL
+Construct a handle, optionally pin a carrier, feed successive input chunks,
+and consume channel snapshots after each processing call.
+At end of input call md_flush(), consume final snapshots, then delete the
+handle
+or reset it for a new stream.
+.PP
+The first successful processing call selects either sample input or external
+spectrum input until reset.
+Even a zero-count sample call selects sample mode.
+An audio handle accepts both mono sample formats; an I/Q handle accepts both
+I/Q formats.
+Changing between float and signed 16-bit within that handle type needs no
+reset.
+Changing between sample input and spectrum input requires md_reset().
+Changing between audio and I/Q requires a new handle.
+.PP
+Input arrays are borrowed only during the processing call.
+No input pointer is retained.
+Arbitrary complete-sample or complete-pair chunks are accepted; incomplete
+hops
+are retained inside the decoder.
+The API accepts C values in native representation, not a byte stream.
+Byte framing, byte order and incomplete I/Q pairs are the host's
+responsibility.
+.PP
+Float components are clamped to [-1,1], with non-finite values replaced by
+zero.
+Signed 16-bit components are divided by 32768.
+Processing performs no heap allocation, blocking I/O or callbacks.
+This does not imply a hard real-time execution bound: channel creation,
+historical replay and model updates make work vary by frame.
+.PP
+The decoder has no input timestamp or discontinuity API.
+After dropped samples, sample-rate changes or receiver retuning, reset or
+recreate the appropriate handle rather than silently joining unrelated input.
+.SS I/Q frequency convention
+Interleaved input is I0,Q0,I1,Q1,... representing I+jQ.
+Counts passed to md_process_iq() or md_process_iq_s16() are complex pairs,
+not scalar components or bytes.
+For I=cos(2*pi*f*t), Q=sin(2*pi*f*t), the reported offset is +f Hz.
+Negative-frequency carriers remain distinct from positive-frequency carriers.
+Swapping I and Q reverses the orientation.
+.PP
+No receiver center frequency is stored in the decoder.
+To display RF frequency, the host adds its RF center to the signed offset
+according to its receiver's frequency convention.
+The decoder performs no DC removal or I/Q-imbalance correction.
+.SS External spectra
+md_process_spectrum() consumes exactly one linear-power frame with
+geometry.spectrum_size bins per call.
+The caller supplies frames at geometry.frame_seconds intervals on the same
+ascending grid, window alignment and power scale as the frontend.
+Audio power is 0.001*abs(FFT(window*audio))^2;
+I/Q power is 0.00025*abs(FFT(window*(I+jQ)))^2.
+See md_process_spectrum(3) for the complete window and calibration formula.
+Decibels or arbitrary waterfall pixels are not compatible power frames.
+Non-finite and nonpositive power values become zero.
+.SS Flush and reset
+md_flush() pads a partial hop and drains about one second of silence.
+It commits pending output and seals the stream.
+Repeated flush is a successful no-op.
+Processing and pin/unpin operations fail after flush until reset;
+queries remain available.
+Frame counts include the synthetic drain frames.
+.PP
+md_reset() discards output, pins, channel identities and learned stream state,
+and clears the sample/spectrum mode selection.
+Geometry, handle type and allocated storage remain available for reuse.
+md_delete() does not implicitly flush or preserve output.
+.SH CHANNELS AND SELECTION
+Discovery and tracking process multiple carriers within the retained band,
+up to max_channels slots.
+Enumerate with md_get_channel_count() and md_get_channel(); retain IDs instead
+of enumeration indices because ordering can change during processing.
+All live channels can be queried independently of the current selection.
+.PP
+The automatic current-channel policy waits for duration-model training and
+compares channel power with hysteresis.
+It does not select every observed peak immediately.
+To receive a short known-frequency signal without waiting for automatic
+selection, pin a frequency.
+.PP
+md_pin_frequency() rounds and clamps requests to the retained band's usable
+interior, reusing a nearby channel or allocating a preallocated slot.
+It selects that channel, prevents automatic retirement and current-channel
+switching, and leaves discovery of other channels enabled.
+Pitch tracking continues; pinning is not frequency translation or an exact
+frequency hold.
+.PP
+Use md_pin_frequency(decoder, 0) to pin the IF center.
+md_set_frequency(decoder, 0) instead releases the pin, as does
+md_unpin_frequency().
+Releasing a pin initially retains the channel and message, but future
+processing can switch or retire it.
+.SH MESSAGE SNAPSHOTS
+Messages are bounded, revisable snapshots, not queues of new characters.
+md_get_text() returns Latin-1 text with word_end spaces;
+md_get_characters() exposes the records and their source ordinals.
+Reading a message does not consume or clear it.
+.PP
+Channel ID zero selects the current channel.
+If no current channel exists, this yields a successful empty message.
+A nonzero unknown or retired channel ID yields ENOENT.
+The maximum is MORSEDEC_MESSAGE_CAPACITY, currently 500 records.
+When full, old records are discarded in blocks; retired channels no longer
+expose messages.
+Long-running applications must archive output while processing.
+.PP
+Copied channel summaries and copied text belong to the caller.
+A borrowed character array must not be modified or freed and is valid only
+until the next mutating call on its handle.
+Copy it before processing, flush, reset, selection changes or deletion.
+Keep the handle serialized across size-query/copy or enumeration operations.
+.PP
+To retain a transcript, key observations by channel ID and ordinal and apply
+later record revisions.
+Blindly appending every text snapshot duplicates output and loses revisions.
+After a reset, start a fresh stream archive; do not compare ordinals from
+unrelated channel timebases as if they were one character sequence.
+.SH RETURN VALUES
+Fallible int functions return MORSEDEC_SUCCESS (1) or MORSEDEC_FAILURE (0).
+Constructors return an owned handle or NULL.
+Failures set errno; errno is not a success indicator and need not be cleared
+on successful calls.
+.PP
+md_config_init() and md_delete() return void and accept NULL as a no-op.
+The scalar queries have absence defaults and no errno-based error return:
+md_get_state(NULL) returns MORSEDEC_STATE_NONE;
+md_get_channel_count(NULL) and md_get_frame_count(NULL) return zero;
+md_get_frequency(NULL), md_get_snr(NULL) and md_get_wpm(NULL) return -1.
+The same -1 result applies when there is no current channel.
+.PP
+Because negative frequencies and negative SNR estimates can be valid,
+check md_get_state() or enumerate channels to detect absence.
+A failed call's output arguments are unspecified unless its manual page
+explicitly states otherwise.
+.SH ERRORS
+The individual function pages describe which errors apply.
+.TP
+.B EINVAL
+Invalid configuration, argument, input type or mode; an out-of-range
+enumeration
+index; or a processing/selection operation after flush.
+.TP
+.B ENOMEM
+Decoder storage allocation or FFT planning failed during construction.
+.TP
+.B ENOENT
+A requested nonzero channel ID is no longer tracked.
+.TP
+.B ENOSPC
+No free channel slot for pinning, or insufficient text-buffer capacity.
+On text-buffer failure, md_get_text() reports the required byte count,
+including NUL, and writes no partial string.
+.SH THREAD SAFETY
+Serialize all operations on the same handle, including getters and deletion.
+Different handles may process concurrently after construction.
+The application must also serialize construction and destruction against
+all FFTW planner and plan-destruction operations, including those outside
+libmorsedec.
+.PP
+There are no library-owned worker threads, locks for shared handle access,
+or callbacks.
+Functions are not specified as async-signal-safe.
+For signal-driven shutdown, set an application flag and flush/delete from
+normal program flow.
+.SH EXAMPLE
+This complete program reads native-endian float I,Q pairs from stdin and
+prints all nonempty channel snapshots with signed IF offsets.
+It prints full snapshots, including repeated/revised text; replace the output
+helper with an ordinal-aware archive when building a persistent transcript.
+Use the streaming APIs directly for device input, or use morsedec-iqlive for
+little-endian raw byte streams.
+.PP
+.nf
+#include <morsedec.h>
+#include <stdio.h>
+
+static int snapshots(morsedec_decoder_t *d)
+{
+    char text[3 * MORSEDEC_MESSAGE_CAPACITY + 1];
+    size_t required;
+
+    for (size_t i = 0; i < md_get_channel_count(d); i++) {
+        struct morsedec_channel c;
+        if (!md_get_channel(d, i, &c) ||
+            !md_get_text(d, c.id, text, sizeof(text), &required))
+            return 0;
+        if (text[0])
+            printf("%+.3f Hz #%llu: %s\en", c.frequency,
+                   (unsigned long long)c.id, text);
+    }
+    return !ferror(stdout);
+}
+
+int main(void)
+{
+    struct morsedec_config config;
+    morsedec_decoder_t *d;
+    float iq[2048];
+    size_t n;
+    int status = 1;
+
+    md_config_init(&config);
+    config.sample_rate = 48000; /* complex pairs per second */
+    config.min_frequency = -12000;
+    config.max_frequency = 12000;
+    d = md_new_iq(&config);
+    if (!d) {
+        perror("md_new_iq");
+        return 1;
+    }
+    while ((n = fread(iq, 1, sizeof(iq), stdin)) != 0) {
+        if (n % (2 * sizeof(iq[0]))) {
+            fputs("Incomplete I/Q pair\en", stderr);
+            goto done;
+        }
+        if (!md_process_iq(d, iq, n / (2 * sizeof(iq[0])))) {
+            perror("md_process_iq");
+            goto done;
+        }
+        if (!snapshots(d))
+            goto done;
+    }
+    if (ferror(stdin)) {
+        perror("stdin");
+        goto done;
+    }
+    if (!md_flush(d)) {
+        perror("md_flush");
+        goto done;
+    }
+    if (!snapshots(d) || fflush(stdout))
+        goto done;
+    status = 0;
+done:
+    md_delete(d);
+    return status;
+}
+.fi
+.PP
+For mono audio, use md_new() with the nonnegative audio band and replace
+the I/Q processing call with md_process(d, samples, sample_count).
+For signed 16-bit audio or I/Q, use the corresponding s16 function.
+.SH NOTES
+Default discovery warms up for about 2.125 seconds and replays bounded
+history.
+Decoding latency is roughly one second plus acquisition and model learning,
+depending on the signal and configured cadence.
+Flush adds synthetic time.
+.PP
+Signals within about three default-grid bins can merge.
+Fast 30-40 WPM CW, fading, interference, onset clipping and short handoffs
+remain areas of limited validation.
+Do not infer a guaranteed range from the accepted initial_wpm parameter.
+The existing three-recording corpus was used for tuning and is not an
+independent accuracy evaluation.
+.SH VERSION
+This manual describes libmorsedec 0.2.0, shared-library ABI 1.
+All public function names use md_.
+Version 0.2.0 replaced the original morsedec_ function symbols without
+aliases;
+update call sites and dynamic lookups and rebuild consumers.
+The header, public data-type names and MORSEDEC_ constants retain their names.
+MORSEDEC_VERSION is the compile-time version string, not a runtime query.
+.SH LICENSE
+Copyright (C) 2026 Gong BI1XJT.
+.PP
+SPDX-License-Identifier: GPL-3.0-or-later.
+See the distributed COPYING file for the GNU General Public License.
+.SH SEE ALSO
+.BR md_new (3),
+.BR md_new_iq (3),
+.BR md_process (3),
+.BR md_process_iq (3),
+.BR md_process_spectrum (3),
+.BR md_get_channel (3),
+.BR md_get_characters (3),
+.BR md_get_text (3),
+.BR md_flush (3),
+.BR pkg-config (1)
+.PP
+The project README describes morsedec-audio, morsedec-live and
+morsedec-iqlive.
+The implementation decisions and signal-processing conventions are documented
+in docs/design.md.

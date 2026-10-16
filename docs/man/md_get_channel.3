@@ -1,0 +1,54 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH MD_GET_CHANNEL 3 "2026-10-16" "libmorsedec 0.2.0" "Library Functions Manual"
+.SH NAME
+md_get_channel \- copy a tracked channel summary
+.SH SYNOPSIS
+.nf
+#include <morsedec.h>
+
+int md_get_channel(const morsedec_decoder_t *decoder, size_t index,
+    struct morsedec_channel *channel);
+.fi
+.SH DESCRIPTION
+Copy a tracked channel summary.
+.SH FUNCTION PARAMETERS
+.TP
+.I decoder
+Decoder handle. Calls using this handle must be serialized, including queries.
+.TP
+.I index
+Zero-based enumeration position, strictly below md_get_channel_count().
+.TP
+.I channel
+Non-NULL output structure; receives a caller-owned copy.
+.SH RETURN VALUE
+Returns MORSEDEC_SUCCESS (1) on success, or MORSEDEC_FAILURE (0) and sets
+errno on failure. Do not inspect errno after success.
+.SH ERRORS
+.TP
+.B EINVAL
+NULL decoder or channel, or index outside the current enumeration.
+.SH REMARKS
+Copies the channel ID, state, frequency, snr, wpm, key_probability, strength
+and character_count. See libmorsedec(3) for field units and interpretation.
+Frequencies are FFT-bin centers; on I/Q handles they are signed Hz offsets
+from 0 Hz IF.
+.PP
+The ID remains associated with this channel until retirement or reset.
+Enumeration indices can change on any processing call and must not be stored
+as identities. Pass channel.id to md_get_text() or md_get_characters(). A
+copied summary is not updated when the decoder advances. Enumeration remains
+available after flush.
+.SH THREAD SAFETY
+Serialize all calls that access the same handle, including getters. Different
+handles may process concurrently after construction. These functions are not
+specified as async-signal-safe.
+.SH VERSION
+This md_ entry point is available since libmorsedec 0.2.0 (shared-library ABI
+1).
+.SH SEE ALSO
+.BR libmorsedec (3),
+.BR md_get_channel_count (3),
+.BR md_get_characters (3),
+.BR md_get_text (3),
+.BR md_get_state (3)

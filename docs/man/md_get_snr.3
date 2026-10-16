@@ -1,0 +1,38 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH MD_GET_SNR 3 "2026-10-16" "libmorsedec 0.2.0" "Library Functions Manual"
+.SH NAME
+md_get_snr \- query the current channel signal-to-noise estimate
+.SH SYNOPSIS
+.nf
+#include <morsedec.h>
+
+double md_get_snr(const morsedec_decoder_t *decoder);
+.fi
+.SH DESCRIPTION
+Query the current channel signal-to-noise estimate.
+.SH FUNCTION PARAMETERS
+.TP
+.I decoder
+Decoder handle. Calls using this handle must be serialized, including queries.
+.SH RETURN VALUE
+Returns an SNR estimate in dB, or -1 for NULL decoder or no current channel.
+This query has no errno-based failure return.
+.SH REMARKS
+The estimate is derived from the decoder's delayed envelope and accumulated
+confident marks. It is an internal relative metric, not a calibrated RF
+instrument measurement; it may be negative or not yet representative during
+acquisition. Use state or channel enumeration to test for absence instead of
+interpreting every negative number as an error. md_get_channel() returns the
+same estimate for a specified channel.
+.SH THREAD SAFETY
+Serialize all calls that access the same handle, including getters. Different
+handles may process concurrently after construction. These functions are not
+specified as async-signal-safe.
+.SH VERSION
+This md_ entry point is available since libmorsedec 0.2.0 (shared-library ABI
+1).
+.SH SEE ALSO
+.BR libmorsedec (3),
+.BR md_get_state (3),
+.BR md_get_channel (3),
+.BR md_get_wpm (3)

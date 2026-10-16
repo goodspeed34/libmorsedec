@@ -1,0 +1,71 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH MD_GET_TEXT 3 "2026-10-16" "libmorsedec 0.2.0" "Library Functions Manual"
+.SH NAME
+md_get_text \- copy a channel message snapshot as a string
+.SH SYNOPSIS
+.nf
+#include <morsedec.h>
+
+int md_get_text(const morsedec_decoder_t *decoder, uint64_t id, char
+    *buffer, size_t capacity, size_t *required);
+.fi
+.SH DESCRIPTION
+Copy a channel message snapshot as a string.
+.SH FUNCTION PARAMETERS
+.TP
+.I decoder
+Decoder handle. Calls using this handle must be serialized, including queries.
+.TP
+.I id
+Stable channel ID, or zero for the current channel.
+.TP
+.I buffer
+Caller-owned destination. NULL is allowed only when capacity is zero.
+.TP
+.I capacity
+Destination capacity in bytes, including room for the terminating NUL.
+.TP
+.I required
+Non-NULL output address for the required byte count, including the terminating
+NUL.
+.SH RETURN VALUE
+Returns MORSEDEC_SUCCESS (1) on success, or MORSEDEC_FAILURE (0) and sets
+errno on failure. Do not inspect errno after success.
+.SH ERRORS
+.TP
+.B EINVAL
+NULL decoder or required, or NULL buffer with nonzero capacity.
+.TP
+.B ENOENT
+Nonzero id does not identify a tracked channel.
+.TP
+.B ENOSPC
+Destination is too small; *required includes the NUL byte.
+.SH REMARKS
+Copies each character byte and word_end spaces, followed by NUL. The encoding
+is Latin-1, not UTF-8. Prosigns retain their lowercase pair representation;
+undecodable runs may appear as an asterisk. The copied string belongs to the
+caller. It is a full revisable snapshot, not newly decoded text.
+.PP
+Call with buffer=NULL and capacity=0 to query the size. Keep the handle
+serialized across a size query and the corresponding copy, or retry if a later
+call reports ENOSPC. If id=0 and no current channel exists, the empty string
+requires one byte. A fixed buffer of 3*MORSEDEC_MESSAGE_CAPACITY+1 bytes
+covers the present character-plus-two-spaces maximum.
+.PP
+On ENOSPC, *required is updated and no string bytes are written; there is no
+truncation or partial string. On other failures the output values are not
+specified. Reading text does not consume or clear it. Copy pending text after
+each processing call and once after md_flush().
+.SH THREAD SAFETY
+Serialize all calls that access the same handle, including getters. Different
+handles may process concurrently after construction. These functions are not
+specified as async-signal-safe.
+.SH VERSION
+This md_ entry point is available since libmorsedec 0.2.0 (shared-library ABI
+1).
+.SH SEE ALSO
+.BR libmorsedec (3),
+.BR md_get_characters (3),
+.BR md_get_channel (3),
+.BR md_flush (3)

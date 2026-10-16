@@ -1,0 +1,59 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH MD_PROCESS_S16 3 "2026-10-16" "libmorsedec 0.2.0" "Library Functions Manual"
+.SH NAME
+md_process_s16 \- feed mono signed 16-bit audio samples
+.SH SYNOPSIS
+.nf
+#include <morsedec.h>
+
+int md_process_s16(morsedec_decoder_t *decoder, const int16_t
+    *samples, size_t count);
+.fi
+.SH DESCRIPTION
+Feed mono signed 16-bit audio samples.
+.SH FUNCTION PARAMETERS
+.TP
+.I decoder
+Decoder handle. Calls using this handle must be serialized, including queries.
+.TP
+.I samples
+Input array, or NULL only when count is zero. Native C values; the library
+does not decode byte order.
+.TP
+.I count
+Number of mono scalar samples, not bytes.
+.SH RETURN VALUE
+Returns MORSEDEC_SUCCESS (1) on success, or MORSEDEC_FAILURE (0) and sets
+errno on failure. Do not inspect errno after success.
+.SH ERRORS
+.TP
+.B EINVAL
+NULL decoder, NULL input with nonzero count, wrong handle type,
+external-spectrum mode already selected, or input after md_flush(). Reset
+before switching from spectrum input or starting a new stream after flush.
+.SH REMARKS
+Requires a handle from md_new(). Float and s16 sample calls may be interleaved
+on an audio handle without reset.
+.PP
+Signed 16-bit values are divided by 32768, so -32768 maps to -1 and +32767
+maps to 32767/32768.
+.PP
+Input storage is borrowed only for the duration of the call. Complete hops are
+processed immediately; partial hops are retained. Chunk boundaries do not
+change the result. No heap allocation, blocking I/O, or callbacks occur during
+processing. Read each channel's bounded message snapshot after every
+processing call. A successful zero-count call selects sample-input mode even
+though it consumes no samples.
+.SH THREAD SAFETY
+Serialize all calls that access the same handle, including getters. Different
+handles may process concurrently after construction. These functions are not
+specified as async-signal-safe.
+.SH VERSION
+This md_ entry point is available since libmorsedec 0.2.0 (shared-library ABI
+1).
+.SH SEE ALSO
+.BR libmorsedec (3),
+.BR md_new (3),
+.BR md_process (3),
+.BR md_flush (3),
+.BR md_get_characters (3)

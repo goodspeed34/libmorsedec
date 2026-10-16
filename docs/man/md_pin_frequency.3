@@ -1,0 +1,56 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH MD_PIN_FREQUENCY 3 "2026-10-16" "libmorsedec 0.2.0" "Library Functions Manual"
+.SH NAME
+md_pin_frequency \- select and pin a channel at a requested frequency
+.SH SYNOPSIS
+.nf
+#include <morsedec.h>
+
+int md_pin_frequency(morsedec_decoder_t *decoder, double hz);
+.fi
+.SH DESCRIPTION
+Select and pin a channel at a requested frequency.
+.SH FUNCTION PARAMETERS
+.TP
+.I decoder
+Decoder handle. Calls using this handle must be serialized, including queries.
+.TP
+.I hz
+Finite requested Hz. I/Q accepts negative, zero and positive IF offsets; audio
+accepts zero and positive frequencies.
+.SH RETURN VALUE
+Returns MORSEDEC_SUCCESS (1) on success, or MORSEDEC_FAILURE (0) and sets
+errno on failure. Do not inspect errno after success.
+.SH ERRORS
+.TP
+.B EINVAL
+NULL decoder, non-finite hz, negative audio frequency, or a flushed handle.
+.TP
+.B ENOSPC
+A new tracking slot is needed but all slots are occupied.
+.SH REMARKS
+Rounds to a spectrum bin and clamps to the usable interval, leaving ten
+retained bins on either edge as tracking guards. Reuses a channel within two
+bins of the requested bin if available, otherwise creates one. It releases any
+previous current pin, selects the channel, and prevents its automatic
+retirement and automatic current-channel switching. Other channels continue to
+be discovered and processed.
+.PP
+The channel still tracks pitch; pinning does not fix the exact measured
+frequency, alter FFT geometry, or tune the input. A zero request can only
+select 0 Hz if the configured retained band and its guards include that bin.
+Requests outside the usable band are clamped, not rejected. Query
+md_get_frequency() or md_get_channel() for the actual result.
+.SH THREAD SAFETY
+Serialize all calls that access the same handle, including getters. Different
+handles may process concurrently after construction. These functions are not
+specified as async-signal-safe.
+.SH VERSION
+This md_ entry point is available since libmorsedec 0.2.0 (shared-library ABI
+1).
+.SH SEE ALSO
+.BR libmorsedec (3),
+.BR md_set_frequency (3),
+.BR md_unpin_frequency (3),
+.BR md_get_frequency (3),
+.BR md_get_geometry (3)

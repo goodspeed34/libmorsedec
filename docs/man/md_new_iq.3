@@ -1,0 +1,57 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH MD_NEW_IQ 3 "2026-10-16" "libmorsedec 0.2.0" "Library Functions Manual"
+.SH NAME
+md_new_iq \- create a streaming complex I/Q decoder
+.SH SYNOPSIS
+.nf
+#include <morsedec.h>
+
+morsedec_decoder_t * md_new_iq(const struct morsedec_config
+    *config);
+.fi
+.SH DESCRIPTION
+Create a streaming complex I/Q decoder.
+.SH FUNCTION PARAMETERS
+.TP
+.I config
+Configuration to copy, or NULL for 48 kHz, -1200..1200 Hz and otherwise audio
+defaults.
+.SH RETURN VALUE
+Returns an owned decoder handle on success, or NULL and sets errno on failure.
+.SH ERRORS
+.TP
+.B EINVAL
+Invalid configuration, signed band or geometry.
+.TP
+.B ENOMEM
+Storage allocation or FFT planning failed.
+.SH REMARKS
+Accepts I+jQ input: I=cos(2*pi*f*t), Q=sin(2*pi*f*t) produces a positive f Hz
+offset. sample_rate counts complex pairs per second. Retained band edges may
+be negative and must describe a nonempty subband of [-sample_rate/2,
+sample_rate/2); the upper edge is exclusive. With an explicit config, all
+fields are used as supplied: md_config_init() does not choose symmetric I/Q
+defaults.
+.PP
+Channel frequencies and geometry are signed Hz offsets from the stream IF
+center at 0 Hz. No RF center frequency is added. There is no built-in
+frequency translation, resampling, DC-offset removal or I/Q-imbalance
+correction. I and Q must retain their order; swapping them reverses frequency
+orientation. Pass interleaved pairs to md_process_iq() or md_process_iq_s16().
+Mono processing calls are invalid for this handle. External power frames are
+also supported on the signed ascending grid. Ownership, allocation and
+lifetime match md_new().
+.SH THREAD SAFETY
+Serialize this call with all FFTW planner and plan-destruction operations in
+the application, including operations for other handles.
+.SH VERSION
+This md_ entry point is available since libmorsedec 0.2.0 (shared-library ABI
+1).
+.SH SEE ALSO
+.BR libmorsedec (3),
+.BR md_config_init (3),
+.BR md_delete (3),
+.BR md_process_iq (3),
+.BR md_process_iq_s16 (3),
+.BR md_process_spectrum (3),
+.BR md_pin_frequency (3)

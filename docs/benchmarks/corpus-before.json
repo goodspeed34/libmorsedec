@@ -1,0 +1,53 @@
+{
+  "label": "before",
+  "method": "default automatic selection; current-channel snapshots archived by source ordinal; uppercase; whitespace removed; punctuation retained; O and 0 distinct",
+  "library_sha256": "31a60c4bb344cd605c3d54f05fb9a3636ca8f8a06578f678f5ec3af5856b5834",
+  "ffmpeg": "ffmpeg version 8.0.1-3ubuntu2+esm5 Copyright (c) 2000-2025 the FFmpeg developers",
+  "total_errors": 81,
+  "reference_characters": 170,
+  "cer_percent": 47.64705882352941,
+  "cases": [
+    {
+      "id": "UBlxpe5gvv0",
+      "source_sha256": "e8254b0158e9de21c0918cd2af6a93f134039b047c128dd3d9f1cb587f1e10d4",
+      "reference": "AI5DD AI5DD 56N CO BK BK GA UR 55N 55N OK OK 73 AE0Q DE AI5DD 44 EE R 44 EE EE",
+      "decoded": "EIIE  AIE  5DD  T* AI5DD 56N COBKNIKGARU 55N 55N T MK OK 73 AE0QDEE TI5DD 44EE SI44EE EE  U  ",
+      "reference_characters": 57,
+      "errors": 18,
+      "cer_percent": 31.57894736842105,
+      "sample_rate": 44100,
+      "channels": 2,
+      "duration_seconds": 44.35011337868481,
+      "fft_size": 5644,
+      "hop_size": 469
+    },
+    {
+      "id": "9AhkEDs2Sko",
+      "source_sha256": "e2c40cab9d36207d0f17959141c2c72a1f9a20d919031b2949f247e7f9a4143d",
+      "reference": "D DE JO2QOT JO2QOT 5NN CA 5NN 100 TU JO2QOT TU K6XX",
+      "decoded": "SE EI  DE E E  JOE  2E  AWEIOEI T  IEE  EI JO2QOT I5E  NN ICEA*E  5  5NN 1E  0 S  0EETEUE  IE *  JO2QOT EEEETU HKE  6XXI *E 2  ",
+      "reference_characters": 40,
+      "errors": 45,
+      "cer_percent": 112.5,
+      "sample_rate": 44100,
+      "channels": 2,
+      "duration_seconds": 35.828390022675734,
+      "fft_size": 5644,
+      "hop_size": 469
+    },
+    {
+      "id": "9jgZ94TzRys",
+      "source_sha256": "3276bf6819c8d2ee8396cdb6c9144c7fb06cc083e7764bf6ca27bccf7d41a9ee",
+      "reference": "? WD4DAN WD4DAN GE ES FB UR 57N 57N CO BK BK TU GE UR 56N 56N GA GA 73 BK BK TU GA 73 DE W0ABE TU EE /",
+      "decoded": "WD4DAN SE  WD4DAN GE ESFB EUR E  57N E57NCO bk  A4TUG E RU56N E56NE GA GA73bkEE  bkTU GA73DE W0ABE TUEE  / EE*N  ",
+      "reference_characters": 73,
+      "errors": 18,
+      "cer_percent": 24.65753424657534,
+      "sample_rate": 44100,
+      "channels": 2,
+      "duration_seconds": 52.03591836734694,
+      "fft_size": 5644,
+      "hop_size": 469
+    }
+  ]
+}

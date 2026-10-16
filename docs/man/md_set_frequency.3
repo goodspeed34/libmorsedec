@@ -1,0 +1,50 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH MD_SET_FREQUENCY 3 "2026-10-16" "libmorsedec 0.2.0" "Library Functions Manual"
+.SH NAME
+md_set_frequency \- pin a nonzero frequency or release the current pin
+.SH SYNOPSIS
+.nf
+#include <morsedec.h>
+
+int md_set_frequency(morsedec_decoder_t *decoder, double hz);
+.fi
+.SH DESCRIPTION
+Pin a nonzero frequency or release the current pin.
+.SH FUNCTION PARAMETERS
+.TP
+.I decoder
+Decoder handle. Calls using this handle must be serialized, including queries.
+.TP
+.I hz
+Nonzero requested frequency in Hz; signed IF offset for I/Q. Exactly zero
+requests unpinning.
+.SH RETURN VALUE
+Returns MORSEDEC_SUCCESS (1) on success, or MORSEDEC_FAILURE (0) and sets
+errno on failure. Do not inspect errno after success.
+.SH ERRORS
+.TP
+.B EINVAL
+NULL decoder, non-finite hz, negative nonzero audio frequency, or a flushed
+handle.
+.TP
+.B ENOSPC
+A new tracking slot is needed but all slots are occupied.
+.SH REMARKS
+For nonzero hz, behaves as md_pin_frequency(). Negative values are accepted
+only on I/Q handles. For zero, behaves as md_unpin_frequency(), including when
+zero is negative floating-point zero. To select a carrier exactly at the IF
+center, use md_pin_frequency(decoder, 0); this function reserves zero as the
+release operation. Pinning selects a channel rather than translating the input
+frequency.
+.SH THREAD SAFETY
+Serialize all calls that access the same handle, including getters. Different
+handles may process concurrently after construction. These functions are not
+specified as async-signal-safe.
+.SH VERSION
+This md_ entry point is available since libmorsedec 0.2.0 (shared-library ABI
+1).
+.SH SEE ALSO
+.BR libmorsedec (3),
+.BR md_pin_frequency (3),
+.BR md_unpin_frequency (3),
+.BR md_get_frequency (3)

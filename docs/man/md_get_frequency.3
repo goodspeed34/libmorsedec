@@ -1,0 +1,37 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH MD_GET_FREQUENCY 3 "2026-10-16" "libmorsedec 0.2.0" "Library Functions Manual"
+.SH NAME
+md_get_frequency \- query the current channel frequency
+.SH SYNOPSIS
+.nf
+#include <morsedec.h>
+
+double md_get_frequency(const morsedec_decoder_t *decoder);
+.fi
+.SH DESCRIPTION
+Query the current channel frequency.
+.SH FUNCTION PARAMETERS
+.TP
+.I decoder
+Decoder handle. Calls using this handle must be serialized, including queries.
+.SH RETURN VALUE
+Returns the current channel frequency in Hz, or -1 for NULL decoder or no
+current channel. This query has no errno-based failure return.
+.SH REMARKS
+The result is a measured FFT-bin center. For I/Q this is a signed offset
+relative to 0 Hz IF, with no RF center frequency added. Since -1 Hz can be a
+valid I/Q result, test md_get_state()!=MORSEDEC_STATE_NONE or use channel
+enumeration to distinguish an absent selection. The scalar getter does not
+report all carriers.
+.SH THREAD SAFETY
+Serialize all calls that access the same handle, including getters. Different
+handles may process concurrently after construction. These functions are not
+specified as async-signal-safe.
+.SH VERSION
+This md_ entry point is available since libmorsedec 0.2.0 (shared-library ABI
+1).
+.SH SEE ALSO
+.BR libmorsedec (3),
+.BR md_get_state (3),
+.BR md_get_channel (3),
+.BR md_pin_frequency (3)

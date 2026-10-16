@@ -1,0 +1,75 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH MD_PROCESS_SPECTRUM 3 "2026-10-16" "libmorsedec 0.2.0" "Library Functions Manual"
+.SH NAME
+md_process_spectrum \- feed one calibrated linear-power spectrum frame
+.SH SYNOPSIS
+.nf
+#include <morsedec.h>
+
+int md_process_spectrum(morsedec_decoder_t *decoder, const float
+    *power, size_t count);
+.fi
+.SH DESCRIPTION
+Feed one calibrated linear-power spectrum frame.
+.SH FUNCTION PARAMETERS
+.TP
+.I decoder
+Decoder handle. Calls using this handle must be serialized, including queries.
+.TP
+.I power
+Non-NULL array containing linear power, in ascending retained-bin order.
+Borrowed during the call.
+.TP
+.I count
+Exactly geometry.spectrum_size float values. One call advances one complete
+hop.
+.SH RETURN VALUE
+Returns MORSEDEC_SUCCESS (1) on success, or MORSEDEC_FAILURE (0) and sets
+errno on failure. Do not inspect errno after success.
+.SH ERRORS
+.TP
+.B EINVAL
+NULL decoder or power, wrong count, sample-input mode selected, or input after
+flush.
+.SH REMARKS
+Available on both audio and I/Q handles. Geometry must match
+md_get_geometry(): bin j is first_frequency+j*bin_spacing and successive calls
+represent frame_seconds apart. I/Q bins include negative offsets, ascending
+through zero; they are not in raw FFT output order. NaN, infinite, zero and
+negative powers become zero.
+.PP
+The first call selects external-spectrum mode. Audio or I/Q sample calls then
+fail until md_reset(); spectrum input likewise fails after sample mode is
+selected. md_flush() seals this mode too. Processing performs no allocation,
+blocking I/O or callbacks.
+.PP
+Frames must match the frontend window and power calibration, not merely its
+bin count. The FFT is unnormalized. For N=fft_size, fs=sample_rate and
+i=0..N-1, use:
+.nf
+a = 2*pi*25*(i-N/2)/fs
+w[i] = (0.42-0.5*cos(2*pi*i/N)+0.08*cos(4*pi*i/N))
+       * sinc(a) * (8000/fs)
+sinc(a) = sin(a)/a; sinc(0) = 1
+audio power = 0.001 * abs(FFT(w*x))^2
+I/Q power   = 0.00025 * abs(FFT(w*(I+jQ)))^2
+.fi
+.PP
+Preserve sample-window alignment and the same temporal response. A generic SDR
+waterfall in dB, a different window, or a differently normalized FFT is not a
+compatible input. The one-quarter I/Q power coefficient compensates for the
+doubled amplitude of an isolated complex exponential relative to a real
+sinusoid of equal peak amplitude.
+.SH THREAD SAFETY
+Serialize all calls that access the same handle, including getters. Different
+handles may process concurrently after construction. These functions are not
+specified as async-signal-safe.
+.SH VERSION
+This md_ entry point is available since libmorsedec 0.2.0 (shared-library ABI
+1).
+.SH SEE ALSO
+.BR libmorsedec (3),
+.BR md_get_geometry (3),
+.BR md_new_iq (3),
+.BR md_reset (3),
+.BR md_flush (3)

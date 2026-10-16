@@ -1,0 +1,48 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH MD_NEW 3 "2026-10-16" "libmorsedec 0.2.0" "Library Functions Manual"
+.SH NAME
+md_new \- create a streaming mono audio decoder
+.SH SYNOPSIS
+.nf
+#include <morsedec.h>
+
+morsedec_decoder_t *md_new(const struct morsedec_config *config);
+.fi
+.SH DESCRIPTION
+Create a streaming mono audio decoder.
+.SH FUNCTION PARAMETERS
+.TP
+.I config
+Configuration to copy, or NULL to use the audio defaults.
+.SH RETURN VALUE
+Returns an owned decoder handle on success, or NULL and sets errno on failure.
+.SH ERRORS
+.TP
+.B EINVAL
+Invalid configuration, including invalid geometry, band, channel capacity, or
+initial WPM.
+.TP
+.B ENOMEM
+Storage allocation or FFT planning failed.
+.SH REMARKS
+Creates an independent decoder and preallocates its FFT, channel slots,
+filters, history and decoding state. Release it with md_delete(). The caller
+may reuse or discard config after return. Configuration is immutable for the
+lifetime of the handle; md_reset() preserves it. See libmorsedec(3) for
+validation rules. Accepts mono PCM through md_process() or md_process_s16(),
+or calibrated power frames through md_process_spectrum(). The first successful
+processing call selects sample or spectrum input until reset.
+.SH THREAD SAFETY
+Serialize this call with all FFTW planner and plan-destruction operations in
+the application, including operations for other decoder handles. No such lock
+is needed between independent handles during processing.
+.SH VERSION
+This md_ entry point is available since libmorsedec 0.2.0 (shared-library ABI
+1).
+.SH SEE ALSO
+.BR libmorsedec (3),
+.BR md_config_init (3),
+.BR md_delete (3),
+.BR md_new_iq (3),
+.BR md_process (3),
+.BR md_reset (3)

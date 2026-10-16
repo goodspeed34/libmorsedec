@@ -1,0 +1,116 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH MORSEDEC-LIVE 1 "2026-10-16" "libmorsedec 0.2.0" "General Commands Manual"
+.SH NAME
+morsedec-live \- decode streaming Morse audio from standard input
+.SH SYNOPSIS
+.B morsedec-live
+.RI [ options ]
+.SH DESCRIPTION
+.B morsedec-live
+decodes headerless, interleaved audio PCM read from standard input. It does not
+open audio devices; use a recorder such as
+.B arecord
+to supply the stream. Input is processed until end of file, a termination
+signal, or the optional input duration limit.
+.PP
+By default, messages from the selected channel are written to standard output
+as text snapshots. Use
+.B -a
+to print all tracked channels or
+.B -j
+for JSON Lines snapshots, including revisions. Diagnostics are written to
+standard error. An optional CSV trace records per-hop channel metrics.
+.SH OPTIONS
+.TP
+.BI -r " HZ"
+Set the input sample rate. Required. The value is samples per second.
+.TP
+.BI -F " s16|f32"
+Set the sample format. The default is
+.B s16
+(signed 16-bit little-endian PCM). The alternative
+.B f32
+is little-endian IEEE binary32.
+.TP
+.BI -n " N"
+Set the number of interleaved audio channels. The default is one.
+.TP
+.BI -c " N"
+Select audio channel
+.I N
+(1-based). By default, channels are averaged.
+.TP
+.BI -f " HZ"
+Pin decoding to a positive audio frequency. Without this option, signals are
+discovered automatically.
+.TP
+.BI -l " HZ"
+Set the lower retained band edge. The default is 200 Hz.
+.TP
+.BI -u " HZ"
+Set the exclusive upper retained band edge. The default is 1200 Hz.
+.TP
+.BI -w " WPM"
+Set the initial Morse speed estimate, from 5 through 80 WPM. The default uses
+model priors.
+.TP
+.BI -s " N"
+Stop after consuming
+.I N
+seconds worth of input samples. This limits input duration, not wall-clock time.
+.TP
+.BI -a
+Print messages from all tracked channels instead of only the selected channel.
+.TP
+.B -j
+Write JSON Lines message snapshots, including revisions, instead of human
+readable text.
+.TP
+.BI -t " FILE"
+Write per-hop channel metrics as CSV to
+.IR FILE .
+.TP
+.B -V
+Print version, copyright, and warranty information, then exit.
+.TP
+.B -h
+Print a short usage summary, then exit.
+.SH INPUT FORMAT
+Input is read from standard input as headerless little-endian PCM. It contains
+one or more interleaved audio channels according to
+.BR -n .
+Each frame contains one sample per channel. No resampling is performed. The
+sample rate and sample format must match the stream producer. Incomplete sample
+frames at end of input are reported as an error.
+.SH STREAM HANDLING
+The tool retains partial reads between system calls and processes complete
+decoder hops as they arrive. End of file, SIGINT, SIGTERM, or the duration limit
+flushes pending decoder output before exit. Empty input is valid. A signal is
+handled in the main processing loop so pending output and resources can be
+drained and released normally.
+.PP
+The optional CSV trace includes synthetic drain time at shutdown. PCM input has
+no timestamps or discontinuity markers; dropped samples cannot be detected by
+the decoder.
+.SH EXAMPLES
+Decode a mono 48 kHz recording:
+.PP
+.nf
+morsedec-live -r 48000 < recording.s16
+.fi
+.PP
+Capture stereo audio and select the second channel:
+.PP
+.nf
+arecord -t raw -f S16_LE -r 44100 -c 2 | morsedec-live -r 44100 -n 2 -c 2 -j
+.fi
+.SH EXIT STATUS
+Returns 0 after successful decoding and output, or a nonzero status if input,
+configuration, decoding, or output fails.
+.SH SEE ALSO
+.BR morsedec-audio (1),
+.BR morsedec-iqlive (1),
+.BR libmorsedec (3)
+.SH COPYRIGHT
+Copyright \(co 2026 Gong BI1XJT. Licensed under the GNU General Public License,
+version 3 or (at your option) any later version.

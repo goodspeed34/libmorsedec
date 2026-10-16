@@ -1,0 +1,34 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH MD_DELETE 3 "2026-10-16" "libmorsedec 0.2.0" "Library Functions Manual"
+.SH NAME
+md_delete \- destroy a decoder and release its storage
+.SH SYNOPSIS
+.nf
+#include <morsedec.h>
+
+void md_delete(morsedec_decoder_t *decoder);
+.fi
+.SH DESCRIPTION
+Destroy a decoder and release its storage.
+.SH FUNCTION PARAMETERS
+.TP
+.I decoder
+Handle to destroy. NULL is accepted and has no effect.
+.SH RETURN VALUE
+This function returns no value.
+.SH REMARKS
+Releases all owned buffers and the FFT plan. The handle and any borrowed
+character views are invalid after return. This does not flush pending
+decoding: call md_flush() and consume final snapshots before deletion if final
+output is required. Deleting the same non-NULL handle twice is invalid.
+.SH THREAD SAFETY
+Exclude all concurrent use of this handle. Serialize destruction with every
+FFTW planner and plan-destruction operation in the application.
+.SH VERSION
+This md_ entry point is available since libmorsedec 0.2.0 (shared-library ABI
+1).
+.SH SEE ALSO
+.BR libmorsedec (3),
+.BR md_new (3),
+.BR md_new_iq (3),
+.BR md_flush (3)

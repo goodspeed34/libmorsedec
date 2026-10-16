@@ -1,0 +1,64 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH MD_PROCESS_IQ 3 "2026-10-16" "libmorsedec 0.2.0" "Library Functions Manual"
+.SH NAME
+md_process_iq \- feed interleaved floating-point I/Q samples
+.SH SYNOPSIS
+.nf
+#include <morsedec.h>
+
+int md_process_iq(morsedec_decoder_t *decoder, const float
+    *interleaved, size_t count);
+.fi
+.SH DESCRIPTION
+Feed interleaved floating-point I/Q samples.
+.SH FUNCTION PARAMETERS
+.TP
+.I decoder
+Decoder handle. Calls using this handle must be serialized, including queries.
+.TP
+.I interleaved
+Input array, or NULL only when count is zero. Native C values; the library
+does not decode byte order.
+.TP
+.I count
+Number of complex pairs, not scalar components or bytes. The input contains
+2*count values in I0,Q0,I1,Q1,... order.
+.SH RETURN VALUE
+Returns MORSEDEC_SUCCESS (1) on success, or MORSEDEC_FAILURE (0) and sets
+errno on failure. Do not inspect errno after success.
+.SH ERRORS
+.TP
+.B EINVAL
+NULL decoder, NULL input with nonzero count, wrong handle type,
+external-spectrum mode already selected, or input after md_flush(). Reset
+before switching from spectrum input or starting a new stream after flush.
+.TP
+.B EINVAL
+count exceeds SIZE_MAX/2 and cannot describe an interleaved pair array.
+.SH REMARKS
+Requires a handle from md_new_iq(). Positive complex rotation reports positive
+Hz; see md_new_iq(3).
+.PP
+Float values are normalized to [-1,1]. Finite values outside that range are
+clamped; NaN and infinite values become zero. Each I/Q component is normalized
+independently. Float and s16 I/Q calls may be interleaved without reset.
+.PP
+Input storage is borrowed only for the duration of the call. Complete hops are
+processed immediately; partial hops are retained. Chunk boundaries do not
+change the result. No heap allocation, blocking I/O, or callbacks occur during
+processing. Read each channel's bounded message snapshot after every
+processing call. A successful zero-count call selects sample-input mode even
+though it consumes no samples.
+.SH THREAD SAFETY
+Serialize all calls that access the same handle, including getters. Different
+handles may process concurrently after construction. These functions are not
+specified as async-signal-safe.
+.SH VERSION
+This md_ entry point is available since libmorsedec 0.2.0 (shared-library ABI
+1).
+.SH SEE ALSO
+.BR libmorsedec (3),
+.BR md_new_iq (3),
+.BR md_process_iq_s16 (3),
+.BR md_flush (3),
+.BR md_get_characters (3)

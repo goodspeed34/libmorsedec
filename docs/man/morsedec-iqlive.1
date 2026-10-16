@@ -1,0 +1,118 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH MORSEDEC-IQLIVE 1 "2026-10-16" "libmorsedec 0.2.0" "General Commands Manual"
+.SH NAME
+morsedec-iqlive \- decode streaming Morse I/Q from standard input
+.SH SYNOPSIS
+.B morsedec-iqlive
+.RI [ options ]
+.SH DESCRIPTION
+.B morsedec-iqlive
+decodes interleaved complex I/Q samples from standard input. Samples are
+provided as I,Q pairs, with I first, and are interpreted as
+.IR I+jQ .
+Reported frequencies are signed Hz offsets from the stream's 0 Hz IF center.
+Positive complex rotation produces a positive offset.
+.PP
+The tool does not open SDR devices. Pipe or redirect a raw I/Q stream into it.
+Input is processed until end of file, a termination signal, or the optional
+input duration limit.
+.PP
+By default, messages from the selected channel are written to standard output
+as text snapshots. Use
+.B -a
+to print all tracked channels or
+.B -j
+for JSON Lines snapshots, including revisions. Diagnostics are written to
+standard error. An optional CSV trace records per-hop channel metrics.
+.SH OPTIONS
+.TP
+.BI -r " HZ"
+Set the input sample rate in complex pairs per second. Required.
+.TP
+.BI -F " s16|f32"
+Set the sample format. The default is
+.B s16
+(signed 16-bit little-endian PCM). The alternative
+.B f32
+is little-endian IEEE binary32.
+.TP
+.BI -f " HZ"
+Pin decoding to a signed frequency offset from 0 Hz IF. Zero selects the IF
+center. Without this option, signals are discovered automatically.
+.TP
+.BI -l " HZ"
+Set the signed lower retained band edge. The default is -1200 Hz.
+.TP
+.BI -u " HZ"
+Set the exclusive upper retained band edge. The default is 1200 Hz.
+.TP
+.BI -w " WPM"
+Set the initial Morse speed estimate, from 5 through 80 WPM. The default uses
+model priors.
+.TP
+.BI -s " N"
+Stop after consuming
+.I N
+seconds worth of complex input samples. This limits input duration, not
+wall-clock time.
+.TP
+.B -a
+Print messages from all tracked channels instead of only the selected channel.
+.TP
+.B -j
+Write JSON Lines message snapshots, including revisions, instead of human
+readable text.
+.TP
+.BI -t " FILE"
+Write per-hop channel metrics as CSV to
+.IR FILE .
+.TP
+.B -V
+Print version, copyright, and warranty information, then exit.
+.TP
+.B -h
+Print a short usage summary, then exit.
+.SH INPUT FORMAT
+Input is read from standard input as headerless, interleaved I/Q values in
+little-endian byte order. The
+.B s16
+format is signed 16-bit PCM; the
+.B f32
+format is IEEE 754 binary32. Each complex sample is represented by I followed
+by Q, so the sample rate counts pairs rather than individual scalar values. No
+resampling is performed. The format and rate must match the stream producer.
+An incomplete I/Q pair at end of input is reported as an error.
+.SH STREAM HANDLING
+The tool retains partial reads between system calls and processes complete
+decoder hops as they arrive. End of file, SIGINT, SIGTERM, or the duration limit
+flushes pending decoder output before exit. Empty input is valid. A signal is
+handled in the main processing loop so pending output and resources can be
+drained and released normally.
+.PP
+The optional CSV trace includes synthetic drain time at shutdown. I/Q input has
+no timestamps or discontinuity markers; dropped samples cannot be detected by
+the decoder.
+.SH EXAMPLES
+Decode 48 kHz signed 16-bit I/Q, centered at zero IF:
+.PP
+.nf
+morsedec-iqlive -r 48000 -f 0 -j < capture.iq
+.fi
+.PP
+Decode float I/Q while retaining offsets from -12 kHz through 12 kHz:
+.PP
+.nf
+morsedec-iqlive -F f32 -r 48000 -l -12000 -u 12000 -a < capture.iq
+.fi
+.SH EXIT STATUS
+Returns 0 after successful decoding and output, or a nonzero status if input,
+configuration, decoding, or output fails.
+.SH SEE ALSO
+.BR morsedec-audio (1),
+.BR morsedec-live (1),
+.BR libmorsedec (3),
+.BR md_new_iq (3),
+.BR md_process_iq (3)
+.SH COPYRIGHT
+Copyright \(co 2026 Gong BI1XJT. Licensed under the GNU General Public License,
+version 3 or (at your option) any later version.

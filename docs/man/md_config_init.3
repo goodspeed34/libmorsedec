@@ -1,0 +1,35 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH MD_CONFIG_INIT 3 "2026-10-16" "libmorsedec 0.2.0" "Library Functions Manual"
+.SH NAME
+md_config_init \- initialize decoder configuration defaults
+.SH SYNOPSIS
+.nf
+#include <morsedec.h>
+
+void md_config_init(struct morsedec_config *config);
+.fi
+.SH DESCRIPTION
+Initialize decoder configuration defaults.
+.SH FUNCTION PARAMETERS
+.TP
+.I config
+Configuration structure to initialize. NULL is accepted and has no effect.
+.SH RETURN VALUE
+This function returns no value.
+.SH REMARKS
+Writes audio defaults: sample_rate=48000, fft_size=0, hop_size=0,
+min_frequency=200, max_frequency=1200, max_channels=32, initial_wpm=0. Zero
+FFT and hop sizes request automatic geometry. Call this before changing
+selected fields; a wholly zero-initialized configuration is invalid. For an
+explicit I/Q configuration set signed band edges before calling md_new_iq();
+initialization itself always uses audio defaults.
+.SH THREAD SAFETY
+Independent configuration objects can be initialized concurrently. Serialize
+access to the same object.
+.SH VERSION
+This md_ entry point is available since libmorsedec 0.2.0 (shared-library ABI
+1).
+.SH SEE ALSO
+.BR libmorsedec (3),
+.BR md_new (3),
+.BR md_new_iq (3)

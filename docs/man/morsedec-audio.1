@@ -1,0 +1,138 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH MORSEDEC-AUDIO 1 "2026-10-16" "libmorsedec 0.2.0" "General Commands Manual"
+.SH NAME
+morsedec-audio \- decode Morse code from audio or I/Q files
+.SH SYNOPSIS
+.B morsedec-audio
+.RI [ options ]
+.I FILE|-
+.SH DESCRIPTION
+.B morsedec-audio
+decodes Morse code from audio files supported by libsndfile, including WAV,
+FLAC, and AIFF. It can also read headerless raw PCM from a file or standard
+input. With
+.BR -i ,
+it interprets a two channel input as interleaved I,Q samples and reports signed
+frequency offsets from 0 Hz IF.
+.PP
+Messages are written to standard output when new message snapshots appear.
+By default, output is limited to the selected channel; use
+.B -a
+to print messages from every tracked channel. Diagnostics and errors are
+written to standard error. The input operand
+.B -
+reads from standard input.
+.SH OPTIONS
+.TP
+.B -i
+Interpret input as interleaved I,Q pairs. Input must have exactly two channels.
+For raw input, the default channel count becomes two. The default retained band
+is -1200 through 1200 Hz.
+.TP
+.BI -f " HZ"
+Pin decoding to a frequency. For audio this must be positive. For I/Q it is a
+signed offset from 0 Hz, and zero pins the IF center. Without this option, the
+decoder discovers signals automatically.
+.TP
+.BI -l " HZ"
+Set the lower retained band edge. The default is 200 Hz for audio and -1200 Hz
+with
+.BR -i .
+.TP
+.BI -u " HZ"
+Set the exclusive upper retained band edge. The default is 1200 Hz.
+.TP
+.BI -w " WPM"
+Set the initial Morse speed estimate. Values from 5 through 80 select an
+explicit speed; zero uses model priors.
+.TP
+.B -a
+Print messages from all tracked channels instead of only the selected channel.
+.TP
+.B -j
+Write JSON Lines message snapshots, including revisions, instead of human
+readable text.
+.TP
+.BI -t " FILE"
+Write per-frame channel metrics as CSV to
+.IR FILE .
+The trace file must differ from the input file.
+.TP
+.BI -c " N"
+For multichannel audio, select channel
+.I N
+(1-based). By default, channels are averaged. This option is unavailable with
+.BR -i .
+.TP
+.BI -F " s16|f32"
+Read headerless raw samples as signed 16-bit or IEEE binary32 little-endian
+values. Raw format must be specified with this option.
+.TP
+.BI -r " HZ"
+Set the sample rate for raw input. Required with
+.BR -F .
+The rate is samples per second for audio and I/Q pairs per second with
+.BR -i .
+.TP
+.BI -n " N"
+Set the number of interleaved channels in raw input. The default is one for
+audio and two with
+.BR -i .
+.TP
+.B -V
+Print version, copyright, and warranty information, then exit.
+.TP
+.B -h
+Print a short usage summary, then exit.
+.SH INPUT FORMAT
+Without
+.BR -F ,
+the input format is determined by libsndfile. With
+.BR -F ,
+the input is headerless and little-endian. The
+.B s16
+format is signed 16-bit PCM; the
+.B f32
+format is IEEE 754 binary32. Raw input requires both
+.B -r
+and
+.BR -F .
+Raw channels are interleaved by frame. The
+.B -c
+option selects one audio channel; otherwise the channels are averaged.
+I/Q input always consists of I then Q values and requires exactly two
+channels.
+.PP
+No resampling is performed. The specified or file-provided sample rate must
+match the source. Float input is normalized to the range expected by the
+decoder.
+.SH EXAMPLES
+Decode a WAV file:
+.PP
+.nf
+morsedec-audio recording.wav
+.fi
+.PP
+Decode raw 48 kHz stereo audio, using the first channel and JSON output:
+.PP
+.nf
+morsedec-audio -F s16 -r 48000 -n 2 -c 1 -j - < capture.pcm
+.fi
+.PP
+Decode signed I/Q offsets around a pinned signal:
+.PP
+.nf
+morsedec-audio -i -F f32 -r 48000 -f -700 -a capture.iq
+.fi
+.SH EXIT STATUS
+Returns 0 after successful decoding and output, or a nonzero status if input,
+configuration, decoding, or output fails.
+.SH SEE ALSO
+.BR morsedec-live (1),
+.BR morsedec-iqlive (1),
+.BR libmorsedec (3),
+.BR md_new (3),
+.BR md_new_iq (3)
+.SH COPYRIGHT
+Copyright \(co 2026 Gong BI1XJT. Licensed under the GNU General Public License,
+version 3 or (at your option) any later version.

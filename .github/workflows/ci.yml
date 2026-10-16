@@ -1,0 +1,28 @@
+name: build
+on: [push, pull_request]
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        build: [shared, static, sanitize]
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y meson ninja-build libfftw3-dev libsndfile1-dev clang-format
+      - name: Configure
+        shell: bash
+        run: |
+          if [ '${{ matrix.build }}' = sanitize ]; then
+            meson setup build -Db_sanitize=address,undefined -Db_lundef=false -Dwerror=true
+          else
+            meson setup build -Ddefault_library=${{ matrix.build }} -Dwerror=true
+          fi
+      - run: meson compile -C build
+      - run: meson compile -C build format-check
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install meson ninja fftw libsndfile pkgconf
+      - run: meson setup build -Dwerror=true
+      - run: meson compile -C build

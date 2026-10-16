@@ -1,0 +1,70 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH MD_GET_CHARACTERS 3 "2026-10-16" "libmorsedec 0.2.0" "Library Functions Manual"
+.SH NAME
+md_get_characters \- borrow a channel message snapshot with character metadata
+.SH SYNOPSIS
+.nf
+#include <morsedec.h>
+
+int md_get_characters(const morsedec_decoder_t *decoder, uint64_t
+    id, const struct morsedec_character **characters, size_t
+    *count);
+.fi
+.SH DESCRIPTION
+Borrow a channel message snapshot with character metadata.
+.SH FUNCTION PARAMETERS
+.TP
+.I decoder
+Decoder handle. Calls using this handle must be serialized, including queries.
+.TP
+.I id
+Stable channel ID, or zero to request the current channel.
+.TP
+.I characters
+Non-NULL output address for a read-only borrowed array. Do not free or modify
+the array.
+.TP
+.I count
+Non-NULL output address for the number of records; there is no terminator
+record.
+.SH RETURN VALUE
+Returns MORSEDEC_SUCCESS (1) on success, or MORSEDEC_FAILURE (0) and sets
+errno on failure. Do not inspect errno after success.
+.SH ERRORS
+.TP
+.B EINVAL
+NULL decoder, characters or count.
+.TP
+.B ENOENT
+Nonzero id does not identify a currently tracked channel.
+.SH REMARKS
+Returns the current bounded message snapshot, at most
+MORSEDEC_MESSAGE_CAPACITY (500) records. If id is zero and there is no current
+channel, returns success with *characters=NULL and *count=0. A named live
+channel may also have zero characters.
+.PP
+The view is valid only until the next mutating call on this handle, including
+processing, reset, flush, pin/unpin or deletion. Copy records while access to
+the handle is serialized if they are needed later. Channel retirement
+invalidates that channel ID.
+.PP
+Records contain Latin-1 character bytes, word-type labels, source ordinals,
+low-SNR flags and revisable word-boundary metadata. These are snapshots, not a
+queue of newly arrived characters. Preserve an archive keyed by channel ID and
+ordinal, applying revisions rather than blindly appending repeated snapshots.
+Consume frequently: oldest records are discarded as the bounded buffer fills,
+and retired channel messages are no longer available. See libmorsedec(3) for
+all record fields.
+.SH THREAD SAFETY
+Serialize all calls that access the same handle, including getters. Different
+handles may process concurrently after construction. These functions are not
+specified as async-signal-safe.
+.SH VERSION
+This md_ entry point is available since libmorsedec 0.2.0 (shared-library ABI
+1).
+.SH SEE ALSO
+.BR libmorsedec (3),
+.BR md_get_text (3),
+.BR md_get_channel (3),
+.BR md_flush (3),
+.BR md_reset (3)

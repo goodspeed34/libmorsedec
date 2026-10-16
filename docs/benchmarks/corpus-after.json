@@ -1,0 +1,53 @@
+{
+  "label": "after",
+  "method": "default automatic selection; current-channel snapshots archived by source ordinal; uppercase; whitespace removed; punctuation retained; O and 0 distinct",
+  "library_sha256": "6cf96644a91ce80b9806f32b0d0296b6eee9015c36bc1168abedd1aabace6a3d",
+  "ffmpeg": "ffmpeg version 8.0.1-3ubuntu2+esm5 Copyright (c) 2000-2025 the FFmpeg developers",
+  "total_errors": 24,
+  "reference_characters": 170,
+  "cer_percent": 14.117647058823529,
+  "cases": [
+    {
+      "id": "UBlxpe5gvv0",
+      "source_sha256": "e8254b0158e9de21c0918cd2af6a93f134039b047c128dd3d9f1cb587f1e10d4",
+      "reference": "AI5DD AI5DD 56N CO BK BK GA UR 55N 55N OK OK 73 AE0Q DE AI5DD 44 EE R 44 EE EE",
+      "decoded": "AI5DD  AI5DD 56N COBK TEKT NA RU 55N 55N T MK OK 73 AE0QDE AI5DD 44EE  IE IT4EE EE  U  ",
+      "reference_characters": 57,
+      "errors": 13,
+      "cer_percent": 22.80701754385965,
+      "sample_rate": 44100,
+      "channels": 2,
+      "duration_seconds": 44.35011337868481,
+      "fft_size": 5644,
+      "hop_size": 469
+    },
+    {
+      "id": "9AhkEDs2Sko",
+      "source_sha256": "e2c40cab9d36207d0f17959141c2c72a1f9a20d919031b2949f247e7f9a4143d",
+      "reference": "D DE JO2QOT JO2QOT 5NN CA 5NN 100 TU JO2QOT TU K6XX",
+      "decoded": "DE JO2QOT  JO2QOT 5NN CA  5NN 100 TU  E JO2QOT TU K6XX  ",
+      "reference_characters": 40,
+      "errors": 2,
+      "cer_percent": 5.0,
+      "sample_rate": 44100,
+      "channels": 2,
+      "duration_seconds": 35.828390022675734,
+      "fft_size": 5644,
+      "hop_size": 469
+    },
+    {
+      "id": "9jgZ94TzRys",
+      "source_sha256": "3276bf6819c8d2ee8396cdb6c9144c7fb06cc083e7764bf6ca27bccf7d41a9ee",
+      "reference": "? WD4DAN WD4DAN GE ES FB UR 57N 57N CO BK BK TU GE UR 56N 56N GA GA 73 BK BK TU GA 73 DE W0ABE TU EE /",
+      "decoded": "WD4DAN  WD4DAN GE ESFB  UR 57N 57N CObk  A4TUGE RU56N 56N GA GA73bk  bkTU GA73DE W0ABE TUEE  / EE*N  ",
+      "reference_characters": 73,
+      "errors": 9,
+      "cer_percent": 12.32876712328767,
+      "sample_rate": 44100,
+      "channels": 2,
+      "duration_seconds": 52.03591836734694,
+      "fft_size": 5644,
+      "hop_size": 469
+    }
+  ]
+}

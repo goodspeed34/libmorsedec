@@ -1,0 +1,47 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH MD_GET_GEOMETRY 3 "2026-10-16" "libmorsedec 0.2.0" "Library Functions Manual"
+.SH NAME
+md_get_geometry \- query the actual FFT and timing geometry
+.SH SYNOPSIS
+.nf
+#include <morsedec.h>
+
+int md_get_geometry(const morsedec_decoder_t *decoder, struct
+    morsedec_geometry *geometry);
+.fi
+.SH DESCRIPTION
+Query the actual FFT and timing geometry.
+.SH FUNCTION PARAMETERS
+.TP
+.I decoder
+Decoder handle. Calls using this handle must be serialized, including queries.
+.TP
+.I geometry
+Non-NULL output structure; receives a caller-owned copy.
+.SH RETURN VALUE
+Returns MORSEDEC_SUCCESS (1) on success, or MORSEDEC_FAILURE (0) and sets
+errno on failure. Do not inspect errno after success.
+.SH ERRORS
+.TP
+.B EINVAL
+decoder or geometry is NULL.
+.SH REMARKS
+Returns the effective sample_rate, fft_size, hop_size, spectrum_size,
+first_frequency, bin_spacing and frame_seconds. Automatic sizes and band edges
+are rounded; query this structure instead of assuming the requested edges were
+exact. Spectrum bin j has frequency first_frequency+j*bin_spacing. For I/Q,
+this is a signed Hz offset. frame_seconds=hop_size/sample_rate and
+bin_spacing=sample_rate/fft_size. The configuration is immutable, so these
+values remain valid across reset and flush.
+.SH THREAD SAFETY
+Serialize all calls that access the same handle, including getters. Different
+handles may process concurrently after construction. These functions are not
+specified as async-signal-safe.
+.SH VERSION
+This md_ entry point is available since libmorsedec 0.2.0 (shared-library ABI
+1).
+.SH SEE ALSO
+.BR libmorsedec (3),
+.BR md_new (3),
+.BR md_new_iq (3),
+.BR md_process_spectrum (3)

@@ -1,0 +1,1 @@
+option('tools', type: 'feature', value: 'auto', description: 'Command-line tools (libsndfile enables file audio decoding)')
