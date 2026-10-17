@@ -18,6 +18,7 @@
  */
 #define _POSIX_C_SOURCE 200809L
 #include "audio-common.h"
+#include <poll.h>
 #include <unistd.h>
 #include <errno.h>
 #include <limits.h>
@@ -25,16 +26,6 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef _WIN32
-#include <fcntl.h>
-#include <io.h>
-#include <windows.h>
-#else
-#include <poll.h>
-#endif
-
-/* Readiness wait before rechecking the interrupt flag, in milliseconds. */
-#define MD_STDIN_WAIT 100
 
 static volatile sig_atomic_t interrupted;
 
@@ -43,25 +34,6 @@ static void interrupt_capture(int signal_number)
 	(void)signal_number;
 	interrupted = 1;
 }
-
-#ifdef _WIN32
-/*
- * Windows has no poll(2) covering pipes and console input: WSAPoll only
- * accepts sockets. Waiting on the standard input handle reports the same
- * readiness, including end of file once the writer closes the pipe, so a
- * Ctrl-C or a closed producer is noticed without blocking on read().
- */
-static int wait_stdin(int timeout_ms)
-{
-	HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
-	DWORD result;
-
-	if (handle == NULL || handle == INVALID_HANDLE_VALUE)
-		return 1;
-	result = WaitForSingleObject(handle, (DWORD)timeout_ms);
-	return result == WAIT_TIMEOUT ? 0 : 1;
-}
-#endif
 
 static void usage(FILE *out, int iq)
 {
@@ -110,9 +82,7 @@ int md_cli_live(int argc, char **argv, int iq)
 	unsigned char *bytes = NULL;
 	size_t frame_bytes, capacity, pending = 0;
 	int sample_bytes = 2;
-#ifndef _WIN32
 	struct sigaction action = {0};
-#endif
 	uint64_t received = 0, limit = UINT64_MAX;
 	int channels = iq ? 2 : 1, selected = 0;
 	int status = EXIT_FAILURE;
@@ -265,14 +235,6 @@ int md_cli_live(int argc, char **argv, int iq)
 		      "snr,wpm,state\n",
 		      trace);
 	}
-#ifdef _WIN32
-	/* Raw PCM on stdin must not undergo text-mode translation. */
-	_setmode(_fileno(stdin), _O_BINARY);
-	if (signal(SIGINT, interrupt_capture) == SIG_ERR) {
-		perror("Install signal handler");
-		goto done;
-	}
-#else
 	action.sa_handler = interrupt_capture;
 	sigemptyset(&action.sa_mask);
 	if (sigaction(SIGINT, &action, NULL) ||
@@ -285,18 +247,13 @@ int md_cli_live(int argc, char **argv, int iq)
 		perror("Ignore SIGPIPE");
 		goto done;
 	}
-#endif
 	fprintf(stderr, "Reading stdin: %.0f Hz, %d channel(s), %s\n", rate,
 		channels, sample_bytes == 2 ? "S16_LE" : "FLOAT_LE");
 	while (!interrupted && received < limit) {
+		struct pollfd input = {.fd = STDIN_FILENO, .events = POLLIN};
 		size_t count, want = geometry.hop_size;
 		ssize_t n;
-#ifdef _WIN32
-		int ready = wait_stdin(MD_STDIN_WAIT);
-#else
-		struct pollfd input = {.fd = STDIN_FILENO, .events = POLLIN};
-		int ready = poll(&input, 1, MD_STDIN_WAIT);
-#endif
+		int ready = poll(&input, 1, 100);
 
 		if (ready < 0) {
 			if (errno == EINTR)

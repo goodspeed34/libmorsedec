@@ -14,10 +14,6 @@ minimal consumer. Describe decoder architecture and implementation tradeoffs in
 ## Build and Development Commands
 
 Install Meson, Ninja and FFTW3 development files; libsndfile enables the CLI.
-On Windows, build from an MSYS2 MINGW64 shell using the matching
-`mingw-w64-x86_64-gcc`, `-meson`, `-ninja`, `-pkgconf`, `-fftw` and
-`-libsndfile` packages. Keep Windows-only code behind `_WIN32` and leave the
-Unix code paths unchanged.
 
 - `meson setup build`: configure a development build.
 - `meson compile -C build`: build the library, tools and example.
