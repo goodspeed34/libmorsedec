@@ -19,11 +19,12 @@ for module responsibilities, signal processing, timing, and implementation trade
 ## Build
 
 Dependencies: a C11 compiler, Meson >= 0.63, Ninja, FFTW3 (double precision).
-The file-audio CLI uses libsndfile; the audio and I/Q stdin tools need no audio I/O library.
+The file-audio CLI uses libsndfile; the audio and I/Q stdin tools need no audio
+I/O library but link ncurses for the optional `-T` terminal view.
 
 ```sh
 # Debian/Ubuntu dependencies
-sudo apt install meson ninja-build pkg-config libfftw3-dev libsndfile1-dev clang-format
+sudo apt install meson ninja-build pkg-config libfftw3-dev libsndfile1-dev libncurses-dev clang-format
 meson setup build
 meson compile -C build
 meson compile -C build format-check
@@ -37,7 +38,7 @@ packages. Use `-Dwerror=true` to turn warnings into errors.
 # MSYS2 MINGW64 dependencies
 pacman -S --needed mingw-w64-x86_64-gcc mingw-w64-x86_64-meson \
   mingw-w64-x86_64-ninja mingw-w64-x86_64-pkgconf mingw-w64-x86_64-fftw \
-  mingw-w64-x86_64-libsndfile
+  mingw-w64-x86_64-libsndfile mingw-w64-x86_64-ncurses
 meson setup build
 meson compile -C build
 meson compile -C build format-check   # needs mingw-w64-x86_64-clang
@@ -51,7 +52,10 @@ shell's `PATH`. Consumers that link the installed library must have the install
 
 Use `-Dtools=disabled` for the library alone, `-Dtools=enabled` to require the
 file CLI, or `-Ddefault_library=static` for a static library. The stdin CLI is
-built whenever tools are enabled or auto. Installation includes
+built whenever tools are enabled or auto. The ncurses terminal view is enabled
+by default and controlled by `-Dtui`: use `-Dtui=disabled` to build the stdin
+tools without it, or `-Dtui=auto` to accept whatever ncurses is available.
+Installation includes
 `morsedec.h` and `morsedec.pc`; consumers can use `dependency('morsedec')` in
 Meson or `pkg-config --cflags --libs morsedec`.
 
@@ -110,6 +114,26 @@ audio duration. Output uses the same complete-message snapshots as
 `-l`, `-u`, `-w` and CSV diagnostics work in both tools. Decoder
 acquisition and DSP latency still apply. See [stdin implementation notes](docs/live-capture.md)
 for stream behavior and shutdown handling.
+
+### Terminal view
+
+`-T` replaces the text snapshots with a two pane ncurses view on the terminal.
+The left pane lists every tracked channel with its frequency, estimated SNR,
+speed and state; the right pane shows the decoded messages, wrapped and
+scrollable, with the newest line following the channel that is currently
+decoding. `q` quits, `c` clears the messages, and the arrow, Page and Home/End
+keys scroll the retained lines.
+
+```sh
+arecord -t raw -f S16_LE -r 48000 -c 1 | build/morsedec-live -r 48000 -T
+build/morsedec-iqlive -F f32 -r 48000 -l -12000 -u 12000 -T < capture.iq
+```
+
+The view owns the terminal, not stdin, which keeps carrying the sample stream.
+`-j` and `-t FILE` keep working beside it, so machine readable output can feed a
+pipeline while the terminal shows the live view. ncurses is optional and enabled
+by default; `-Dtui=disabled` builds the tools without `-T`. On Windows the view
+attaches to the console and needs a real one rather than a pipe.
 
 ## C API
 

@@ -17,6 +17,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "audio-common.h"
+#include "tui.h"
 #include <errno.h>
 #include <math.h>
 #include <stdlib.h>
@@ -121,11 +122,16 @@ int md_cli_report(morsedec_decoder_t *d, const struct morsedec_geometry *g,
 			       c.snr, c.wpm);
 			json_string(text);
 			puts("}");
-		} else {
+		} else if (!reporter->tui) {
 			printf("[%8.3f s %8.2f Hz #%llu] %s\n", time,
 			       c.frequency, (unsigned long long)c.id, text);
 		}
+		if (reporter->tui)
+			md_tui_message(reporter->tui, time, c.frequency, c.id,
+				       text);
 	}
+	if (reporter->tui)
+		md_tui_draw(reporter->tui, d, g, time, all);
 	return !fflush(stdout) && (!trace || !ferror(trace));
 }
 
