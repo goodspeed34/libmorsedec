@@ -118,6 +118,8 @@ static void usage(FILE *out, int iq)
 	      out);
 	fputs("  -u HZ       Exclusive band upper edge (default 1200)\n"
 	      "  -w WPM      Initial speed, 5..80 (default model priors)\n"
+	      "  -p N        Processing threads, including caller (0: auto; 1: "
+	      "serial)\n"
 	      "  -s N        Stop after N seconds of input\n"
 	      "  -a          Print every tracked channel\n"
 	      "  -j          JSON Lines snapshots, including revisions\n"
@@ -157,6 +159,7 @@ int md_cli_live(int argc, char **argv, int iq)
 {
 	struct morsedec_config config;
 	struct morsedec_geometry geometry;
+	size_t threads = 0;
 	struct md_cli_reporter reporter = {0};
 	morsedec_decoder_t *decoder = NULL;
 	float *interleaved = NULL, *mono = NULL;
@@ -179,8 +182,8 @@ int md_cli_live(int argc, char **argv, int iq)
 		config.min_frequency = -1200;
 	opterr = 0;
 	while ((option = getopt(argc, argv,
-				iq ? ":ajTr:F:f:l:u:w:s:t:Vh"
-				   : ":ajTr:F:f:l:u:w:s:t:n:c:Vh")) != -1) {
+				iq ? ":ajTp:r:F:f:l:u:w:s:t:Vh"
+				   : ":ajTp:r:F:f:l:u:w:s:t:n:c:Vh")) != -1) {
 		double value = 0;
 
 		if (strchr("rncfluws", option) &&
@@ -190,6 +193,10 @@ int md_cli_live(int argc, char **argv, int iq)
 			goto done;
 		}
 		switch (option) {
+		case 'p':
+			if (!md_cli_threads(optarg, &threads))
+				goto invalid_value;
+			break;
 		case 'V':
 			return md_cli_version(iq ? "morsedec-iqlive"
 						 : "morsedec-live");
@@ -286,7 +293,8 @@ int md_cli_live(int argc, char **argv, int iq)
 		}
 		limit = (uint64_t)frames;
 	}
-	decoder = iq ? md_new_iq(&config) : md_new(&config);
+	decoder = iq ? md_new_iq_with_threads(&config, threads)
+		     : md_new_with_threads(&config, threads);
 	if (!decoder) {
 		perror("Decoder configuration");
 		goto done;

@@ -1,0 +1,66 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH MD_NEW_IQ_WITH_THREADS 3 "2026-10-17" "libmorsedec 0.2.0" "Library Functions Manual"
+.SH NAME
+md_new_iq_with_threads \- create a decoder with a channel processing thread
+budget
+.SH SYNOPSIS
+.nf
+#include <morsedec.h>
+
+morsedec_decoder_t *md_new_iq_with_threads(
+    const struct morsedec_config *config, size_t threads);
+.fi
+.SH DESCRIPTION
+Construct a complex I/Q decoder. Input, configuration and ownership match
+md_new_iq(3). All storage and workers are created before return.
+.SH FUNCTION PARAMETERS
+.TP
+.I config
+Configuration to copy, or NULL for the defaults documented by md_new_iq(3).
+.TP
+.I threads
+Maximum simultaneous processing participants, including the caller. Zero selects
+automatic scheduling using online logical CPUs. One creates no workers.
+Larger values explicitly enable channel parallelism. Budgets are capped by
+max_channels; no CPU affinity or priority is changed.
+.SH RETURN VALUE
+An owned decoder, or NULL with errno set. md_get_thread_count() reports the
+resolved maximum; fewer participants are used when fewer channels have work.
+.SH ERRORS
+.TP
+.B EINVAL
+Invalid decoder configuration.
+.TP
+.B ENOMEM
+Allocation or FFT planning failed, or an explicit worker allocation failed.
+.TP
+.B ENOTSUP
+An explicit threads value greater than one was requested without a thread
+backend.
+.TP
+.B EAGAIN
+An explicit request could not create workers because resources were unavailable.
+Other pthread initialization errors may also be returned.
+.SH REMARKS
+Automatic mode runs fewer than four runnable channels serially. Explicit mode
+may parallelize two. Each job owns one channel's complete pipeline; FFT, band
+management, selection and sorting remain serial. All jobs complete before a
+processing call returns. Synchronization may wait for OS scheduling; there is no
+additional input queue, allocation, blocking I/O or callback during processing.
+.PP
+Automatic worker initialization failures clean up partial pools and fall back to
+serial. Explicit requests return the failure. Reset retains the pool and budget;
+deletion joins workers. Multiple handles have independent pools: choose budgets
+that avoid oversubscribing the application. Threading may increase CPU use or
+elapsed time for small workloads.
+.SH THREAD SAFETY
+Serialize construction with every FFTW planner and plan-destruction operation.
+Serialize all calls accessing the resulting handle, including queries.
+.SH VERSION
+Available in the libmorsedec 0.2.0 development API, shared-library ABI 1.
+.SH SEE ALSO
+.BR md_new_iq (3),
+.BR md_get_thread_count (3),
+.BR md_delete (3),
+.BR md_reset (3),
+.BR libmorsedec (3)

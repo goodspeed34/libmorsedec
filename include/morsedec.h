@@ -114,6 +114,24 @@ MORSEDEC_API morsedec_decoder_t *md_new(const struct morsedec_config *config);
  * rotation (I=cos, Q=sin) gives positive Hz. No RF center offset is added. */
 MORSEDEC_API morsedec_decoder_t *
 md_new_iq(const struct morsedec_config *config);
+/* Thread budgets include the caller: 0 selects automatic scheduling (also
+ * used by md_new/md_new_iq), 1 creates no workers, larger values explicitly
+ * enable parallel channel processing. Automatic mode uses the online logical
+ * CPU count; all budgets are capped by max_channels.
+ * Automatic scheduling stays serial below four runnable channels and falls
+ * back to serial if worker initialization fails. Explicit parallel requests
+ * fail with ENOTSUP when the backend is unavailable, or the initialization
+ * error (e.g. ENOMEM/EAGAIN). Workers and buffers are owned by the decoder;
+ * construction creates them, reset preserves them, and deletion joins them.
+ * Input and snapshots retain their synchronous ownership and lifetime rules.
+ */
+MORSEDEC_API morsedec_decoder_t *
+md_new_with_threads(const struct morsedec_config *config, size_t threads);
+MORSEDEC_API morsedec_decoder_t *
+md_new_iq_with_threads(const struct morsedec_config *config, size_t threads);
+/* Resolved maximum processing participants, including caller; NULL returns 0.
+ * Fewer participants are used when there are fewer runnable channels. */
+MORSEDEC_API size_t md_get_thread_count(const morsedec_decoder_t *decoder);
 MORSEDEC_API void md_delete(morsedec_decoder_t *decoder); /* NULL is OK. */
 MORSEDEC_API int md_reset(morsedec_decoder_t *decoder);
 MORSEDEC_API int md_get_geometry(const morsedec_decoder_t *decoder,

@@ -39,6 +39,7 @@ struct md_cli_reporter {
 	struct md_tui *tui;
 };
 
+int md_cli_threads(const char *text, size_t *out);
 int md_cli_number(const char *text, double *out);
 int md_cli_version(const char *program);
 int md_cli_live(int argc, char **argv, int iq);

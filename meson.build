@@ -9,26 +9,51 @@ endif
 math = cc.find_library('m', required: false)
 inc = include_directories('include', 'src')
 sources = files('src/decoder.c', 'src/frontend.c', 'src/band.c', 'src/signal.c',
-  'src/segment.c', 'src/statistics.c', 'src/character.c', 'src/word.c', 'src/message.c')
+  'src/parallel.c', 'src/segment.c', 'src/statistics.c', 'src/character.c', 'src/word.c', 'src/message.c')
 cargs = ['-DMORSEDEC_BUILD']
+thread_deps = []
+have_parallel = false
+parallel = get_option('parallel')
+if not parallel.disabled()
+  threads = dependency('threads', required: parallel)
+  have_parallel = threads.found() and cc.links('''
+    #include <pthread.h>
+    static void *worker(void *p) { return p; }
+    int main(void) {
+      pthread_t thread;
+      pthread_mutex_t mutex;
+      pthread_cond_t condition;
+      pthread_mutex_init(&mutex, 0);
+      pthread_cond_init(&condition, 0);
+      if (pthread_create(&thread, 0, worker, 0)) return 1;
+      return pthread_join(thread, 0);
+    }
+  ''', dependencies: threads, name: 'channel worker backend')
+  if have_parallel
+    cargs += '-DMD_PARALLEL'
+    thread_deps += threads
+  elif parallel.enabled()
+    error('Parallel processing requires pthreads (winpthreads on MinGW)')
+  endif
+endif
 if get_option('default_library') == 'static'
   cargs += '-DMORSEDEC_STATIC'
 endif
 lib = library('morsedec', sources, include_directories: inc,
-  dependencies: [fftw, math], c_args: cargs, gnu_symbol_visibility: 'hidden',
+  dependencies: [fftw, math] + thread_deps, c_args: cargs, gnu_symbol_visibility: 'hidden',
   version: meson.project_version(), soversion: '1', install: true)
 consumer_args = []
 if get_option('default_library') == 'static'
   consumer_args += '-DMORSEDEC_STATIC'
 endif
 morsedec_dep = declare_dependency(link_with: lib, include_directories: include_directories('include'),
-  compile_args: consumer_args)
+  compile_args: consumer_args, dependencies: [fftw, math] + thread_deps)
 install_headers('include/morsedec.h')
 subdir('docs/man')
 pkg = import('pkgconfig')
 pkg.generate(lib, name: 'libmorsedec', filebase: 'morsedec',
   description: 'Streaming multichannel amateur radio CW decoder',
-  extra_cflags: consumer_args, requires_private: 'fftw3', libraries_private: math)
+  extra_cflags: consumer_args, requires_private: 'fftw3', libraries_private: [math] + thread_deps)
 sndfile = dependency('sndfile', required: get_option('tools'))
 if sndfile.found() and not get_option('tools').disabled()
   # tui.c contributes only its no-op stubs here: the file decoder shares the
@@ -77,8 +102,34 @@ if formatter.found()
   format_files = sources + files('include/morsedec.h', 'src/internal.h', 'src/codes.h', 'src/templates.h',
     'tools/morsedec-audio.c', 'tools/morsedec-live.c', 'tools/morsedec-iqlive.c',
     'tools/live-common.c', 'tools/audio-common.c', 'tools/tui.c',
-    'tools/audio-common.h', 'tools/tui.h', 'examples/decode.c')
+    'tools/audio-common.h', 'tools/tui.h', 'examples/decode.c',
+    'benchmarks/check-parallel.c', 'benchmarks/parallel-speed.c')
   run_target('format', command: [formatter, '-i', format_files])
   run_target('format-check', command: [formatter, '--dry-run', '--Werror', format_files])
 endif
 install_data('COPYING', install_dir: get_option('datadir') / 'licenses' / 'libmorsedec')
+
+# Link a private static copy so the existing internal regression checks can
+# exercise hidden helpers without exporting them from the public library.
+check_args = cargs + ['-DMORSEDEC_STATIC', '-UNDEBUG']
+check_lib = static_library('morsedec-check', sources,
+  include_directories: inc, dependencies: [fftw, math] + thread_deps,
+  c_args: check_args, install: false)
+check_deps = [fftw, math] + thread_deps
+pattern_check = executable('check-patterns', 'benchmarks/check-patterns.c',
+  include_directories: inc, link_with: check_lib,
+  dependencies: check_deps, c_args: check_args)
+test('patterns', pattern_check)
+wrap_args = []
+wrap_links = []
+if have_parallel and host_machine.system() == 'linux'
+  wrap_args = ['-DMD_WRAP_THREADS']
+  wrap_links = ['-Wl,--wrap=pthread_create', '-Wl,--wrap=calloc']
+endif
+parallel_check = executable('check-parallel', 'benchmarks/check-parallel.c',
+  include_directories: inc, link_with: check_lib, dependencies: check_deps,
+  c_args: check_args + wrap_args, link_args: wrap_links)
+test('parallel', parallel_check, timeout: 120)
+
+executable('parallel-speed', 'benchmarks/parallel-speed.c',
+  dependencies: [morsedec_dep, math], build_by_default: false)

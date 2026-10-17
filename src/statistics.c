@@ -43,7 +43,7 @@ static const double gap_prior[8][8] = {
     {0, 0, 0, 0.03482, 0.07524, 0, 0, 0},
     {0.00014, 0, 0, 0, 0, 0, 0, 0}};
 
-void md_stats_init(struct morsedec_decoder *d, struct md_statistics *s)
+void md_stats_init(const struct morsedec_decoder *d, struct md_statistics *s)
 {
 	double shift =
 	    d->config.initial_wpm > 0 ? log(23.16 / d->config.initial_wpm) : 0;
@@ -269,7 +269,7 @@ static void reestimate(struct md_statistics *s, double scale)
 	s->mean[4] = fmax(s->mean[4], s->mean[3] + log(1.5));
 }
 
-void md_stats_commit(struct morsedec_decoder *d, struct md_channel *c,
+void md_stats_commit(const struct morsedec_decoder *d, struct md_channel *c,
 		     struct md_element *elements, int count, int flush)
 {
 	struct md_statistics *s = &c->stats;

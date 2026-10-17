@@ -1,2 +1,3 @@
 option('tools', type: 'feature', value: 'auto', description: 'Command-line tools (libsndfile enables file audio decoding)')
 option('tui', type: 'feature', value: 'enabled', description: 'ncurses terminal interface for the stdin tools (-T)')
+option('parallel', type: 'feature', value: 'auto', description: 'Per-channel worker pool (pthreads or MinGW winpthreads)')

@@ -41,6 +41,11 @@ orientation. Pass interleaved pairs to md_process_iq() or md_process_iq_s16().
 Mono processing calls are invalid for this handle. External power frames are
 also supported on the signed ascending grid. Ownership, allocation and
 lifetime match md_new().
+.PP
+Uses automatic channel parallelism: online logical CPUs capped by channel
+capacity, with serial execution below four runnable channels. Worker startup
+failure falls back to serial. Use the corresponding with_threads constructor
+for an explicit budget, including 1 to create no workers.
 .SH THREAD SAFETY
 Serialize this call with all FFTW planner and plan-destruction operations in
 the application, including operations for other handles.
@@ -48,6 +53,8 @@ the application, including operations for other handles.
 This md_ entry point is available since libmorsedec 0.2.0 (shared-library ABI
 1).
 .SH SEE ALSO
+.BR md_new_iq_with_threads (3),
+.BR md_get_thread_count (3),
 .BR libmorsedec (3),
 .BR md_config_init (3),
 .BR md_delete (3),

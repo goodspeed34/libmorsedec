@@ -95,7 +95,7 @@ void md_channel_init(struct morsedec_decoder *d, struct md_channel *c, int bin)
 	md_word_reset(d, &c->word);
 }
 
-void md_signal_frame(struct morsedec_decoder *d, struct md_channel *c,
+void md_signal_frame(const struct morsedec_decoder *d, struct md_channel *c,
 		     const float *s, uint64_t frame)
 {
 	double shape[21], shoulder = 0, outer = 0;

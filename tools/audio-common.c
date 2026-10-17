@@ -19,6 +19,7 @@
 #include "audio-common.h"
 #include "tui.h"
 #include <errno.h>
+#include <inttypes.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -43,6 +44,24 @@ int md_cli_number(const char *text, double *out)
 	errno = 0;
 	*out = strtod(text, &end);
 	return text[0] && !*end && !errno && isfinite(*out);
+}
+
+int md_cli_threads(const char *text, size_t *out)
+{
+	char *end;
+	uintmax_t value;
+
+	if (!*text)
+		return 0;
+	for (const char *p = text; *p; p++)
+		if (*p < '0' || *p > '9')
+			return 0;
+	errno = 0;
+	value = strtoumax(text, &end, 10);
+	if (errno || *end || value > SIZE_MAX)
+		return 0;
+	*out = (size_t)value;
+	return 1;
 }
 
 static void json_string(const char *text)

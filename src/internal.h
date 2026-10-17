@@ -99,6 +99,8 @@ struct md_channel {
 	struct md_word word;
 	struct md_message message;
 };
+struct md_parallel;
+
 struct morsedec_decoder {
 	struct morsedec_config config;
 	struct morsedec_geometry geometry;
@@ -115,7 +117,10 @@ struct morsedec_decoder {
 	float *power, *smooth, *ratio, *history;
 	unsigned char *peaks;
 	struct md_channel *channels;
-	struct md_channel **order, *current;
+	struct md_channel **order, **jobs, *current;
+	struct md_parallel *parallel;
+	size_t thread_count;
+	int parallel_auto;
 	size_t count;
 	double noise;
 	struct md_model *model;
@@ -142,31 +147,36 @@ int md_frontend_init(struct morsedec_decoder *d);
 void md_frontend_frame(struct morsedec_decoder *d);
 void md_band_frame(struct morsedec_decoder *d, const float *spectrum);
 void md_band_select(struct morsedec_decoder *d);
+void md_channel_replay(const struct morsedec_decoder *d, struct md_channel *c);
+int md_parallel_init(struct morsedec_decoder *d, size_t threads);
+void md_parallel_delete(struct morsedec_decoder *d);
+void md_parallel_run(struct morsedec_decoder *d, size_t count);
 struct md_channel *md_channel_new(struct morsedec_decoder *d, int bin);
 void md_channel_init(struct morsedec_decoder *d, struct md_channel *c, int bin);
-void md_signal_frame(struct morsedec_decoder *d, struct md_channel *c,
+void md_signal_frame(const struct morsedec_decoder *d, struct md_channel *c,
 		     const float *spectrum, uint64_t frame);
-void md_segment_init(struct morsedec_decoder *d, struct md_channel *c);
-void md_segment_commit(struct morsedec_decoder *d, struct md_channel *c,
+void md_segment_init(const struct morsedec_decoder *d, struct md_channel *c);
+void md_segment_commit(const struct morsedec_decoder *d, struct md_channel *c,
 		       struct md_element *elements, int count, int drop);
-void md_segment_step(struct morsedec_decoder *d, struct md_channel *c, int bit,
-		     double probability, int drop);
-void md_stats_init(struct morsedec_decoder *d, struct md_statistics *s);
+void md_segment_step(const struct morsedec_decoder *d, struct md_channel *c,
+		     int bit, double probability, int drop);
+void md_stats_init(const struct morsedec_decoder *d, struct md_statistics *s);
 double md_score(const struct md_statistics *s, int kind, double duration);
 void md_classify(const struct md_statistics *s, struct md_element *e,
 		 double scale);
-void md_stats_commit(struct morsedec_decoder *d, struct md_channel *c,
+void md_stats_commit(const struct morsedec_decoder *d, struct md_channel *c,
 		     struct md_element *elements, int count, int flush);
 double md_speed(const struct md_statistics *s);
-void md_character_feed(struct morsedec_decoder *d, struct md_channel *c,
+void md_character_feed(const struct morsedec_decoder *d, struct md_channel *c,
 		       const struct md_element *e, int flush);
 const char *md_lookup(const char *pattern);
 void md_decode_pattern(const char *pattern, char *out, size_t capacity);
 int md_model_init(struct md_model *model);
-void md_word_reset(struct morsedec_decoder *d, struct md_word *w);
-void md_word_feed(struct morsedec_decoder *d, struct md_channel *c,
+void md_word_reset(const struct morsedec_decoder *d, struct md_word *w);
+void md_word_feed(const struct morsedec_decoder *d, struct md_channel *c,
 		  const struct morsedec_character *character);
-void md_word_emit(struct morsedec_decoder *d, struct md_channel *c, int flush);
+void md_word_emit(const struct morsedec_decoder *d, struct md_channel *c,
+		  int flush);
 void md_message_merge(struct md_message *m,
 		      const struct morsedec_character *batch, size_t count);
 #endif

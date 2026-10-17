@@ -82,3 +82,41 @@ Both measurements include the four-second silent tail but exclude construction,
 file I/O and teardown. The JSON contains nine process-CPU timings. Compare
 medians on an otherwise idle host; tiny differences do not establish a speed
 advantage across workloads.
+
+## Channel parallelism
+
+Build the generated-input latency benchmark (no external audio is needed):
+
+```sh
+meson setup build-parallel --buildtype=release -Dparallel=enabled
+meson compile -C build-parallel parallel-speed
+build-parallel/parallel-speed 32 1 spectrum 48000
+build-parallel/parallel-speed 32 4 spectrum 48000
+build-parallel/parallel-speed 8 0 audio 48000
+build-parallel/parallel-speed 8 4 iq 48000
+```
+
+Arguments are carrier count (1..32), total thread budget (0 means automatic),
+input mode (`spectrum`, `audio`, or `iq`; default `spectrum`), and sample rate
+(default 48000). The requested band must fit the sample rate: use 48 kHz for
+32 carriers; 8 kHz supports the cases through eight carriers. Inputs contain
+staggered three-dot letters. They are generated once and preloaded; construction,
+a 400-hop acquisition/replay warmup, and destruction are excluded from timing.
+The benchmark reports separate construction/destruction medians, medians over
+five runs of 1200 hops, process CPU time,
+median/p99/maximum hop wall latency and deadline misses across all runs. Each
+run processes 12.75 seconds of steady input at the default hop cadence. Active
+channel count is included so missing acquisition cannot masquerade as speedup.
+These synthetic cases measure scheduling costs, not decoding accuracy.
+
+Compare carrier counts 1/2/4/8/16/32 and budgets 1/2/4/0 on an otherwise idle
+host. Spectrum input isolates the band/channel backend; audio and I/Q include
+frontend cost. Thread wakeups can increase CPU and median latency while reducing
+p99 latency during expensive word updates. Prefer wall time and latency to
+process CPU time when judging parallel speedup.
+
+`meson test -C build` runs both the existing pattern checks and deterministic
+serial/parallel snapshot checks. Linux also injects partial worker-start and
+allocation failures. Exercise serial builds with `-Dparallel=disabled`, memory
+checks with `-Db_sanitize=address,undefined -Db_lundef=false`, and race checks in a
+separate build with `-Db_sanitize=thread -Db_lundef=false`.

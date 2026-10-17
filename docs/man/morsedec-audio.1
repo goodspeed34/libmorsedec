@@ -24,6 +24,16 @@ written to standard error. The input operand
 reads from standard input.
 .SH OPTIONS
 .TP
+.BI -p " N"
+Maximum processing participants including the caller. Zero (default) selects
+automatic channel parallelism; one creates no workers. Automatic mode uses
+online
+logical CPUs capped by channel capacity, keeping fewer than four runnable
+channels serial. Explicit values permit parallel processing from two channels.
+FFT and band management remain serial. Automatic worker startup failure falls
+back to serial; explicit requests report errors. Small workloads can run faster
+with one participant. N must be a nonnegative decimal integer.
+.TP
 .B -i
 Interpret input as interleaved I,Q pairs. Input must have exactly two channels.
 For raw input, the default channel count becomes two. The default retained band

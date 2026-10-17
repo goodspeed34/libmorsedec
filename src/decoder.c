@@ -76,7 +76,7 @@ static int configure(struct morsedec_decoder *d,
 }
 
 static morsedec_decoder_t *new_decoder(const struct morsedec_config *config,
-				       int iq)
+				       int iq, size_t threads)
 {
 	struct morsedec_config defaults;
 	struct morsedec_decoder *d = calloc(1, sizeof(*d));
@@ -103,8 +103,9 @@ static morsedec_decoder_t *new_decoder(const struct morsedec_config *config,
 	    calloc((size_t)d->bins * (size_t)d->history_size, sizeof(float));
 	d->channels = calloc(d->config.max_channels, sizeof(*d->channels));
 	d->order = calloc(d->config.max_channels, sizeof(*d->order));
+	d->jobs = calloc(d->config.max_channels, sizeof(*d->jobs));
 	if (!d->power || !d->smooth || !d->ratio || !d->peaks || !d->history ||
-	    !d->channels || !d->order) {
+	    !d->channels || !d->order || !d->jobs) {
 		errno = ENOMEM;
 		goto fail;
 	}
@@ -116,7 +117,7 @@ static morsedec_decoder_t *new_decoder(const struct morsedec_config *config,
 			goto fail;
 		}
 	}
-	if (!md_frontend_init(d))
+	if (!md_frontend_init(d) || !md_parallel_init(d, threads))
 		goto fail;
 	return d;
 fail: {
@@ -129,18 +130,36 @@ fail: {
 
 morsedec_decoder_t *md_new(const struct morsedec_config *config)
 {
-	return new_decoder(config, 0);
+	return md_new_with_threads(config, 0);
 }
 
 morsedec_decoder_t *md_new_iq(const struct morsedec_config *config)
 {
-	return new_decoder(config, 1);
+	return md_new_iq_with_threads(config, 0);
+}
+
+morsedec_decoder_t *md_new_with_threads(const struct morsedec_config *config,
+					size_t threads)
+{
+	return new_decoder(config, 0, threads);
+}
+
+morsedec_decoder_t *md_new_iq_with_threads(const struct morsedec_config *config,
+					   size_t threads)
+{
+	return new_decoder(config, 1, threads);
+}
+
+size_t md_get_thread_count(const morsedec_decoder_t *d)
+{
+	return d ? d->thread_count : 0;
 }
 
 void md_delete(morsedec_decoder_t *d)
 {
 	if (!d)
 		return;
+	md_parallel_delete(d);
 	if (d->plan)
 		fftw_destroy_plan(d->plan);
 	fftw_free(d->fft_input);
@@ -159,6 +178,7 @@ void md_delete(morsedec_decoder_t *d)
 			free(d->channels[i].word.states);
 	free(d->channels);
 	free(d->order);
+	free(d->jobs);
 	free(d->model);
 	free(d);
 }

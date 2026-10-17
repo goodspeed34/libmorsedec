@@ -51,6 +51,7 @@ function names use `md_`.
 | Function group | Manual pages |
 | --- | --- |
 | Configuration and lifetime | [md_config_init(3)](md_config_init.3), [md_new(3)](md_new.3), [md_new_iq(3)](md_new_iq.3), [md_delete(3)](md_delete.3), [md_reset(3)](md_reset.3) |
+| Channel parallelism | [md_new_with_threads(3)](md_new_with_threads.3), [md_new_iq_with_threads(3)](md_new_iq_with_threads.3), [md_get_thread_count(3)](md_get_thread_count.3) |
 | Geometry | [md_get_geometry(3)](md_get_geometry.3) |
 | Audio input | [md_process(3)](md_process.3), [md_process_s16(3)](md_process_s16.3) |
 | I/Q input | [md_process_iq(3)](md_process_iq.3), [md_process_iq_s16(3)](md_process_iq_s16.3) |

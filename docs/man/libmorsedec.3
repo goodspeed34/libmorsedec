@@ -22,9 +22,10 @@ Each decoder has independent stream state and bounded per-channel messages.
 The application supplies mono audio, complex I/Q samples, or calibrated
 linear-power spectra, then polls channel and message snapshots.
 .PP
-The library does not open audio or SDR devices, read files, resample input,
-start background threads, or deliver callbacks.
-Processing is synchronous in the caller's thread.
+The library does not open audio or SDR devices, read files, resample input, or
+deliver callbacks.
+Processing is synchronous: the caller may share channel work with persistent
+workers and waits for all work before returning.
 The FFT frontend uses FFTW3 double precision.
 The public header supports C and C++ linkage.
 .SH FUNCTION INDEX
@@ -45,6 +46,25 @@ Release a handle and its FFT plan and buffers.
 .TP
 .BR md_reset (3)
 Discard stream state while preserving configuration and storage.
+.SS Channel parallelism
+.TP
+.BR md_new_with_threads (3), md_new_iq_with_threads (3)
+Construct with a participant budget, including the caller: 0 is automatic,
+1 creates no workers. Existing constructors use automatic mode.
+.TP
+.BR md_get_thread_count (3)
+Query the resolved maximum participant count.
+.PP
+Automatic mode uses online logical CPUs, capped by channel capacity, and keeps
+fewer than four runnable channels serial. Explicit budgets are capped by channel
+capacity and permit parallel execution from two runnable channels. FFT and band
+management remain serial. Automatic worker initialization failure falls back to
+serial; explicit requests report initialization errors or ENOTSUP if
+unsupported.
+Workers are created during construction, preserved by reset, and joined by
+deletion. Processing, flush and reset allocate no memory and create no threads.
+Synchronization may wait for worker scheduling. Budget each handle independently
+when several handles run concurrently.
 .SS Streaming input
 .TP
 .BR md_process (3)
@@ -441,8 +461,8 @@ The application must also serialize construction and destruction against
 all FFTW planner and plan-destruction operations, including those outside
 libmorsedec.
 .PP
-There are no library-owned worker threads, locks for shared handle access,
-or callbacks.
+Worker-pool locks do not protect public calls sharing a handle.
+There are no callbacks.
 Functions are not specified as async-signal-safe.
 For signal-driven shutdown, set an application flag and flush/delete from
 normal program flow.

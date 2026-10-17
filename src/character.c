@@ -74,7 +74,7 @@ void md_decode_pattern(const char *pattern, char *out, size_t capacity)
 	}
 }
 
-static void decode_run(struct morsedec_decoder *d, struct md_channel *c,
+static void decode_run(const struct morsedec_decoder *d, struct md_channel *c,
 		       const struct md_element *gap, int flush)
 {
 	char pattern[64], text[128];
@@ -113,7 +113,7 @@ static void decode_run(struct morsedec_decoder *d, struct md_channel *c,
 	md_word_emit(d, c, flush);
 }
 
-void md_character_feed(struct morsedec_decoder *d, struct md_channel *c,
+void md_character_feed(const struct morsedec_decoder *d, struct md_channel *c,
 		       const struct md_element *e, int flush)
 {
 	if (e && e->kind >= 3) {

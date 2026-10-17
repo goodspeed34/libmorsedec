@@ -55,6 +55,11 @@ file CLI, or `-Ddefault_library=static` for a static library. The stdin CLI is
 built whenever tools are enabled or auto. The ncurses terminal view is enabled
 by default and controlled by `-Dtui`: use `-Dtui=disabled` to build the stdin
 tools without it, or `-Dtui=auto` to accept whatever ncurses is available.
+Per-channel parallelism is enabled automatically when pthreads are available
+(winpthreads on MinGW). `-Dparallel=enabled` requires the backend;
+`-Dparallel=disabled` builds a serial library. Run regression checks with
+`meson test -C build`.
+
 Installation includes
 `morsedec.h` and `morsedec.pc`; consumers can use `dependency('morsedec')` in
 Meson or `pkg-config --cflags --libs morsedec`.
@@ -135,12 +140,27 @@ pipeline while the terminal shows the live view. ncurses is optional and enabled
 by default; `-Dtui=disabled` builds the tools without `-T`. On Windows the view
 attaches to the console and needs a real one rather than a pipe.
 
+All decoder tools accept `-p N`: `0` (default) selects automatic per-channel
+parallelism, `1` creates no workers, and larger values set a maximum participant
+count including the caller. Automatic mode uses the online logical CPU count,
+capped by channel capacity, and stays serial below four runnable channels. FFT
+and band management remain serial. Worker wakeups can increase CPU use on small
+workloads; compare `-p 1` and `-p 4` on representative captures.
+
 ## C API
 
 The [library manual](docs/man/README.md) contains an overview,
 `libmorsedec(3)`, and individual reference pages for every public function.
 Read a local page with `man -l docs/man/libmorsedec.3` or, after installation,
 `man 3 libmorsedec` and `man 3 md_process_iq`.
+
+`md_new()` and `md_new_iq()` use automatic scheduling. Use
+`md_new_with_threads(config, N)` or `md_new_iq_with_threads(config, N)` for an
+explicit budget; `md_get_thread_count()` reports the resolved maximum including
+the caller. Automatic initialization falls back to serial if workers cannot be
+created. Explicit parallel requests report initialization failures. Reset retains
+the pool, and deletion joins its workers. Calls on each handle still require
+serialization, including queries, and processing completes all work before return.
 
 Version 0.2.0 renames every public function from `morsedec_*` to `md_*`.
 Update call sites and dynamic symbol lookups, then rebuild consumers against

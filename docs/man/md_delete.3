@@ -17,7 +17,8 @@ Handle to destroy. NULL is accepted and has no effect.
 .SH RETURN VALUE
 This function returns no value.
 .SH REMARKS
-Releases all owned buffers and the FFT plan. The handle and any borrowed
+Stops and joins all workers before releasing owned buffers and the FFT plan.
+The handle and any borrowed
 character views are invalid after return. This does not flush pending
 decoding: call md_flush() and consume final snapshots before deletion if final
 output is required. Deleting the same non-NULL handle twice is invalid.

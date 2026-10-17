@@ -9,7 +9,8 @@ Morse timing.
 
 The implementation is synchronous C11. The host owns devices, byte framing,
 stream scheduling, and transcript persistence; the library owns signal analysis
-and bounded decoding state. There are no library worker threads or callbacks.
+and bounded decoding state. A persistent per-handle worker pool can process
+channels concurrently; there are no callbacks.
 This document describes the current implementation and its tradeoffs. Public
 contracts and individual function details are in the [library manuals](man/README.md).
 
@@ -31,8 +32,10 @@ flowchart TD
     M --> P[Host polling and transcript archive]
 ```
 
-The diagram shows logical responsibilities. The implementation invokes these
-stages directly in the processing thread; they are not asynchronous queues.
+The diagram shows logical responsibilities. FFT and band management run in the
+calling thread. Each channel pipeline runs as one job on the caller or a worker,
+with a completion barrier before selection and sorting; there are no asynchronous
+stage queues.
 The feedback from duration learning to segmentation stays within one channel.
 
 | Module | Responsibility | Principal state or output |
@@ -474,8 +477,51 @@ Every call touching one handle must be serialized, including queries and borrowe
 views. Independent handles may process concurrently after construction.
 Construction and destruction must be serialized with all FFTW planning and
 plan-destruction operations in the application. The library never calls global
-`fftw_cleanup()` or creates worker threads. Parallelizing channels would require
-explicit boundaries around band updates, slot lifecycle, selection and output.
+`fftw_cleanup()`. FFTW execution remains single-threaded within each handle.
+
+### Per-channel workers
+
+`md_new()` and `md_new_iq()` select automatic scheduling. Their
+`md_new_with_threads()` and `md_new_iq_with_threads()` variants accept a total
+participant budget including the caller: zero selects automatic mode, one creates
+no workers, and larger values explicitly enable channel parallelism. Automatic
+mode uses the OS-reported online logical CPU count, capped by channel capacity.
+Explicit budgets are also capped by channel capacity. `md_get_thread_count()`
+reports the resolved budget, not the number currently running. Applications with
+several handles should assign their own budgets to avoid oversubscription.
+
+The private pthread backend (winpthreads on MinGW) allocates the pool and starts
+workers after frontend construction. `-Dparallel=auto` enables it when detected;
+`enabled` requires it and `disabled` builds a serial backend. Unsupported explicit
+parallel requests fail with `ENOTSUP`. Automatic initialization failure cleans up
+partially started workers and falls back to serial; explicit requests propagate
+the initialization error. Reset preserves the budget and pool. Deletion wakes
+and joins workers before freeing decoder storage.
+
+Each band frame first performs its existing merge, history, peak detection,
+slot retirement/creation and noise updates serially. It clears each channel's
+change flag, applies frontend validity limits, and builds a preallocated list of
+channels with replay work. Automatic mode keeps fewer than four runnable channels
+serial; explicit mode may parallelize two. Participating workers are limited by
+both the budget and job count, and receive individual condition-variable signals.
+Idle workers sleep. The caller also claims channel jobs through a short mutex.
+Workers receive the caller's floating-point environment on each dispatch so
+rounding-mode changes after construction do not change channel results.
+
+A job retains the existing maximum of four chronological replay frames. Its
+entire extraction, segmentation, timing, character, word and message path updates
+only that channel. History, band ratios, noise, configuration, frame counters and
+word-model topology remain read-only until every participant acknowledges the
+hop's completion. Generation counters distinguish dispatches; the barrier also
+waits for signaled workers that have not claimed any work. Only then can selection,
+sorting or the next frame run. Explicit flush's final commit loop remains serial.
+
+Processing remains synchronous and allocation-free, including reset and flush;
+worker synchronization can wait for OS scheduling but performs no blocking I/O.
+No additional stream buffering or algorithmic latency is introduced. Thread wakeups
+increase CPU use and can cost more than they save on small workloads. Use `-p 1`
+in the CLI or the serial constructors to compare against automatic mode. No CPU
+pinning, scheduling-priority changes or global worker pool is used.
 
 Fallible integer functions return 1 or 0 and set `errno` on failure. Constructors
 return an owned handle or NULL. Invalid arguments, geometry, input-mode changes
@@ -493,8 +539,11 @@ retain their `morsedec` names. Only declarations marked `MORSEDEC_API` are expor
 
 Earlier evaluations covered numeric primitives, geometry, chunk independence,
 input validation, frequency drift, traceback overlap, reset/flush, I/Q placement
-and calibration, and synthesized multicarrier messages. The current distribution
-does not include automated evaluation scripts or fixtures. Shared/static and
+and calibration, and synthesized multicarrier messages. Meson runs the pattern
+and parallel-processing regression checks with
+`meson test -C build`. Deterministic generated inputs compare serial and parallel
+snapshots, input chunking, acquisition replay, reset/flush and channel lifecycle;
+Linux additionally injects allocation and worker-start failures. Shared/static and
 sanitizer build configurations remain available; CI builds the library and tools.
 
 The [archived benchmark report](benchmarks/README.md) records transcripts,

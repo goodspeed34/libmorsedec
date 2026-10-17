@@ -24,6 +24,16 @@ standard error. An optional CSV trace records per-hop channel metrics, and
 replaces the text snapshots with a full-screen terminal view.
 .SH OPTIONS
 .TP
+.BI -p " N"
+Maximum processing participants including the caller. Zero (default) selects
+automatic channel parallelism; one creates no workers. Automatic mode uses
+online
+logical CPUs capped by channel capacity, keeping fewer than four runnable
+channels serial. Explicit values permit parallel processing from two channels.
+FFT and band management remain serial. Automatic worker startup failure falls
+back to serial; explicit requests report errors. Small workloads can run faster
+with one participant. N must be a nonnegative decimal integer.
+.TP
 .BI -r " HZ"
 Set the input sample rate. Required. The value is samples per second.
 .TP
