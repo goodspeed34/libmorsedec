@@ -89,6 +89,11 @@ flushes pending decoder output before exit. Empty input is valid. A signal is
 handled in the main processing loop so pending output and resources can be
 drained and released normally.
 .PP
+On Windows the tool waits on the standard input handle instead of polling and
+switches standard input to binary mode. Ctrl-C is delivered by the console
+handler; SIGTERM and SIGPIPE do not exist, and a closed downstream pipe becomes
+a write error rather than a signal.
+.PP
 The optional CSV trace includes synthetic drain time at shutdown. I/Q input has
 no timestamps or discontinuity markers; dropped samples cannot be detected by
 the decoder.

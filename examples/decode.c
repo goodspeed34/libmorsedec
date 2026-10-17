@@ -18,6 +18,10 @@
  */
 #include "morsedec.h"
 #include <stdio.h>
+#ifdef _WIN32
+#include <fcntl.h>
+#include <io.h>
+#endif
 
 /* Minimal native-endian s16 mono stdin example. Prefer morsedec-audio for
  * portable WAV/FLAC input or little-endian raw files. */
@@ -29,6 +33,10 @@ int main(void)
 	char text[MORSEDEC_MESSAGE_CAPACITY * 3 + 1];
 	size_t count, required;
 
+#ifdef _WIN32
+	/* Keep text-mode translation from corrupting binary sample data. */
+	_setmode(_fileno(stdin), _O_BINARY);
+#endif
 	md_config_init(&config);
 	config.sample_rate = 48000;
 	decoder = md_new(&config);

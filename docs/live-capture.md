@@ -1,7 +1,8 @@
 # Live decoding from stdin
 
 `morsedec-live` reads raw audio PCM and `morsedec-iqlive` reads raw I/Q pairs
-from stdin on Unix-like systems. Both link only to libmorsedec and the math library. Audio device access belongs to a separate
+from stdin on Unix-like systems and on Windows with the MSYS2 MINGW64 toolchain.
+Both link only to libmorsedec and the math library. Audio device access belongs to a separate
 recorder such as `arecord`; no capture backend is integrated into the project.
 The file decoder `morsedec-audio` additionally uses libsndfile.
 
@@ -46,6 +47,15 @@ EOF, Ctrl-C, SIGTERM or `-s N` flush pending decoder output and release
 resources. The duration counts input frames, rather than wall-clock time.
 Signals remain responsive while stdin is idle. Signal handlers only set a flag;
 all decoding and cleanup happen in the main loop. I/O failures return nonzero.
+
+On Windows the tools wait on the standard input handle instead of `poll`, which
+only covers sockets there, and switch standard input to binary mode so that
+byte counts and sample payloads survive text-mode translation. Ctrl-C arrives
+through the console handler; the loop then drains pending output at its next
+readiness check, within one wait interval. There is no SIGTERM or SIGPIPE, and a
+closed downstream pipe surfaces as a write error rather than a signal. Capture
+producers are console applications such as `sox` or a `python` reader; a plain
+file redirection works the same way.
 
 Text and JSON Lines are complete message snapshots, including revisions, flushed
 after processing so downstream pipes receive live updates. CSV diagnostics use
