@@ -9,7 +9,8 @@ Morse timing.
 
 The implementation is synchronous C11. The host owns devices, byte framing,
 stream scheduling, and transcript persistence; the library owns signal analysis
-and bounded decoding state. There are no library worker threads or callbacks.
+and bounded decoding state. A persistent per-handle worker pool can process
+channels concurrently; there are no callbacks.
 This document describes the current implementation and its tradeoffs. Public
 contracts and individual function details are in the [library manuals](man/README.md).
 
@@ -31,8 +32,10 @@ flowchart TD
     M --> P[Host polling and transcript archive]
 ```
 
-The diagram shows logical responsibilities. The implementation invokes these
-stages directly in the processing thread; they are not asynchronous queues.
+The diagram shows logical responsibilities. FFT and band management run in the
+calling thread. Each channel pipeline runs as one job on the caller or a worker,
+with a completion barrier before selection and sorting; there are no asynchronous
+stage queues.
 The feedback from duration learning to segmentation stays within one channel.
 
 | Module | Responsibility | Principal state or output |
@@ -246,7 +249,8 @@ Signal transitions, learned timing and inactivity govern these states. Short
 noise bursts can create candidates without becoming a selected message channel.
 Retirement releases the slot and removes its message from the queryable set.
 
-Automatic selection requires a trained duration model. It compares smoothed
+Automatic selection requires a trained duration model or a short transmission
+with at least three committed marks followed by sustained silence. It compares smoothed
 absolute carrier power, switching only when a candidate is more than four times
 the current channel's power. Absolute power avoids comparing differently aged
 per-channel normalization floors, and hysteresis reduces selection flapping.
@@ -271,7 +275,10 @@ Fallbacks prevent division by a vanishing floor.
 The center's square-root power estimates amplitude. Ten shoulder bins at offsets
 four through eight provide background evidence. Their logarithmic products
 produce a shoulder estimate; subtracting that estimate from the center amplitude
-produces nonnegative prominence. A short temporal operation suppresses isolated
+produces nonnegative prominence. Prominence is capped at 200 to prevent an
+almost zero noise floor from giving long marks an arbitrarily large influence
+on the decision threshold. The amplitude used for the SNR query is not capped.
+A short temporal operation suppresses isolated
 excursions, while longer filters estimate carrier presence, signal strength and
 an adaptive decision threshold.
 
@@ -282,7 +289,12 @@ threshold. A bounded hyperbolic tangent turns that difference into a probability
 The main keying observation is delayed by 36 nominal ticks, about 382.5 ms.
 
 A second gate limits confidence using tonal contrast: center log power minus
-mean shoulder log power. It is delayed to match the keying observation and maps
+mean shoulder log power. For learned speeds below 28 WPM it uses offsets four
+through eight. From 28 to 34 WPM it blends toward offsets six through ten, which
+leave room for the wider spectrum of short marks. Both observations are delayed
+to match keying, then interpreted using the latest speed estimate from all three
+mark/element-gap means. This avoids interpreting a hand-keyed sender's short dots
+alone as evidence of fast CW. The resulting contrast maps
 through `0.5*tanh(2*(contrast - ln(8))) + 0.5`. A large broadband impulse therefore
 cannot become a confident mark on amplitude alone. The final key probability has
 a small positive floor to keep logarithmic observations finite.
@@ -329,8 +341,14 @@ also include broad tails so long pauses remain representable.
 
 Learning collects alternating runs into a 14-element window. When it contains
 seven marks and seven gaps, the estimator sorts their log durations and scores
-candidate partitions into the five classes. A covariance-based penalty and fixed
-partition priors regularize sparse or ambiguous observations. Weighted candidate
+candidate partitions into the five classes. Within-class squared residuals,
+scaled by the initial class variances, measure how well each partition fits the
+observed durations. A covariance-based penalty and fixed partition priors
+regularize sparse or ambiguous observations. Gaps of at least 60 nominal ticks
+are replaced by the longest shorter gap for partition fitting, or the current
+word-gap mean when no shorter gap exists; long silences do not set the sender's
+spacing. Inferring an absent class converts each observed class mean back to dot
+units, including the word-gap ratio. Weighted candidate
 estimates classify the window, and covariance-aware updates adapt the duration
 means and variances. Variance bounds and ordering constraints keep the classes
 usable. The updated model marks segmentation's duration tables dirty; those
@@ -338,9 +356,16 @@ tables are rebuilt before the next observation.
 
 During initial learning, a bounded 256-element pending buffer preserves elements
 until classification has enough context. Long acquisition silence is excluded
-from the training window. Buffer exhaustion or flush can release pending text
-without declaring that full training occurred. This distinction keeps a flushed
-noise burst from satisfying automatic channel selection's training gate.
+from the training window. A carrier drop alone does not end learning: at slow
+speeds an ordinary word gap can briefly drop the carrier. After 75 nominal ticks
+(about 0.8 seconds) without a carrier, a pending transmission with at least three
+marks is classified using the current model and becomes eligible for automatic
+selection. Explicit stream flush also permits this release. Isolated marks and
+noise excursions do not satisfy the automatic short-transmission gate. A pinned
+channel may release even a single mark without qualifying as a trained channel.
+Flush runs channel selection after releasing pending text, so a short message
+that ends on its last mark does not need extra host-provided silence to become
+the current channel.
 
 `initial_wpm` shifts the initial means and regularization toward a known sender
 speed. It does not fix the model or establish an assured decode range. Reported
@@ -354,7 +379,8 @@ Character assembly accumulates marks and short gaps until a classified letter or
 word gap closes a run. Dots and dashes form a pattern that is looked up in the
 Morse table, including punctuation and procedural signals. A bounded fallback
 tries splitting unknown patterns around a dash-dot delimiter; unresolved runs
-produce `*`. Runs are bounded to avoid unbounded accumulation or recursion.
+produce `*`. Split characters retain the left-to-right order of the input.
+Runs are bounded to avoid unbounded accumulation or recursion.
 
 Character records preserve a Latin-1 byte, source ordinal, low-SNR evidence and
 word-boundary evidence. Prosigns can produce multiple lowercase records from one
@@ -368,6 +394,8 @@ match literals or letter/digit/generic classes; non-emitting selector nodes
 combine paths. Outgoing weights are normalized and stored as log scores. Each
 channel advances its own states in a bounded Viterbi-style update, then uses
 saved lengths and classes to reconstruct word boundaries.
+Score normalization includes the root hypothesis that starts a new word, so
+its score remains comparable to paths that continue the current word.
 
 The current implementation keeps a rolling 26-character window, allowing word
 interpretations to span element batches. Repetition heuristics retain plausible
@@ -449,8 +477,51 @@ Every call touching one handle must be serialized, including queries and borrowe
 views. Independent handles may process concurrently after construction.
 Construction and destruction must be serialized with all FFTW planning and
 plan-destruction operations in the application. The library never calls global
-`fftw_cleanup()` or creates worker threads. Parallelizing channels would require
-explicit boundaries around band updates, slot lifecycle, selection and output.
+`fftw_cleanup()`. FFTW execution remains single-threaded within each handle.
+
+### Per-channel workers
+
+`md_new()` and `md_new_iq()` select automatic scheduling. Their
+`md_new_with_threads()` and `md_new_iq_with_threads()` variants accept a total
+participant budget including the caller: zero selects automatic mode, one creates
+no workers, and larger values explicitly enable channel parallelism. Automatic
+mode uses the OS-reported online logical CPU count, capped by channel capacity.
+Explicit budgets are also capped by channel capacity. `md_get_thread_count()`
+reports the resolved budget, not the number currently running. Applications with
+several handles should assign their own budgets to avoid oversubscription.
+
+The private pthread backend (winpthreads on MinGW) allocates the pool and starts
+workers after frontend construction. `-Dparallel=auto` enables it when detected;
+`enabled` requires it and `disabled` builds a serial backend. Unsupported explicit
+parallel requests fail with `ENOTSUP`. Automatic initialization failure cleans up
+partially started workers and falls back to serial; explicit requests propagate
+the initialization error. Reset preserves the budget and pool. Deletion wakes
+and joins workers before freeing decoder storage.
+
+Each band frame first performs its existing merge, history, peak detection,
+slot retirement/creation and noise updates serially. It clears each channel's
+change flag, applies frontend validity limits, and builds a preallocated list of
+channels with replay work. Automatic mode keeps fewer than four runnable channels
+serial; explicit mode may parallelize two. Participating workers are limited by
+both the budget and job count, and receive individual condition-variable signals.
+Idle workers sleep. The caller also claims channel jobs through a short mutex.
+Workers receive the caller's floating-point environment on each dispatch so
+rounding-mode changes after construction do not change channel results.
+
+A job retains the existing maximum of four chronological replay frames. Its
+entire extraction, segmentation, timing, character, word and message path updates
+only that channel. History, band ratios, noise, configuration, frame counters and
+word-model topology remain read-only until every participant acknowledges the
+hop's completion. Generation counters distinguish dispatches; the barrier also
+waits for signaled workers that have not claimed any work. Only then can selection,
+sorting or the next frame run. Explicit flush's final commit loop remains serial.
+
+Processing remains synchronous and allocation-free, including reset and flush;
+worker synchronization can wait for OS scheduling but performs no blocking I/O.
+No additional stream buffering or algorithmic latency is introduced. Thread wakeups
+increase CPU use and can cost more than they save on small workloads. Use `-p 1`
+in the CLI or the serial constructors to compare against automatic mode. No CPU
+pinning, scheduling-priority changes or global worker pool is used.
 
 Fallible integer functions return 1 or 0 and set `errno` on failure. Constructors
 return an owned handle or NULL. Invalid arguments, geometry, input-mode changes
@@ -468,8 +539,11 @@ retain their `morsedec` names. Only declarations marked `MORSEDEC_API` are expor
 
 Earlier evaluations covered numeric primitives, geometry, chunk independence,
 input validation, frequency drift, traceback overlap, reset/flush, I/Q placement
-and calibration, and synthesized multicarrier messages. The current distribution
-does not include automated evaluation scripts or fixtures. Shared/static and
+and calibration, and synthesized multicarrier messages. Meson runs the pattern
+and parallel-processing regression checks with
+`meson test -C build`. Deterministic generated inputs compare serial and parallel
+snapshots, input chunking, acquisition replay, reset/flush and channel lifecycle;
+Linux additionally injects allocation and worker-start failures. Shared/static and
 sanitizer build configurations remain available; CI builds the library and tools.
 
 The [archived benchmark report](benchmarks/README.md) records transcripts,

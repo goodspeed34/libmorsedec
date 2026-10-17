@@ -19,28 +19,54 @@ for module responsibilities, signal processing, timing, and implementation trade
 ## Build
 
 Dependencies: a C11 compiler, Meson >= 0.63, Ninja, FFTW3 (double precision).
-The file-audio CLI uses libsndfile; the audio and I/Q stdin tools need no audio I/O library.
+The file-audio CLI uses libsndfile; the audio and I/Q stdin tools need no audio
+I/O library but link ncurses for the optional `-T` terminal view.
 
 ```sh
 # Debian/Ubuntu dependencies
-sudo apt install meson ninja-build pkg-config libfftw3-dev libsndfile1-dev clang-format
+sudo apt install meson ninja-build pkg-config libfftw3-dev libsndfile1-dev libncurses-dev clang-format
 meson setup build
 meson compile -C build
 meson compile -C build format-check
 meson install -C build
 ```
 
+On Windows, build from an MSYS2 **MINGW64** shell with the `mingw-w64-x86_64-*`
+packages. Use `-Dwerror=true` to turn warnings into errors.
+
+```sh
+# MSYS2 MINGW64 dependencies
+pacman -S --needed mingw-w64-x86_64-gcc mingw-w64-x86_64-meson \
+  mingw-w64-x86_64-ninja mingw-w64-x86_64-pkgconf mingw-w64-x86_64-fftw \
+  mingw-w64-x86_64-libsndfile mingw-w64-x86_64-ncurses
+meson setup build
+meson compile -C build
+meson compile -C build format-check   # needs mingw-w64-x86_64-clang
+```
+
+The Windows build produces `libmorsedec-1.dll` with an import library and the
+same tools with a `.exe` suffix. Executables in the build directory find the
+DLL beside them; `libfftw3-3.dll` and `libsndfile-1.dll` come from the MINGW64
+shell's `PATH`. Consumers that link the installed library must have the install
+`bin` directory on `PATH`.
+
 Use `-Dtools=disabled` for the library alone, `-Dtools=enabled` to require the
 file CLI, or `-Ddefault_library=static` for a static library. The stdin CLI is
-built whenever tools are enabled or auto. Installation includes
+built whenever tools are enabled or auto. The ncurses terminal view is enabled
+by default and controlled by `-Dtui`: use `-Dtui=disabled` to build the stdin
+tools without it, or `-Dtui=auto` to accept whatever ncurses is available.
+Per-channel parallelism is enabled automatically when pthreads are available
+(winpthreads on MinGW). `-Dparallel=enabled` requires the backend;
+`-Dparallel=disabled` builds a serial library. Run regression checks with
+`meson test -C build`.
+
+Installation includes
 `morsedec.h` and `morsedec.pc`; consumers can use `dependency('morsedec')` in
 Meson or `pkg-config --cflags --libs morsedec`.
 
-The current development target is Unix-like systems. On macOS, install
-`meson ninja fftw libsndfile pkgconf` through Homebrew and use the same commands.
-CI jobs cover Linux and macOS; local validation currently runs on Linux.
-Other operating-system ports are deferred. The core uses portable C11 and
-keeps file/device I/O in CLI tools to support those ports later.
+The library core is portable C11 and file/device I/O stays in the CLI tools. On
+macOS, install `meson ninja fftw libsndfile pkgconf` through Homebrew and use
+the same commands as Linux. CI covers Linux, macOS and Windows/MINGW64.
 
 ## Decode and inspect audio
 
@@ -94,12 +120,47 @@ audio duration. Output uses the same complete-message snapshots as
 acquisition and DSP latency still apply. See [stdin implementation notes](docs/live-capture.md)
 for stream behavior and shutdown handling.
 
+### Terminal view
+
+`-T` replaces the text snapshots with a two pane ncurses view on the terminal.
+The left pane lists every tracked channel with its frequency, estimated SNR,
+speed and state; the right pane shows the decoded messages, wrapped and
+scrollable, with the newest line following the channel that is currently
+decoding. `q` quits, `c` clears the messages, and the arrow, Page and Home/End
+keys scroll the retained lines.
+
+```sh
+arecord -t raw -f S16_LE -r 48000 -c 1 | build/morsedec-live -r 48000 -T
+build/morsedec-iqlive -F f32 -r 48000 -l -12000 -u 12000 -T < capture.iq
+```
+
+The view owns the terminal, not stdin, which keeps carrying the sample stream.
+`-j` and `-t FILE` keep working beside it, so machine readable output can feed a
+pipeline while the terminal shows the live view. ncurses is optional and enabled
+by default; `-Dtui=disabled` builds the tools without `-T`. On Windows the view
+attaches to the console and needs a real one rather than a pipe.
+
+All decoder tools accept `-p N`: `0` (default) selects automatic per-channel
+parallelism, `1` creates no workers, and larger values set a maximum participant
+count including the caller. Automatic mode uses the online logical CPU count,
+capped by channel capacity, and stays serial below four runnable channels. FFT
+and band management remain serial. Worker wakeups can increase CPU use on small
+workloads; compare `-p 1` and `-p 4` on representative captures.
+
 ## C API
 
 The [library manual](docs/man/README.md) contains an overview,
 `libmorsedec(3)`, and individual reference pages for every public function.
 Read a local page with `man -l docs/man/libmorsedec.3` or, after installation,
 `man 3 libmorsedec` and `man 3 md_process_iq`.
+
+`md_new()` and `md_new_iq()` use automatic scheduling. Use
+`md_new_with_threads(config, N)` or `md_new_iq_with_threads(config, N)` for an
+explicit budget; `md_get_thread_count()` reports the resolved maximum including
+the caller. Automatic initialization falls back to serial if workers cannot be
+created. Explicit parallel requests report initialization failures. Reset retains
+the pool, and deletion joins its workers. Calls on each handle still require
+serialization, including queries, and processing completes all work before return.
 
 Version 0.2.0 renames every public function from `morsedec_*` to `md_*`.
 Update call sites and dynamic symbol lookups, then rebuild consumers against
@@ -203,12 +264,21 @@ in [docs/design.md](docs/design.md).
 
 ## Evaluation and current scope
 
+[Comparison with Vail](docs/benchmarks/vail-comparison.md) reproduces its 464-case
+synthetic grid: mean CER is **3.606% for libmorsedec versus 3.721% for Vail**,
+improved from libmorsedec's 10.439% baseline. On 120 additional synthetic cases,
+the figures are **4.478% versus 6.112%**. Measured streaming throughput is about
+**1,700× real time**, using about 12% more CPU than Vail on that workload. Some noisy
+and jittered conditions still favor Vail. Reproduction
+scripts and complete per-case reports are included.
+
 [Archived recording measurements](docs/benchmarks/README.md) document an earlier
 three-recording tuning evaluation. Combined character error rate fell from
 **47.65% to 14.12%**, ignoring whitespace while retaining punctuation and
 distinguishing O from 0. These recordings were used for tuning and do not
-establish accuracy on independent input. Evaluation scripts and fixtures are
-not shipped with the library.
+establish accuracy on independent input. The current recording runner is in
+`benchmarks/`; media fixtures remain external. Rerunning those recordings after
+the current changes gives **19/170 errors (11.18% CER)**.
 
 This remains an initial decoder implementation. Fast CW, difficult fading/QRM,
 and other receiver recordings need further validation; weak spectral sidelobes

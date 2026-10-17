@@ -17,7 +17,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "audio-common.h"
+#include "tui.h"
 #include <errno.h>
+#include <inttypes.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,6 +44,24 @@ int md_cli_number(const char *text, double *out)
 	errno = 0;
 	*out = strtod(text, &end);
 	return text[0] && !*end && !errno && isfinite(*out);
+}
+
+int md_cli_threads(const char *text, size_t *out)
+{
+	char *end;
+	uintmax_t value;
+
+	if (!*text)
+		return 0;
+	for (const char *p = text; *p; p++)
+		if (*p < '0' || *p > '9')
+			return 0;
+	errno = 0;
+	value = strtoumax(text, &end, 10);
+	if (errno || *end || value > SIZE_MAX)
+		return 0;
+	*out = (size_t)value;
+	return 1;
 }
 
 static void json_string(const char *text)
@@ -121,11 +141,16 @@ int md_cli_report(morsedec_decoder_t *d, const struct morsedec_geometry *g,
 			       c.snr, c.wpm);
 			json_string(text);
 			puts("}");
-		} else {
+		} else if (!reporter->tui) {
 			printf("[%8.3f s %8.2f Hz #%llu] %s\n", time,
 			       c.frequency, (unsigned long long)c.id, text);
 		}
+		if (reporter->tui)
+			md_tui_message(reporter->tui, time, c.frequency, c.id,
+				       text);
 	}
+	if (reporter->tui)
+		md_tui_draw(reporter->tui, d, g, time, all);
 	return !fflush(stdout) && (!trace || !ferror(trace));
 }
 

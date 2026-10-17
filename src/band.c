@@ -69,6 +69,7 @@ static void merge_channels(struct morsedec_decoder *d)
 void md_band_frame(struct morsedec_decoder *d, const float *s)
 {
 	int n = d->bins;
+	size_t jobs = 0;
 	double decay = pow(0.97, d->tick_scale);
 	double peak_decay = pow(0.8, d->tick_scale);
 
@@ -154,15 +155,16 @@ void md_band_frame(struct morsedec_decoder *d, const float *s)
 			if (c->next_frame < valid)
 				c->next_frame = valid;
 		}
-		for (int replay = 0; replay < 4 && c->next_frame <= d->frames;
-		     replay++) {
-			const float *frame =
-			    d->history +
-			    (c->next_frame % (uint64_t)d->history_size) *
-				(size_t)n;
-			md_signal_frame(d, c, frame, c->next_frame++);
-		}
+		if (c->next_frame <= d->frames)
+			d->jobs[jobs++] = c;
 	}
+	md_parallel_run(d, jobs);
+	md_band_select(d);
+	sort_channels(d);
+}
+
+void md_band_select(struct morsedec_decoder *d)
+{
 	/* Compare absolute spectral power: differently aged normalization
 	 * floors must not promote a weak noise channel over a real signal. */
 	if (!d->current || !d->current->pinned) {
@@ -177,5 +179,15 @@ void md_band_frame(struct morsedec_decoder *d, const float *s)
 		    (!d->current || best->power > 4 * d->current->power))
 			d->current = best;
 	}
-	sort_channels(d);
+}
+
+void md_channel_replay(const struct morsedec_decoder *d, struct md_channel *c)
+{
+	for (int replay = 0; replay < 4 && c->next_frame <= d->frames;
+	     replay++) {
+		const float *frame =
+		    d->history + (c->next_frame % (uint64_t)d->history_size) *
+				     (size_t)d->bins;
+		md_signal_frame(d, c, frame, c->next_frame++);
+	}
 }

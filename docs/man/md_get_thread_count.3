@@ -1,0 +1,28 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH MD_GET_THREAD_COUNT 3 "2026-10-17" "libmorsedec 0.2.0" "Library Functions Manual"
+.SH NAME
+md_get_thread_count \- query the resolved channel processing thread budget
+.SH SYNOPSIS
+.nf
+#include <morsedec.h>
+
+size_t md_get_thread_count(const morsedec_decoder_t *decoder);
+.fi
+.SH DESCRIPTION
+Return the maximum number of processing participants, including the caller.
+.SH FUNCTION PARAMETERS
+.TP
+.I decoder
+Decoder handle, or NULL.
+.SH RETURN VALUE
+The resolved budget, or zero for NULL. One means serial processing. This is
+not the number of threads currently executing; small workloads use fewer
+participants. The budget is fixed for the handle's lifetime.
+.SH THREAD SAFETY
+Serialize all calls accessing the same handle, including queries.
+.SH VERSION
+Available in the libmorsedec 0.2.0 development API, shared-library ABI 1.
+.SH SEE ALSO
+.BR md_new_with_threads (3),
+.BR md_new_iq_with_threads (3),
+.BR libmorsedec (3)

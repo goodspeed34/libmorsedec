@@ -193,7 +193,7 @@ int md_model_init(struct md_model *m)
 	return !m->failed;
 }
 
-void md_word_reset(struct morsedec_decoder *d, struct md_word *w)
+void md_word_reset(const struct morsedec_decoder *d, struct md_word *w)
 {
 	for (int i = 0; i < d->model->count; i++)
 		w->states[i] = (struct md_word_state){-10000, 0, 0};
@@ -220,7 +220,7 @@ static double emission(int expected, int input)
 	return expected == '+' ? -2.303 : -10000;
 }
 
-static void install(struct morsedec_decoder *d, struct md_word *w, int ch)
+static void install(const struct morsedec_decoder *d, struct md_word *w, int ch)
 {
 	struct md_word_state saved = w->states[w->saved];
 	int n = w->count, length = saved.length;
@@ -234,10 +234,10 @@ static void install(struct morsedec_decoder *d, struct md_word *w, int ch)
 	w->slots[n] = w->slots[n - length] = saved;
 }
 
-void md_word_feed(struct morsedec_decoder *d, struct md_channel *c,
+void md_word_feed(const struct morsedec_decoder *d, struct md_channel *c,
 		  const struct morsedec_character *ch)
 {
-	struct md_model *m = d->model;
+	const struct md_model *m = d->model;
 	struct md_word *w = &c->word;
 	if (w->saved >= 0)
 		install(d, w, ch->character);
@@ -249,7 +249,7 @@ void md_word_feed(struct morsedec_decoder *d, struct md_channel *c,
 	w->chars[w->count++] = *ch;
 	w->states[0].length = 0;
 	for (int i = m->count - 1; i > 0; i--) {
-		struct md_node *n = &m->nodes[i];
+		const struct md_node *n = &m->nodes[i];
 		if (n->selector)
 			continue;
 		w->states[i] = w->states[n->parent];
@@ -266,7 +266,7 @@ void md_word_feed(struct morsedec_decoder *d, struct md_channel *c,
 		if (!m->nodes[target].selector)
 			continue;
 		for (int p = 0; p < m->edge_count; p++) {
-			struct md_edge *link = &m->edges[p];
+			const struct md_edge *link = &m->edges[p];
 			if (link->to == target &&
 			    w->states[link->from].score + link->weight >
 				best.score) {
@@ -308,7 +308,7 @@ void md_word_feed(struct morsedec_decoder *d, struct md_channel *c,
 		if (repeat) {
 			double top = -10000;
 			for (int p = 0; p < m->edge_count; p++) {
-				struct md_edge *link = &m->edges[p];
+				const struct md_edge *link = &m->edges[p];
 				struct md_word_state st = w->states[link->from];
 				if (link->to == 0 && st.length == repeat &&
 				    st.kind != 2 && st.kind != 3 &&
@@ -324,7 +324,8 @@ void md_word_feed(struct morsedec_decoder *d, struct md_channel *c,
 	w->slots[w->count - 1] = w->states[0];
 }
 
-void md_word_emit(struct morsedec_decoder *d, struct md_channel *c, int flush)
+void md_word_emit(const struct morsedec_decoder *d, struct md_channel *c,
+		  int flush)
 {
 	struct md_word *w = &c->word;
 	struct md_word_state best;
@@ -364,7 +365,9 @@ void md_word_emit(struct morsedec_decoder *d, struct md_channel *c, int flush)
 	}
 	md_message_merge(&c->message, w->chars, (size_t)w->count);
 	c->changed = 1;
-	for (int i = 1; i < d->model->count; i++)
+	/* The root is a live hypothesis for starting the next word. Keep its
+	 * score on the same scale as continuing-word hypotheses. */
+	for (int i = 0; i < d->model->count; i++)
 		w->states[i].score -= best.score;
 	if (flush)
 		md_word_reset(d, w);

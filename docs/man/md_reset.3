@@ -30,6 +30,8 @@ reused on subsequent streams of this handle. Borrowed views are invalidated.
 Use this after md_flush(), before switching input mode, or after a
 discontinuity. Reset performs no heap allocation and does not flush discarded
 output.
+.PP
+Preserves the worker pool and its thread budget; creates no new workers.
 .SH THREAD SAFETY
 Serialize all calls that access the same handle, including getters. Different
 handles may process concurrently after construction. These functions are not

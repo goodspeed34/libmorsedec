@@ -7,13 +7,19 @@ band/channel manager, extraction filters, duration model, element segmentation,
 character decoder, word graph and message buffers. Keep internal declarations in
 `src/internal.h`; export public functions only with the `md_` prefix.
 
-`tools/` holds command-line utilities using the library. `examples/` contains a
-minimal consumer. Describe decoder architecture and implementation tradeoffs in
+`tools/` holds command-line utilities using the library; `tools/tui.c` is the
+optional ncurses view of `tools/live-common.c` and compiles to no-op stubs when
+ncurses is absent. `examples/` contains a minimal consumer. Describe decoder
+architecture and implementation tradeoffs in
 `docs/design.md`; document public functions in `docs/man/`.
 
 ## Build and Development Commands
 
 Install Meson, Ninja and FFTW3 development files; libsndfile enables the CLI.
+On Windows, build from an MSYS2 MINGW64 shell using the matching
+`mingw-w64-x86_64-gcc`, `-meson`, `-ninja`, `-pkgconf`, `-fftw` and
+`-libsndfile` packages. Keep Windows-only code behind `_WIN32` and leave the
+Unix code paths unchanged.
 
 - `meson setup build`: configure a development build.
 - `meson compile -C build`: build the library, tools and example.
@@ -21,8 +27,11 @@ Install Meson, Ninja and FFTW3 development files; libsndfile enables the CLI.
 - `meson compile -C build format-check`: verify formatting.
 - `meson setup build-asan -Db_sanitize=address,undefined -Db_lundef=false`: configure sanitizer checks.
 
-Use `-Dtools=disabled` to build without libsndfile. Keep generated files inside
-ignored `build*` directories.
+Use `-Dtools=disabled` to build without libsndfile, and `-Dtui=disabled` to
+build the stdin tools without ncurses and their `-T` terminal view. Keep
+generated files inside ignored `build*` directories. Keep new terminal code in
+`tools/`, never in the library: the core must stay free of terminal and audio
+device dependencies.
 
 ## Coding Style & Naming Conventions
 

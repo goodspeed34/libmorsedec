@@ -18,7 +18,8 @@
  */
 #include "internal.h"
 
-static void duration_tables(struct morsedec_decoder *d, struct md_channel *c)
+static void duration_tables(const struct morsedec_decoder *d,
+			    struct md_channel *c)
 {
 	struct md_segment *g = &c->seg;
 	for (int chain = 0; chain < 2; chain++) {
@@ -42,7 +43,7 @@ static void duration_tables(struct morsedec_decoder *d, struct md_channel *c)
 	c->stats.dirty = 0;
 }
 
-void md_segment_init(struct morsedec_decoder *d, struct md_channel *c)
+void md_segment_init(const struct morsedec_decoder *d, struct md_channel *c)
 {
 	struct md_segment *g = &c->seg;
 	memset(g, 0, sizeof(*g));
@@ -84,7 +85,7 @@ static int survives(const struct md_segment *g, int state,
 	return 0;
 }
 
-void md_segment_commit(struct morsedec_decoder *d, struct md_channel *c,
+void md_segment_commit(const struct morsedec_decoder *d, struct md_channel *c,
 		       struct md_element *elements, int count, int drop)
 {
 	struct md_segment *g = &c->seg;
@@ -106,8 +107,8 @@ void md_segment_commit(struct morsedec_decoder *d, struct md_channel *c,
 	md_stats_commit(d, c, elements, valid, drop);
 }
 
-void md_segment_step(struct morsedec_decoder *d, struct md_channel *c, int bit,
-		     double probability, int drop)
+void md_segment_step(const struct morsedec_decoder *d, struct md_channel *c,
+		     int bit, double probability, int drop)
 {
 	struct md_segment *g = &c->seg;
 	int n[2] = {g->on_max, g->off_max};

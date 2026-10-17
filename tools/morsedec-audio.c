@@ -40,6 +40,8 @@ static void usage(FILE *out)
 	    "  -l HZ       Band lower edge (default 200; -i: -1200)\n"
 	    "  -u HZ       Exclusive band upper edge (default 1200)\n"
 	    "  -w WPM      Initial speed, 5..80; 0 selects model priors\n"
+	    "  -p N        Processing threads, including caller (0: auto; 1: "
+	    "serial)\n"
 	    "  -a          Print all tracked channels\n"
 	    "  -j          JSON Lines snapshots, including revisions\n"
 	    "  -t FILE     Per-frame channel metrics as CSV\n"
@@ -56,6 +58,7 @@ int main(int argc, char **argv)
 {
 	struct morsedec_config config;
 	struct morsedec_geometry geometry;
+	size_t threads = 0;
 	SF_INFO info = {0};
 	SNDFILE *input = NULL;
 	morsedec_decoder_t *decoder = NULL;
@@ -71,7 +74,7 @@ int main(int argc, char **argv)
 
 	md_config_init(&config);
 	opterr = 0;
-	while ((option = getopt(argc, argv, ":iajf:l:u:w:t:c:F:r:n:Vh")) !=
+	while ((option = getopt(argc, argv, ":iajp:f:l:u:w:t:c:F:r:n:Vh")) !=
 	       -1) {
 		double value = 0;
 
@@ -82,6 +85,10 @@ int main(int argc, char **argv)
 			goto done;
 		}
 		switch (option) {
+		case 'p':
+			if (!md_cli_threads(optarg, &threads))
+				goto invalid_value;
+			break;
 		case 'V':
 			return md_cli_version("morsedec-audio");
 		case 'h':
@@ -200,7 +207,8 @@ int main(int argc, char **argv)
 		goto done;
 	}
 	config.sample_rate = (uint32_t)info.samplerate;
-	decoder = iq ? md_new_iq(&config) : md_new(&config);
+	decoder = iq ? md_new_iq_with_threads(&config, threads)
+		     : md_new_with_threads(&config, threads);
 	if (!decoder) {
 		perror("Decoder configuration");
 		goto done;
@@ -228,8 +236,12 @@ int main(int argc, char **argv)
 		      "snr,wpm,state\n",
 		      trace);
 	}
-	reporter = (struct md_cli_reporter){
-	    seen, config.max_channels, all, json, trace, 0};
+	reporter = (struct md_cli_reporter){.seen = seen,
+					    .capacity = config.max_channels,
+					    .all = all,
+					    .json = json,
+					    .trace = trace,
+					    .time_offset = 0};
 	for (;;) {
 		sf_count_t n = sf_readf_float(input, interleaved,
 					      (sf_count_t)geometry.hop_size);

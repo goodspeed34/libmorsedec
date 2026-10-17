@@ -1,14 +1,17 @@
 # Live decoding from stdin
 
 `morsedec-live` reads raw audio PCM and `morsedec-iqlive` reads raw I/Q pairs
-from stdin on Unix-like systems. Both link only to libmorsedec and the math library. Audio device access belongs to a separate
+from stdin on Unix-like systems and on Windows with the MSYS2 MINGW64 toolchain.
+Both link only to libmorsedec and the math library. Audio device access belongs to a separate
 recorder such as `arecord`; no capture backend is integrated into the project.
 The file decoder `morsedec-audio` additionally uses libsndfile.
 
 ## Build and use
 
 `meson setup build` and `meson compile -C build` build both stdin tools without
-additional audio dependencies. `-Dtools=disabled` omits all command-line tools.
+additional audio dependencies. Terminal support (`-T`) needs ncurses and is
+enabled by default; `-Dtui=disabled` drops it, and `-Dtools=disabled` omits all
+command-line tools.
 
 ```sh
 arecord -t raw -f S16_LE -r 48000 -c 1 | build/morsedec-live -r 48000
@@ -47,6 +50,16 @@ resources. The duration counts input frames, rather than wall-clock time.
 Signals remain responsive while stdin is idle. Signal handlers only set a flag;
 all decoding and cleanup happen in the main loop. I/O failures return nonzero.
 
+On Windows the tools check pipe data availability with `PeekNamedPipe` and
+recheck idle pipes at 100 ms intervals; console input uses a handle wait and
+regular files are read directly. Standard input is switched to binary mode so
+that byte counts and sample payloads survive text-mode translation. Ctrl-C arrives
+through the console handler; the loop then drains pending output at its next
+readiness check, within one wait interval. There is no SIGTERM or SIGPIPE, and a
+closed downstream pipe surfaces as a write error rather than a signal. Capture
+producers are console applications such as `sox` or a `python` reader; a plain
+file redirection works the same way.
+
 Text and JSON Lines are complete message snapshots, including revisions, flushed
 after processing so downstream pipes receive live updates. CSV diagnostics use
 `-t FILE`. Timestamps count consumed audio and include synthetic drain
@@ -55,6 +68,36 @@ decoder cannot identify missing samples. Monitor the recorder's stderr for
 capture overruns; restart decoding after an audio discontinuity. Slow downstream
 consumers can propagate backpressure through the pipeline.
 
+## Terminal view
+
+`-T` replaces the text snapshots on standard output with a two pane ncurses
+view on the controlling terminal. Standard input keeps carrying the sample
+stream, so the view opens the terminal itself: `/dev/tty` on Unix-like systems
+and the console (`CONIN$`/`CONOUT$`) on Windows. A Windows build therefore needs
+a real console; under a pipe-only terminal such as a redirected handle the view
+reports that it cannot attach and exits nonzero.
+
+The left pane lists every tracked channel with its reported frequency, estimated
+SNR, estimated speed and decoder state, marking the channel the decoder follows
+and scrolling the list to keep it visible. The right pane shows decoded messages
+prefixed with stream time, frequency and channel id, wrapped to the pane width.
+Because decoder output is a growing snapshot per channel, a message updates its
+own line until another channel produces output, which keeps the scrollback
+readable. `q` or `ESC` quits, `c` clears the message pane, and
+`Up`/`Down`/`PgUp`/`PgDn`/`Home`/`End` scroll the retained lines; the footer
+reports the line count and whether the view is scrolled back.
+
+```sh
+arecord -t raw -f S16_LE -r 48000 -c 1 | build/morsedec-live -r 48000 -T
+build/morsedec-iqlive -F f32 -r 48000 -l -12000 -u 12000 -T < capture.iq
+```
+
+`-j` and `-t FILE` are unaffected by `-T`: JSON Lines and the CSV trace are
+still written, so a pipeline can consume machine readable output while the
+terminal shows the live view. `-a` decides which messages reach both the view
+and standard output. The library itself has no terminal dependency; ncurses is
+linked only into the two stdin tools, and `-Dtui=disabled` removes it entirely.
+
 ## Operational checks
 
 The stdin tools can be exercised with recorded input without an audio device.
@@ -62,4 +105,6 @@ Use input with a known sample rate and byte format, and confirm that reported
 frequencies and message snapshots match the capture. Partial byte frames are
 retained across reads; an incomplete frame at EOF is an error. Empty input is
 valid. For live capture, confirm snapshots arrive before EOF and shutdown drains
-pending output when stdin closes or the process receives SIGINT/SIGTERM.
+pending output when stdin closes or the process receives SIGINT/SIGTERM. Omit
+`-T` for headless runs: the view needs an attached terminal and suppresses the
+text snapshots while it is active.

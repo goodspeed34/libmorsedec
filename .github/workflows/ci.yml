@@ -5,24 +5,53 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        build: [shared, static, sanitize]
+        build: [shared, static, sanitize, serial, thread]
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update && sudo apt-get install -y meson ninja-build libfftw3-dev libsndfile1-dev clang-format
+      - run: sudo apt-get update && sudo apt-get install -y meson ninja-build libfftw3-dev libsndfile1-dev libncurses-dev clang-format
       - name: Configure
         shell: bash
         run: |
           if [ '${{ matrix.build }}' = sanitize ]; then
-            meson setup build -Db_sanitize=address,undefined -Db_lundef=false -Dwerror=true
+            meson setup build -Dparallel=enabled -Db_sanitize=address,undefined -Db_lundef=false -Dwerror=true
+          elif [ '${{ matrix.build }}' = thread ]; then
+            meson setup build -Dparallel=enabled -Db_sanitize=thread -Db_lundef=false -Dtools=disabled -Dwerror=true
+          elif [ '${{ matrix.build }}' = serial ]; then
+            meson setup build -Dparallel=disabled -Dwerror=true
           else
-            meson setup build -Ddefault_library=${{ matrix.build }} -Dwerror=true
+            meson setup build -Dparallel=enabled -Ddefault_library=${{ matrix.build }} -Dwerror=true
           fi
       - run: meson compile -C build
+      - run: meson test -C build --print-errorlogs
       - run: meson compile -C build format-check
   macos:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - run: brew install meson ninja fftw libsndfile pkgconf
-      - run: meson setup build -Dwerror=true
+      - run: brew install meson ninja fftw libsndfile pkgconf ncurses
+      - run: meson setup build -Dparallel=enabled -Dwerror=true
       - run: meson compile -C build
+      - run: meson test -C build --print-errorlogs
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-meson
+            mingw-w64-x86_64-ninja
+            mingw-w64-x86_64-pkgconf
+            mingw-w64-x86_64-fftw
+            mingw-w64-x86_64-libsndfile
+            mingw-w64-x86_64-ncurses
+            mingw-w64-x86_64-clang
+      - run: meson setup build -Dparallel=enabled -Dwerror=true
+      - run: meson compile -C build
+      - run: meson test -C build --print-errorlogs
+      - run: meson compile -C build format-check

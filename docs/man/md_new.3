@@ -32,6 +32,11 @@ lifetime of the handle; md_reset() preserves it. See libmorsedec(3) for
 validation rules. Accepts mono PCM through md_process() or md_process_s16(),
 or calibrated power frames through md_process_spectrum(). The first successful
 processing call selects sample or spectrum input until reset.
+.PP
+Uses automatic channel parallelism: online logical CPUs capped by channel
+capacity, with serial execution below four runnable channels. Worker startup
+failure falls back to serial. Use the corresponding with_threads constructor
+for an explicit budget, including 1 to create no workers.
 .SH THREAD SAFETY
 Serialize this call with all FFTW planner and plan-destruction operations in
 the application, including operations for other decoder handles. No such lock
@@ -40,6 +45,8 @@ is needed between independent handles during processing.
 This md_ entry point is available since libmorsedec 0.2.0 (shared-library ABI
 1).
 .SH SEE ALSO
+.BR md_new_with_threads (3),
+.BR md_get_thread_count (3),
 .BR libmorsedec (3),
 .BR md_config_init (3),
 .BR md_delete (3),
