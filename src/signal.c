@@ -98,8 +98,7 @@ void md_channel_init(struct morsedec_decoder *d, struct md_channel *c, int bin)
 void md_signal_frame(struct morsedec_decoder *d, struct md_channel *c,
 		     const float *s, uint64_t frame)
 {
-	double shape[21], shoulder = 0, outer = 0;
-	double mx, mn, amp, prom, sample, v, input;
+	double shape[21], shoulder = 0, mx, mn, amp, prom, sample, v, input;
 	double (*mem)[8] = c->memory;
 	int old_carrier = c->carrier;
 	int found = 0, offset = 0;
@@ -134,20 +133,10 @@ void md_signal_frame(struct morsedec_decoder *d, struct md_channel *c,
 		c->floor = s[c->bin];
 	for (int i = 0; i < 21; i++)
 		shape[i] = s[c->bin + i - 10] / (c->floor + 1e-12);
-	for (int i = 4; i <= 10; i++) {
-		double power = log(shape[10 - i] * shape[10 + i] + 1e-12);
-
-		if (i <= 8)
-			shoulder += power;
-		if (i >= 6)
-			outer += power;
-	}
+	for (int i = 4; i <= 8; i++)
+		shoulder += log(shape[10 - i] * shape[10 + i] + 1e-12);
 	amp = sqrt(shape[10]);
 	prom = fmax(0, amp - exp(shoulder / 16));
-	/* Bound threshold adaptation on nearly noiseless signals. Otherwise
-	 * tiny floor estimates give long marks enough leverage to hide the
-	 * following shorter marks, despite their ample absolute SNR. */
-	prom = fmin(prom, 200);
 
 	/* Delay taps and filter lengths are expressed in physical time. */
 	memmove(mem + 1, mem, (size_t)md_frames(d, 38) * sizeof(*mem));
@@ -156,13 +145,11 @@ void md_signal_frame(struct morsedec_decoder *d, struct md_channel *c,
 	mem[0][1] = prom;
 	/* Dimensionless log power contrast against ten shoulder bins. */
 	mem[0][3] = log(shape[10] + 1e-12) - shoulder / 10;
-	mem[0][5] = log(shape[10] + 1e-12) - outer / 10;
 	sample =
 	    fmin(mem[md_frames(d, 1)][1], fmax(mem[md_frames(d, 2)][1], prom));
 	mem[0][2] = sample;
 	c->envelope = md_average(&c->env_avg, sample);
 	c->carrier = c->envelope > (old_carrier ? 1.0 : 1.3);
-	c->quiet = c->carrier ? 0 : c->quiet + (c->quiet < md_frames(d, 100));
 	c->strength = md_extreme(&c->peak_hold, c->envelope, 1);
 	v = md_average(&c->thr_avg, md_extreme(&c->max_short, sample, 1));
 	mem[0][4] = 0.4 * fmax(v - 0.8, 0) + 0.8;
@@ -182,12 +169,6 @@ void md_signal_frame(struct morsedec_decoder *d, struct md_channel *c,
 		/* Use the same delayed time as the keying observation. A high
 		 * amplitude alone is insufficient evidence of a tonal mark. */
 		double contrast = mem[md_frames(d, 36)][3];
-		/* Short marks extend into the inner shoulders. Infer their
-		 * width from the full timing model, so hand-keyed dots alone do
-		 * not weaken noise rejection. Apply the latest estimate to both
-		 * observations at the same delayed time. */
-		double fast = md_clamp((md_speed(&c->stats) - 28) / 6, 0, 1);
-		contrast += fast * (mem[md_frames(d, 36)][5] - contrast);
 		double confidence = 0.5 * tanh(2 * (contrast - log(8))) + 0.5;
 		c->probability =
 		    fmax(0.00005, fmin(c->probability, confidence));
@@ -202,8 +183,6 @@ void md_signal_frame(struct morsedec_decoder *d, struct md_channel *c,
 	c->seg.step = frame;
 	md_segment_step(d, c, c->envelope < 1.3, c->probability,
 			old_carrier && !c->carrier);
-	if (c->stats.learning && c->quiet == md_frames(d, 75))
-		md_stats_commit(d, c, NULL, 0, 1);
 	if (c->state == 0) {
 		if (c->stats.trained || c->pinned) {
 			c->state = 1;

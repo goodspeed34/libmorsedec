@@ -364,9 +364,7 @@ void md_word_emit(struct morsedec_decoder *d, struct md_channel *c, int flush)
 	}
 	md_message_merge(&c->message, w->chars, (size_t)w->count);
 	c->changed = 1;
-	/* The root is a live hypothesis for starting the next word. Keep its
-	 * score on the same scale as continuing-word hypotheses. */
-	for (int i = 0; i < d->model->count; i++)
+	for (int i = 1; i < d->model->count; i++)
 		w->states[i].score -= best.score;
 	if (flush)
 		md_word_reset(d, w);
