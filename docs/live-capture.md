@@ -9,9 +9,7 @@ The file decoder `morsedec-audio` additionally uses libsndfile.
 ## Build and use
 
 `meson setup build` and `meson compile -C build` build both stdin tools without
-additional audio dependencies. Terminal support (`-T`) needs ncurses and is
-enabled by default; `-Dtui=disabled` drops it, and `-Dtools=disabled` omits all
-command-line tools.
+additional audio dependencies. `-Dtools=disabled` omits all command-line tools.
 
 ```sh
 arecord -t raw -f S16_LE -r 48000 -c 1 | build/morsedec-live -r 48000
@@ -67,36 +65,6 @@ decoder cannot identify missing samples. Monitor the recorder's stderr for
 capture overruns; restart decoding after an audio discontinuity. Slow downstream
 consumers can propagate backpressure through the pipeline.
 
-## Terminal view
-
-`-T` replaces the text snapshots on standard output with a two pane ncurses
-view on the controlling terminal. Standard input keeps carrying the sample
-stream, so the view opens the terminal itself: `/dev/tty` on Unix-like systems
-and the console (`CONIN$`/`CONOUT$`) on Windows. A Windows build therefore needs
-a real console; under a pipe-only terminal such as a redirected handle the view
-reports that it cannot attach and exits nonzero.
-
-The left pane lists every tracked channel with its reported frequency, estimated
-SNR, estimated speed and decoder state, marking the channel the decoder follows
-and scrolling the list to keep it visible. The right pane shows decoded messages
-prefixed with stream time, frequency and channel id, wrapped to the pane width.
-Because decoder output is a growing snapshot per channel, a message updates its
-own line until another channel produces output, which keeps the scrollback
-readable. `q` or `ESC` quits, `c` clears the message pane, and
-`Up`/`Down`/`PgUp`/`PgDn`/`Home`/`End` scroll the retained lines; the footer
-reports the line count and whether the view is scrolled back.
-
-```sh
-arecord -t raw -f S16_LE -r 48000 -c 1 | build/morsedec-live -r 48000 -T
-build/morsedec-iqlive -F f32 -r 48000 -l -12000 -u 12000 -T < capture.iq
-```
-
-`-j` and `-t FILE` are unaffected by `-T`: JSON Lines and the CSV trace are
-still written, so a pipeline can consume machine readable output while the
-terminal shows the live view. `-a` decides which messages reach both the view
-and standard output. The library itself has no terminal dependency; ncurses is
-linked only into the two stdin tools, and `-Dtui=disabled` removes it entirely.
-
 ## Operational checks
 
 The stdin tools can be exercised with recorded input without an audio device.
@@ -104,6 +72,4 @@ Use input with a known sample rate and byte format, and confirm that reported
 frequencies and message snapshots match the capture. Partial byte frames are
 retained across reads; an incomplete frame at EOF is an error. Empty input is
 valid. For live capture, confirm snapshots arrive before EOF and shutdown drains
-pending output when stdin closes or the process receives SIGINT/SIGTERM. Omit
-`-T` for headless runs: the view needs an attached terminal and suppresses the
-text snapshots while it is active.
+pending output when stdin closes or the process receives SIGINT/SIGTERM.

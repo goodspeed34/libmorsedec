@@ -7,10 +7,8 @@ band/channel manager, extraction filters, duration model, element segmentation,
 character decoder, word graph and message buffers. Keep internal declarations in
 `src/internal.h`; export public functions only with the `md_` prefix.
 
-`tools/` holds command-line utilities using the library; `tools/tui.c` is the
-optional ncurses view of `tools/live-common.c` and compiles to no-op stubs when
-ncurses is absent. `examples/` contains a minimal consumer. Describe decoder
-architecture and implementation tradeoffs in
+`tools/` holds command-line utilities using the library. `examples/` contains a
+minimal consumer. Describe decoder architecture and implementation tradeoffs in
 `docs/design.md`; document public functions in `docs/man/`.
 
 ## Build and Development Commands
@@ -27,11 +25,8 @@ Unix code paths unchanged.
 - `meson compile -C build format-check`: verify formatting.
 - `meson setup build-asan -Db_sanitize=address,undefined -Db_lundef=false`: configure sanitizer checks.
 
-Use `-Dtools=disabled` to build without libsndfile, and `-Dtui=disabled` to
-build the stdin tools without ncurses and their `-T` terminal view. Keep
-generated files inside ignored `build*` directories. Keep new terminal code in
-`tools/`, never in the library: the core must stay free of terminal and audio
-device dependencies.
+Use `-Dtools=disabled` to build without libsndfile. Keep generated files inside
+ignored `build*` directories.
 
 ## Coding Style & Naming Conventions
 

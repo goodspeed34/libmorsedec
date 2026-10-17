@@ -27,16 +27,12 @@ struct md_cli_seen {
 	char text[MORSEDEC_MESSAGE_CAPACITY * 3 + 1];
 };
 
-/* Optional full-screen view; see tui.h. */
-struct md_tui;
-
 struct md_cli_reporter {
 	struct md_cli_seen *seen;
 	size_t capacity;
 	int all, json;
 	FILE *trace;
 	double time_offset;
-	struct md_tui *tui;
 };
 
 int md_cli_number(const char *text, double *out);

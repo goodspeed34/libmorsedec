@@ -8,7 +8,7 @@ jobs:
         build: [shared, static, sanitize]
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update && sudo apt-get install -y meson ninja-build libfftw3-dev libsndfile1-dev libncurses-dev clang-format
+      - run: sudo apt-get update && sudo apt-get install -y meson ninja-build libfftw3-dev libsndfile1-dev clang-format
       - name: Configure
         shell: bash
         run: |
@@ -23,7 +23,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - run: brew install meson ninja fftw libsndfile pkgconf ncurses
+      - run: brew install meson ninja fftw libsndfile pkgconf
       - run: meson setup build -Dwerror=true
       - run: meson compile -C build
   windows:
@@ -43,7 +43,6 @@ jobs:
             mingw-w64-x86_64-pkgconf
             mingw-w64-x86_64-fftw
             mingw-w64-x86_64-libsndfile
-            mingw-w64-x86_64-ncurses
             mingw-w64-x86_64-clang
       - run: meson setup build -Dwerror=true
       - run: meson compile -C build
