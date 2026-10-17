@@ -50,9 +50,10 @@ resources. The duration counts input frames, rather than wall-clock time.
 Signals remain responsive while stdin is idle. Signal handlers only set a flag;
 all decoding and cleanup happen in the main loop. I/O failures return nonzero.
 
-On Windows the tools wait on the standard input handle instead of `poll`, which
-only covers sockets there, and switch standard input to binary mode so that
-byte counts and sample payloads survive text-mode translation. Ctrl-C arrives
+On Windows the tools check pipe data availability with `PeekNamedPipe` and
+recheck idle pipes at 100 ms intervals; console input uses a handle wait and
+regular files are read directly. Standard input is switched to binary mode so
+that byte counts and sample payloads survive text-mode translation. Ctrl-C arrives
 through the console handler; the loop then drains pending output at its next
 readiness check, within one wait interval. There is no SIGTERM or SIGPIPE, and a
 closed downstream pipe surfaces as a write error rather than a signal. Capture

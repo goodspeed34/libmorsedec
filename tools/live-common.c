@@ -47,20 +47,49 @@ static void interrupt_capture(int signal_number)
 
 #ifdef _WIN32
 /*
- * Windows has no poll(2) covering pipes and console input: WSAPoll only
- * accepts sockets. Waiting on the standard input handle reports the same
- * readiness, including end of file once the writer closes the pipe, so a
- * Ctrl-C or a closed producer is noticed without blocking on read().
+ * A pipe handle signals I/O completion, not data availability. Peek before
+ * reading and let the main loop check interrupts between idle intervals.
+ * Disk reads need no readiness wait; console handles support waiting.
  */
 static int wait_stdin(int timeout_ms)
 {
 	HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
-	DWORD result;
+	DWORD type, result, available, mode;
 
-	if (handle == NULL || handle == INVALID_HANDLE_VALUE)
+	if (handle == NULL || handle == INVALID_HANDLE_VALUE) {
+		errno = EBADF;
+		return -1;
+	}
+	type = GetFileType(handle);
+	if (type == FILE_TYPE_DISK)
+		return 1;
+	if (type == FILE_TYPE_PIPE) {
+		if (!PeekNamedPipe(handle, NULL, 0, NULL, &available, NULL)) {
+			/* Let read() observe EOF after the producer closes. */
+			if (GetLastError() == ERROR_BROKEN_PIPE)
+				return 1;
+			errno = EIO;
+			return -1;
+		}
+		if (available)
+			return 1;
+		Sleep((DWORD)timeout_ms);
+		return 0;
+	}
+	if (type != FILE_TYPE_CHAR) {
+		errno = EBADF;
+		return -1;
+	}
+	/* Character devices such as NUL can be read without a console wait. */
+	if (!GetConsoleMode(handle, &mode))
 		return 1;
 	result = WaitForSingleObject(handle, (DWORD)timeout_ms);
-	return result == WAIT_TIMEOUT ? 0 : 1;
+	if (result == WAIT_OBJECT_0)
+		return 1;
+	if (result == WAIT_TIMEOUT)
+		return 0;
+	errno = EIO;
+	return -1;
 }
 #endif
 
@@ -342,7 +371,7 @@ int md_cli_live(int argc, char **argv, int iq)
 		ready = poll(&input, 1, MD_STDIN_WAIT);
 #endif
 
-		if (reporter.tui && md_tui_poll(reporter.tui))
+		if (interrupted || (reporter.tui && md_tui_poll(reporter.tui)))
 			break;
 		if (ready < 0) {
 			if (errno == EINTR)
@@ -350,8 +379,13 @@ int md_cli_live(int argc, char **argv, int iq)
 			fail(&reporter.tui, "Poll stdin", 1);
 			goto done;
 		}
-		if (!ready)
+		if (!ready) {
+			md_tui_draw(reporter.tui, decoder, &geometry,
+				    md_get_frame_count(decoder) *
+					geometry.frame_seconds,
+				    reporter.all);
 			continue;
+		}
 		if ((uint64_t)want > limit - received)
 			want = (size_t)(limit - received);
 		n = read(STDIN_FILENO, bytes + pending,
