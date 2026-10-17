@@ -121,18 +121,6 @@ static double group_mean(const double *x, int begin, int end)
 	return end > begin ? sum / (end - begin) : 0;
 }
 
-static double group_error(const double *x, int begin, int end, double mean,
-			  double variance)
-{
-	double error = 0;
-
-	for (int i = begin; i < end; i++) {
-		double delta = x[i] - mean;
-		error += delta * delta;
-	}
-	return error / variance;
-}
-
 static void update_class(struct md_statistics *s, int kind, double x)
 {
 	double p[5][5], gain[5];
@@ -174,28 +162,13 @@ static void reestimate(struct md_statistics *s, double scale)
 	}
 	if (nm != 7 || ng != 7)
 		return;
-	/* Acquisition and inter-transmission silence must not determine the
-	 * spacing model. Substitute the longest observed ordinary gap. */
-	{
-		double limit = log(60), longest = s->mean[4];
-		int found = 0;
-
-		for (int i = 0; i < 7; i++)
-			if (gaps[i] < limit && (!found || gaps[i] > longest)) {
-				longest = gaps[i];
-				found = 1;
-			}
-		for (int i = 0; i < 7; i++)
-			if (gaps[i] >= limit)
-				gaps[i] = longest;
-	}
 	sort_seven(marks);
 	sort_seven(gaps);
 	for (int a = 0; a <= 7; a++) {
 		for (int k = 0; k <= 4; k++) {
 			for (int c = 0; c <= 5 - k; c++) {
 				int b = 7 - c - k, filled = 0;
-				double candidate[5], ref = 0, mah = 0, error, w;
+				double candidate[5], ref = 0, mah = 0, w;
 
 				candidate[0] = group_mean(marks, 0, a);
 				candidate[1] = group_mean(marks, a, 7);
@@ -207,7 +180,6 @@ static void reestimate(struct md_statistics *s, double scale)
 						ref +=
 						    candidate[i] -
 						    ((i == 1 || i == 3) ? log(3)
-						     : i == 4		? log(8)
 									: 0);
 						filled++;
 					}
@@ -227,24 +199,8 @@ static void reestimate(struct md_statistics *s, double scale)
 							s->prior_mean[i]) *
 						       (candidate[j] -
 							s->prior_mean[j]);
-				/* A plausible prior alone cannot distinguish
-				 * partitions that lump dots and dashes into one
-				 * broad class. Include the observed
-				 * within-class log-duration likelihood. */
-				error =
-				    group_error(marks, 0, a, candidate[0],
-						initial_variance[0]) +
-				    group_error(marks, a, 7, candidate[1],
-						initial_variance[1]) +
-				    group_error(gaps, 0, b, candidate[2],
-						initial_variance[2]) +
-				    group_error(gaps, b, b + c, candidate[3],
-						initial_variance[3]) +
-				    group_error(gaps, b + c, 7, candidate[4],
-						initial_variance[4]);
-				w = exp(-0.5 * (mah + error)) * choose[a] *
-				    pow(0.58, a) * pow(0.42, 7 - a) *
-				    (gap_prior[b][c] + 1e-9);
+				w = exp(-0.5 * mah) * choose[a] * pow(0.58, a) *
+				    pow(0.42, 7 - a) * (gap_prior[b][c] + 1e-9);
 				total += w;
 				for (int i = 0; i < 5; i++)
 					accum[i] += candidate[i] * w;
@@ -277,7 +233,8 @@ void md_stats_commit(struct morsedec_decoder *d, struct md_channel *c,
 
 	for (int i = count - 1; i >= 0; i--) {
 		struct md_element e = elements[i];
-		/* Do not train on the leading acquisition silence. */
+		/* Acquisition silence is not a sample of the sender's spacing.
+		 */
 		if (s->learning && !c->pending_count && !s->count &&
 		    e.duration < -md_frames(d, 60))
 			continue;
@@ -294,20 +251,8 @@ void md_stats_commit(struct morsedec_decoder *d, struct md_channel *c,
 			s->trained = 1;
 		}
 	}
-	if (first && ((flush && c->quiet >= md_frames(d, 75)) ||
-		      c->pending_count == MD_PENDING)) {
-		int marks = 0;
-
-		for (int i = 0; i < c->pending_count; i++)
-			marks += c->pending[i].duration > 0;
-		/* A short keyed transmission can end before a full learning
-		 * window. Three marks provide evidence for automatic selection;
-		 * an isolated noise excursion does not. */
-		if (marks >= 3 || (marks && c->pinned)) {
-			s->learning = 0;
-			s->trained = marks >= 3;
-		}
-	}
+	if (first && (flush || c->pending_count == MD_PENDING))
+		s->learning = 0;
 	if (first && !s->learning) {
 		for (int i = 0; i < c->pending_count; i++) {
 			md_classify(s, &c->pending[i], d->tick_scale);

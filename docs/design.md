@@ -246,8 +246,7 @@ Signal transitions, learned timing and inactivity govern these states. Short
 noise bursts can create candidates without becoming a selected message channel.
 Retirement releases the slot and removes its message from the queryable set.
 
-Automatic selection requires a trained duration model or a short transmission
-with at least three committed marks followed by sustained silence. It compares smoothed
+Automatic selection requires a trained duration model. It compares smoothed
 absolute carrier power, switching only when a candidate is more than four times
 the current channel's power. Absolute power avoids comparing differently aged
 per-channel normalization floors, and hysteresis reduces selection flapping.
@@ -272,10 +271,7 @@ Fallbacks prevent division by a vanishing floor.
 The center's square-root power estimates amplitude. Ten shoulder bins at offsets
 four through eight provide background evidence. Their logarithmic products
 produce a shoulder estimate; subtracting that estimate from the center amplitude
-produces nonnegative prominence. Prominence is capped at 200 to prevent an
-almost zero noise floor from giving long marks an arbitrarily large influence
-on the decision threshold. The amplitude used for the SNR query is not capped.
-A short temporal operation suppresses isolated
+produces nonnegative prominence. A short temporal operation suppresses isolated
 excursions, while longer filters estimate carrier presence, signal strength and
 an adaptive decision threshold.
 
@@ -286,12 +282,7 @@ threshold. A bounded hyperbolic tangent turns that difference into a probability
 The main keying observation is delayed by 36 nominal ticks, about 382.5 ms.
 
 A second gate limits confidence using tonal contrast: center log power minus
-mean shoulder log power. For learned speeds below 28 WPM it uses offsets four
-through eight. From 28 to 34 WPM it blends toward offsets six through ten, which
-leave room for the wider spectrum of short marks. Both observations are delayed
-to match keying, then interpreted using the latest speed estimate from all three
-mark/element-gap means. This avoids interpreting a hand-keyed sender's short dots
-alone as evidence of fast CW. The resulting contrast maps
+mean shoulder log power. It is delayed to match the keying observation and maps
 through `0.5*tanh(2*(contrast - ln(8))) + 0.5`. A large broadband impulse therefore
 cannot become a confident mark on amplitude alone. The final key probability has
 a small positive floor to keep logarithmic observations finite.
@@ -338,14 +329,8 @@ also include broad tails so long pauses remain representable.
 
 Learning collects alternating runs into a 14-element window. When it contains
 seven marks and seven gaps, the estimator sorts their log durations and scores
-candidate partitions into the five classes. Within-class squared residuals,
-scaled by the initial class variances, measure how well each partition fits the
-observed durations. A covariance-based penalty and fixed partition priors
-regularize sparse or ambiguous observations. Gaps of at least 60 nominal ticks
-are replaced by the longest shorter gap for partition fitting, or the current
-word-gap mean when no shorter gap exists; long silences do not set the sender's
-spacing. Inferring an absent class converts each observed class mean back to dot
-units, including the word-gap ratio. Weighted candidate
+candidate partitions into the five classes. A covariance-based penalty and fixed
+partition priors regularize sparse or ambiguous observations. Weighted candidate
 estimates classify the window, and covariance-aware updates adapt the duration
 means and variances. Variance bounds and ordering constraints keep the classes
 usable. The updated model marks segmentation's duration tables dirty; those
@@ -353,16 +338,9 @@ tables are rebuilt before the next observation.
 
 During initial learning, a bounded 256-element pending buffer preserves elements
 until classification has enough context. Long acquisition silence is excluded
-from the training window. A carrier drop alone does not end learning: at slow
-speeds an ordinary word gap can briefly drop the carrier. After 75 nominal ticks
-(about 0.8 seconds) without a carrier, a pending transmission with at least three
-marks is classified using the current model and becomes eligible for automatic
-selection. Explicit stream flush also permits this release. Isolated marks and
-noise excursions do not satisfy the automatic short-transmission gate. A pinned
-channel may release even a single mark without qualifying as a trained channel.
-Flush runs channel selection after releasing pending text, so a short message
-that ends on its last mark does not need extra host-provided silence to become
-the current channel.
+from the training window. Buffer exhaustion or flush can release pending text
+without declaring that full training occurred. This distinction keeps a flushed
+noise burst from satisfying automatic channel selection's training gate.
 
 `initial_wpm` shifts the initial means and regularization toward a known sender
 speed. It does not fix the model or establish an assured decode range. Reported
@@ -376,8 +354,7 @@ Character assembly accumulates marks and short gaps until a classified letter or
 word gap closes a run. Dots and dashes form a pattern that is looked up in the
 Morse table, including punctuation and procedural signals. A bounded fallback
 tries splitting unknown patterns around a dash-dot delimiter; unresolved runs
-produce `*`. Split characters retain the left-to-right order of the input.
-Runs are bounded to avoid unbounded accumulation or recursion.
+produce `*`. Runs are bounded to avoid unbounded accumulation or recursion.
 
 Character records preserve a Latin-1 byte, source ordinal, low-SNR evidence and
 word-boundary evidence. Prosigns can produce multiple lowercase records from one
@@ -391,8 +368,6 @@ match literals or letter/digit/generic classes; non-emitting selector nodes
 combine paths. Outgoing weights are normalized and stored as log scores. Each
 channel advances its own states in a bounded Viterbi-style update, then uses
 saved lengths and classes to reconstruct word boundaries.
-Score normalization includes the root hypothesis that starts a new word, so
-its score remains comparable to paths that continue the current word.
 
 The current implementation keeps a rolling 26-character window, allowing word
 interpretations to span element batches. Repetition heuristics retain plausible

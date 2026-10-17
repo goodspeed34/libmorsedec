@@ -163,12 +163,6 @@ void md_band_frame(struct morsedec_decoder *d, const float *s)
 			md_signal_frame(d, c, frame, c->next_frame++);
 		}
 	}
-	md_band_select(d);
-	sort_channels(d);
-}
-
-void md_band_select(struct morsedec_decoder *d)
-{
 	/* Compare absolute spectral power: differently aged normalization
 	 * floors must not promote a weak noise channel over a real signal. */
 	if (!d->current || !d->current->pinned) {
@@ -183,4 +177,5 @@ void md_band_select(struct morsedec_decoder *d)
 		    (!d->current || best->power > 4 * d->current->power))
 			d->current = best;
 	}
+	sort_channels(d);
 }

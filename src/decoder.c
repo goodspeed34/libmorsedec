@@ -283,16 +283,8 @@ int md_flush(morsedec_decoder_t *d)
 	}
 	for (size_t i = 0; i < d->count; i++) {
 		struct md_channel *c = d->order[i];
-		c->quiet = md_frames(d, 100);
 		md_stats_commit(d, c, NULL, 0, 1);
-		if (c->state == 0 && c->stats.trained) {
-			c->state = 1;
-			c->age = 0;
-		}
 	}
-	/* A short transmission may first become eligible during the explicit
-	 * flush, after the last band frame has already selected its channel. */
-	md_band_select(d);
 	d->flushed = 1;
 	return MORSEDEC_SUCCESS;
 }

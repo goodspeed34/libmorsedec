@@ -41,7 +41,7 @@ static int split_decode(const char *pattern, char *out, size_t capacity)
 		return 0;
 	for (size_t k = 0; k <= mid - 2; k++) {
 		for (int side = 0; side < 2; side++) {
-			size_t p = side ? mid + k - 1 : mid - k - 1;
+			size_t p = side ? mid + k : mid - k;
 			char left[64], right[64], a[128], b[128];
 			if (p + 1 >= n || pattern[p] != '-' ||
 			    pattern[p + 1] != '.')
@@ -49,8 +49,8 @@ static int split_decode(const char *pattern, char *out, size_t capacity)
 			memcpy(left, pattern, p + 1);
 			left[p + 1] = 0;
 			strcpy(right, pattern + p + 1);
-			if (split_decode(left, a, sizeof(a)) &&
-			    split_decode(right, b, sizeof(b)) &&
+			if (split_decode(right, a, sizeof(a)) &&
+			    split_decode(left, b, sizeof(b)) &&
 			    strlen(a) + strlen(b) + 1 <= capacity) {
 				strcpy(out, a);
 				strcat(out, b);
