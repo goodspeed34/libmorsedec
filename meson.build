@@ -31,53 +31,23 @@ pkg.generate(lib, name: 'libmorsedec', filebase: 'morsedec',
   extra_cflags: consumer_args, requires_private: 'fftw3', libraries_private: math)
 sndfile = dependency('sndfile', required: get_option('tools'))
 if sndfile.found() and not get_option('tools').disabled()
-  # tui.c contributes only its no-op stubs here: the file decoder shares the
-  # reporter but has no terminal view.
-  cli = executable('morsedec-audio',
-    ['tools/morsedec-audio.c', 'tools/audio-common.c', 'tools/tui.c'],
+  cli = executable('morsedec-audio', ['tools/morsedec-audio.c', 'tools/audio-common.c'],
     dependencies: [morsedec_dep, sndfile, math], install: true)
 endif
-live_cargs = []
-live_deps = [morsedec_dep, math]
-live_sources = ['tools/live-common.c', 'tools/audio-common.c', 'tools/tui.c']
 if not get_option('tools').disabled()
-  # The ncurses terminal interface (-T) is optional and enabled by default.
-  # Detection falls back from the wide pkg-config module to the narrow one and
-  # finally to the system library, so a missing .pc file does not disable it.
-  tui = get_option('tui')
-  if not tui.disabled()
-    ncurses = dependency('ncursesw', required: false)
-    if not ncurses.found()
-      ncurses = dependency('ncurses', required: false)
-    endif
-    if not ncurses.found()
-      ncurses = cc.find_library('ncursesw', required: false,
-        has_headers: 'ncurses.h')
-    endif
-    if not ncurses.found()
-      ncurses = cc.find_library('ncurses', required: false,
-        has_headers: 'ncurses.h')
-    endif
-    if not ncurses.found() and tui.enabled()
-      error('ncurses is required for the -T terminal view; install it or configure with -Dtui=disabled')
-    endif
-    if ncurses.found()
-      live_cargs += '-DMORSEDEC_TUI'
-      live_deps += ncurses
-    endif
-  endif
+  live_sources = ['tools/live-common.c', 'tools/audio-common.c']
   live = executable('morsedec-live', ['tools/morsedec-live.c'] + live_sources,
-    dependencies: live_deps, c_args: live_cargs, install: true)
+    dependencies: [morsedec_dep, math], install: true)
   iqlive = executable('morsedec-iqlive', ['tools/morsedec-iqlive.c'] + live_sources,
-    dependencies: live_deps, c_args: live_cargs, install: true)
+    dependencies: [morsedec_dep, math], install: true)
 endif
 example = executable('morsedec-example', 'examples/decode.c', dependencies: morsedec_dep)
 formatter = find_program('clang-format', required: false)
 if formatter.found()
   format_files = sources + files('include/morsedec.h', 'src/internal.h', 'src/codes.h', 'src/templates.h',
     'tools/morsedec-audio.c', 'tools/morsedec-live.c', 'tools/morsedec-iqlive.c',
-    'tools/live-common.c', 'tools/audio-common.c', 'tools/tui.c',
-    'tools/audio-common.h', 'tools/tui.h', 'examples/decode.c')
+    'tools/live-common.c', 'tools/audio-common.c',
+    'tools/audio-common.h', 'examples/decode.c')
   run_target('format', command: [formatter, '-i', format_files])
   run_target('format-check', command: [formatter, '--dry-run', '--Werror', format_files])
 endif

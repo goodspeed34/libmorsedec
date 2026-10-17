@@ -19,9 +19,7 @@ as text snapshots. Use
 to print all tracked channels or
 .B -j
 for JSON Lines snapshots, including revisions. Diagnostics are written to
-standard error. An optional CSV trace records per-hop channel metrics, and
-.B -T
-replaces the text snapshots with a full-screen terminal view.
+standard error. An optional CSV trace records per-hop channel metrics.
 .SH OPTIONS
 .TP
 .BI -r " HZ"
@@ -68,20 +66,6 @@ Print messages from all tracked channels instead of only the selected channel.
 Write JSON Lines message snapshots, including revisions, instead of human
 readable text.
 .TP
-.B -T
-Show the decode in a full-screen terminal view instead of writing text
-snapshots to standard output. The left pane lists every tracked channel with
-its frequency, estimated SNR, speed and state; the right pane shows the decoded
-messages, wrapped and scrollable. See
-.B TERMINAL VIEW
-below. JSON Lines
-.RB ( -j )
-and the CSV trace
-.RB ( -t )
-keep working alongside the view. A build configured with
-.B -Dtui=disabled
-rejects this option.
-.TP
 .BI -t " FILE"
 Write per-hop channel metrics as CSV to
 .IR FILE .
@@ -113,48 +97,6 @@ a write error rather than a signal.
 The optional CSV trace includes synthetic drain time at shutdown. PCM input has
 no timestamps or discontinuity markers; dropped samples cannot be detected by
 the decoder.
-.SH TERMINAL VIEW
-With
-.BR -T ,
-a two pane view is drawn on the controlling terminal. The left pane lists every
-tracked channel as frequency in Hz, estimated SNR in dB, estimated speed in WPM
-and decoder state; the channel the decoder currently follows is marked with a
-greater-than sign and kept in view. The right pane shows decoded messages
-prefixed with stream time, frequency and channel id, wrapped to the pane width.
-A message that keeps growing updates its own line until another channel decodes
-something.
-.PP
-.B q
-or
-.B ESC
-quits,
-.B c
-clears the message pane,
-.B Up
-and
-.B Down
-scroll one line,
-.B PgUp
-and
-.B PgDn
-scroll one screen,
-.B Home
-jumps to the oldest retained line and
-.B End
-returns to the live end. The footer shows the retained line count and whether
-the view is scrolled back.
-.PP
-The view takes over the terminal, not standard input, which keeps carrying the
-sample stream. On Windows it attaches to the console, so it needs a real
-console rather than a pipe. Text snapshots are suppressed while the view is
-active, but
-.B -j
-and
-.B -t
-still write to standard output and to their file. Terminal support comes from
-ncurses and is enabled by default; configure with
-.B -Dtui=disabled
-to build the tools without it.
 .SH EXAMPLES
 Decode a mono 48 kHz recording:
 .PP
@@ -166,12 +108,6 @@ Capture stereo audio and select the second channel:
 .PP
 .nf
 arecord -t raw -f S16_LE -r 44100 -c 2 | morsedec-live -r 44100 -n 2 -c 2 -j
-.fi
-.PP
-Watch a live capture in the terminal view:
-.PP
-.nf
-arecord -t raw -f S16_LE -r 48000 -c 1 | morsedec-live -r 48000 -T
 .fi
 .SH EXIT STATUS
 Returns 0 after successful decoding and output, or a nonzero status if input,
