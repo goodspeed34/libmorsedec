@@ -1,5 +1,9 @@
 # Archived recording corpus evaluation
 
+For the current synthetic head-to-head evaluation and recording regression
+results, see [Comparison with Vail decoder](vail-comparison.md). This page retains
+the earlier tuning measurements below.
+
 The three recordings supplied in `CW_TEST_SIGNALS` were used to tune acquisition,
 keying confidence and channel selection. Their media files remain external. The
 reference transcripts come from that folder's README, including its leading or

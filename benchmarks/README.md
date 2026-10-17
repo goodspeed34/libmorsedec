@@ -1,0 +1,84 @@
+# Decoder comparison
+
+`compare.py` runs the exact case definitions and CRC32 seeds from a separately
+checked out [Vail decoder](https://github.com/TheRealKamisama/vail-decoder).
+No Vail source is included here. The comparison used Vail revision
+`ffb61d5bd7f010cedeb291e440c1781052c24c48`.
+
+Build both projects and the final-current-channel adapter:
+
+```sh
+git clone https://github.com/TheRealKamisama/vail-decoder.git build-vail
+git -C build-vail checkout ffb61d5bd7f010cedeb291e440c1781052c24c48
+bash build-vail/build.sh
+meson setup build-perf --buildtype=release
+meson compile -C build-perf
+cc -O2 -Iinclude benchmarks/decode.c -Lbuild-perf \
+  -Wl,-rpath,'$ORIGIN' -lmorsedec -lsndfile -o build-perf/compare-decode
+python3 benchmarks/compare.py --vail build-vail \
+  --decoder build-perf/compare-decode --output build-perf/comparison.json
+```
+
+The adapter uses real FFTW, native mono sample rate, default configuration, one
+hop per processing call, four seconds of silence, then `md_flush()`. It prints
+only the final current-channel snapshot, matching Vail's comparison policy.
+This differs from the chronological snapshot assembly of the archived real
+recordings in [docs/benchmarks](../docs/benchmarks/README.md).
+
+The default is 464 cases (116 conditions, four seeds). Each decoder receives the
+same generated WAV. The JSON contains references, decoded strings, edit counts,
+per-case CER, WAV checksums, Vail revision and adapter/library checksums. CER
+includes word spacing after uppercase conversion and collapsing whitespace. The
+headline metric is the **mean per-case CER**, matching Vail's report; it is not
+pooled edit errors divided by total reference length. Space-free edit counts are
+also retained. Process wall times include startup and file I/O and should not be
+interpreted as library throughput.
+
+Use `--held-out --seeds 2` for 120 additional synthetic cases with different
+messages, speeds, pitches, fading and jitter. These still use Vail's generator;
+they do not establish performance on independent radio recordings. `--chunk N`
+changes the libmorsedec processing chunk size without changing Vail's input.
+`--filter SUBSTRING` selects a subset for diagnosis.
+
+Generated audio and transient reports belong in ignored `build*` directories.
+The script imports the case definitions from the external checkout, so pin its
+revision when reproducing results.
+
+For the three archived real recordings (external signed 16-bit WAV files), run:
+
+```sh
+python3 benchmarks/recordings.py --library build-perf/libmorsedec.so \
+  --audio build/corpus --output build-perf/recordings.json
+```
+
+This uses the references already archived in `docs/benchmarks/corpus-after.json`
+and preserves sample rate and stereo averaging. It retains current-channel
+characters by ordinal after every hop, including revisions and retired channels.
+
+The merged-character regression checks can be run with sanitizers:
+
+```sh
+cc -O1 -g -fsanitize=address,undefined -Iinclude -Isrc \
+  benchmarks/check-patterns.c src/*.c -lfftw3 -lm \
+  -o build-perf/check-patterns
+build-perf/check-patterns
+```
+
+They also cover generic-word spacing, a pinned single-dot transmission and
+automatic selection when a short message ends directly on its last mark.
+
+To compare streaming CPU cost with preloaded 8 kHz mono PCM:
+
+```sh
+cc -O3 -Iinclude benchmarks/speed.c -Lbuild-perf -Wl,-rpath,'$ORIGIN' \
+  -lmorsedec -lsndfile -o build-perf/speed
+cc -O3 -DVAIL_BASELINE -Ibuild-vail/src benchmarks/speed.c \
+  build-vail/src/*.c -lsndfile -lm -o build-perf/vail-speed
+build-perf/speed build-perf/comparison-audio/w20_s3_t1_r0.wav
+build-perf/vail-speed build-perf/comparison-audio/w20_s3_t1_r0.wav
+```
+
+Both measurements include the four-second silent tail but exclude construction,
+file I/O and teardown. The JSON contains nine process-CPU timings. Compare
+medians on an otherwise idle host; tiny differences do not establish a speed
+advantage across workloads.

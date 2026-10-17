@@ -244,12 +244,21 @@ in [docs/design.md](docs/design.md).
 
 ## Evaluation and current scope
 
+[Comparison with Vail](docs/benchmarks/vail-comparison.md) reproduces its 464-case
+synthetic grid: mean CER is **3.606% for libmorsedec versus 3.721% for Vail**,
+improved from libmorsedec's 10.439% baseline. On 120 additional synthetic cases,
+the figures are **4.478% versus 6.112%**. Measured streaming throughput is about
+**1,700× real time**, using about 12% more CPU than Vail on that workload. Some noisy
+and jittered conditions still favor Vail. Reproduction
+scripts and complete per-case reports are included.
+
 [Archived recording measurements](docs/benchmarks/README.md) document an earlier
 three-recording tuning evaluation. Combined character error rate fell from
 **47.65% to 14.12%**, ignoring whitespace while retaining punctuation and
 distinguishing O from 0. These recordings were used for tuning and do not
-establish accuracy on independent input. Evaluation scripts and fixtures are
-not shipped with the library.
+establish accuracy on independent input. The current recording runner is in
+`benchmarks/`; media fixtures remain external. Rerunning those recordings after
+the current changes gives **19/170 errors (11.18% CER)**.
 
 This remains an initial decoder implementation. Fast CW, difficult fading/QRM,
 and other receiver recordings need further validation; weak spectral sidelobes

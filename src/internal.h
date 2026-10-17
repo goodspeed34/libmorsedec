@@ -86,7 +86,7 @@ struct md_channel {
 	uint64_t id, next_frame;
 	int used, bin, state, age, last_signal, pinned, changed;
 	double offset, floor, envelope, strength, probability, square, power;
-	int mean_length, carrier;
+	int mean_length, carrier, quiet;
 	struct md_filter floor_max, floor_min, env_avg, peak_hold;
 	struct md_filter max_short, thr_avg, thr_min;
 	double memory[MD_TIME_MAX][8];
@@ -141,6 +141,7 @@ double md_average(struct md_filter *f, double x);
 int md_frontend_init(struct morsedec_decoder *d);
 void md_frontend_frame(struct morsedec_decoder *d);
 void md_band_frame(struct morsedec_decoder *d, const float *spectrum);
+void md_band_select(struct morsedec_decoder *d);
 struct md_channel *md_channel_new(struct morsedec_decoder *d, int bin);
 void md_channel_init(struct morsedec_decoder *d, struct md_channel *c, int bin);
 void md_signal_frame(struct morsedec_decoder *d, struct md_channel *c,
