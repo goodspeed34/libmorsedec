@@ -34,8 +34,7 @@ struct md_tui *md_tui_start(const char *program, const char *stream);
 void md_tui_stop(struct md_tui *tui);
 /* Drain pending key presses; nonzero once the user asked to quit. */
 int md_tui_poll(struct md_tui *tui);
-/* Record a message snapshot, revising the newest line when the channel of
- * that line is the same one. */
+/* Update the retained row for this channel or frequency in place. */
 void md_tui_message(struct md_tui *tui, double time, double frequency,
 		    uint64_t id, const char *text);
 /* Repaint from the current decoder state. */

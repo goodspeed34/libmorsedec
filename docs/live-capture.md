@@ -77,15 +77,17 @@ and the console (`CONIN$`/`CONOUT$`) on Windows. A Windows build therefore needs
 a real console; under a pipe-only terminal such as a redirected handle the view
 reports that it cannot attach and exits nonzero.
 
-The left pane lists every tracked channel with its reported frequency, estimated
-SNR, estimated speed and decoder state, marking the channel the decoder follows
-and scrolling the list to keep it visible. The right pane shows decoded messages
-prefixed with stream time, frequency and channel id, wrapped to the pane width.
-Because decoder output is a growing snapshot per channel, a message updates its
-own line until another channel produces output, which keeps the scrollback
-readable. `q` or `ESC` quits, `c` clears the message pane, and
-`Up`/`Down`/`PgUp`/`PgDn`/`Home`/`End` scroll the retained lines; the footer
-reports the line count and whether the view is scrolled back.
+The left pane lists every tracked channel with its reported frequency,
+estimated SNR, estimated speed and decoder state, marking the channel the
+decoder follows and scrolling the list to keep it visible. The right pane
+keeps one row per frequency, labelled in Hz. Updates replace that frequency's
+text in place, even when other channels decode between updates. A channel
+retains its row as its frequency drifts; a new channel at a retained frequency
+reuses that row. Long messages show their newest characters without wrapping,
+with `<` marking omitted text. Rows stay in first-seen order until cleared or
+evicted from the bounded history. `q` or `ESC` quits, `c` clears the message
+pane, and `Up`/`Down`/`PgUp`/`PgDn`/`Home`/`End` scroll the retained lines;
+the footer reports the line count and whether the view is scrolled back.
 
 ```sh
 arecord -t raw -f S16_LE -r 48000 -c 1 | build/morsedec-live -r 48000 -T

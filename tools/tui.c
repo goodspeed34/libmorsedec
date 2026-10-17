@@ -46,7 +46,7 @@
 #include <curses.h>
 #endif
 
-/* Message revisions kept for the scrollback pane. */
+/* Frequencies retained in the message pane. */
 #define MD_TUI_SCROLLBACK 256
 /* Width of the channel pane, borders included. */
 #define MD_TUI_CHANNEL_COLUMNS 37
@@ -202,95 +202,59 @@ static void draw_channels(struct md_tui *tui, morsedec_decoder_t *decoder,
 	}
 }
 
-static size_t entry_line(const struct md_tui_message *entry, char *out,
-			 size_t size)
+/* Keep the frequency visible while long snapshots show their newest text. */
+static void draw_message(WINDOW *win, int row, int width,
+			 const struct md_tui_message *entry)
 {
-	int length = snprintf(out, size, "%7.2fs%9.1fHz #%-3llu %s",
-			      entry->time, entry->frequency,
-			      (unsigned long long)entry->id, entry->text);
-	size_t written = length < 0 ? 0 : (size_t)length;
+	char label[48];
+	int prefix =
+	    snprintf(label, sizeof(label), "%9.1fHz ", entry->frequency);
+	size_t length = strlen(entry->text);
+	int available;
 
-	return written >= size ? size - 1 : written;
-}
-
-static size_t entry_height(const struct md_tui_message *entry, int width)
-{
-	char line[sizeof(entry->text) + 64];
-	size_t length = entry_line(entry, line, sizeof(line));
-
-	return length ? (length + (size_t)width - 1) / (size_t)width : 1;
-}
-
-/* Write the wrapped entry from screen row `row`, dropping the first `clip`
- * wrapped rows so a partially scrolled entry stays aligned, and never
- * writing more than `limit` rows. */
-static void draw_entry(WINDOW *win, int row, int width, size_t clip,
-		       size_t limit, const char *line, size_t length)
-{
-	size_t offset = 0, dropped = 0, written = 0;
-
-	while (offset < length && written < limit) {
-		size_t chunk = length - offset;
-
-		if (chunk > (size_t)width)
-			chunk = (size_t)width;
-		if (dropped < clip) {
-			dropped++;
-		} else {
-			mvwaddnstr(win, 1 + row + (int)written, 1,
-				   line + offset, (int)chunk);
-			written++;
-		}
-		offset += chunk;
+	if (prefix > width)
+		prefix = width;
+	mvwaddnstr(win, row, 1, label, prefix);
+	available = width - prefix;
+	if (available <= 0)
+		return;
+	if (length > (size_t)available) {
+		mvwaddch(win, row, 1 + prefix, '<');
+		mvwaddnstr(win, row, 2 + prefix,
+			   entry->text + length - (size_t)(available - 1),
+			   available - 1);
+	} else {
+		mvwaddnstr(win, row, 1 + prefix, entry->text, available);
 	}
 }
 
 static void draw_messages(struct md_tui *tui)
 {
 	WINDOW *win = tui->messages;
-	size_t total = 0, skip = 0, position = 0, index;
-	int rows, columns, width, available, row = 0;
+	size_t skip = 0, index;
+	int rows, columns, width, available, row = 1;
 
 	getmaxyx(win, rows, columns);
 	width = columns - 2;
 	werase(win);
 	box(win, 0, 0);
 	draw_title(win, columns, " MESSAGES ");
-	tui->lines = 0;
+	tui->lines = tui->log_count;
 	if (rows < 3 || width < 4)
 		return;
 	available = rows - 2;
-	for (index = 0; index < tui->log_count; index++)
-		total += entry_height(log_entry(tui, index), width);
-	tui->lines = total;
-	if (total <= (size_t)available) {
+	if (tui->log_count <= (size_t)available) {
 		tui->scroll = 0;
 	} else {
-		if (tui->scroll > total - (size_t)available)
-			tui->scroll = total - (size_t)available;
-		skip = total - (size_t)available - tui->scroll;
-	}
-	for (index = 0; index < tui->log_count && row < available; index++) {
-		const struct md_tui_message *entry = log_entry(tui, index);
-		char line[sizeof(entry->text) + 64];
-		size_t length = entry_line(entry, line, sizeof(line));
-		size_t height =
-		    length ? (length + (size_t)width - 1) / (size_t)width : 1;
-		size_t clip = 0, drawn;
+		size_t maximum = tui->log_count - (size_t)available;
 
-		if (position + height <= skip) {
-			position += height;
-			continue;
-		}
-		if (position < skip)
-			clip = skip - position;
-		drawn = height - clip;
-		if (drawn > (size_t)(available - row))
-			drawn = (size_t)(available - row);
-		draw_entry(win, row, width, clip, drawn, line, length);
-		row += (int)drawn;
-		position += height;
+		if (tui->scroll > maximum)
+			tui->scroll = maximum;
+		skip = maximum - tui->scroll;
 	}
+	for (index = skip; index < tui->log_count && row < rows - 1;
+	     index++, row++)
+		draw_message(win, row, width, log_entry(tui, index));
 }
 
 static void pad(char *text, size_t size, int width)
@@ -511,18 +475,23 @@ int md_tui_poll(struct md_tui *tui)
 void md_tui_message(struct md_tui *tui, double time, double frequency,
 		    uint64_t id, const char *text)
 {
-	struct md_tui_message *entry;
+	struct md_tui_message *entry = NULL;
 
 	if (!tui || !tui->log_size || !text)
 		return;
-	if (tui->log_count && log_entry(tui, tui->log_count - 1)->id == id) {
-		/* The newest line holds this channel's previous snapshot. */
-		entry = log_entry(tui, tui->log_count - 1);
-	} else if (tui->log_count < tui->log_size) {
+	for (size_t i = 0; i < tui->log_count; i++) {
+		struct md_tui_message *candidate = log_entry(tui, i);
+
+		if (candidate->id == id || candidate->frequency == frequency) {
+			entry = candidate;
+			break;
+		}
+	}
+	if (!entry && tui->log_count < tui->log_size) {
 		entry = &tui->log[(tui->log_start + tui->log_count) %
 				  tui->log_size];
 		tui->log_count++;
-	} else {
+	} else if (!entry) {
 		entry = &tui->log[tui->log_start];
 		tui->log_start = (tui->log_start + 1) % tui->log_size;
 	}
