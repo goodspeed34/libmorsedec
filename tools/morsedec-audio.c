@@ -228,8 +228,12 @@ int main(int argc, char **argv)
 		      "snr,wpm,state\n",
 		      trace);
 	}
-	reporter = (struct md_cli_reporter){
-	    seen, config.max_channels, all, json, trace, 0};
+	reporter = (struct md_cli_reporter){.seen = seen,
+					    .capacity = config.max_channels,
+					    .all = all,
+					    .json = json,
+					    .trace = trace,
+					    .time_offset = 0};
 	for (;;) {
 		sf_count_t n = sf_readf_float(input, interleaved,
 					      (sf_count_t)geometry.hop_size);

@@ -18,6 +18,7 @@
  */
 #define _POSIX_C_SOURCE 200809L
 #include "audio-common.h"
+#include "tui.h"
 #include <unistd.h>
 #include <errno.h>
 #include <limits.h>
@@ -91,10 +92,36 @@ static void usage(FILE *out, int iq)
 	      "  -s N        Stop after N seconds of input\n"
 	      "  -a          Print every tracked channel\n"
 	      "  -j          JSON Lines snapshots, including revisions\n"
+	      "  -T          Full-screen ncurses view on the terminal\n"
 	      "  -t FILE     Per-hop channel metrics as CSV\n"
 	      "  -V          Show version, copyright and warranty\n"
 	      "  -h          Show this help\n",
 	      out);
+}
+
+/*
+ * Diagnostics must not be written over the curses screen, and the endwin()
+ * that follows would erase whatever reached the terminal first. Leave the
+ * view, then report.
+ */
+static void leave_tui(struct md_tui **tui)
+{
+	if (*tui) {
+		md_tui_stop(*tui);
+		*tui = NULL;
+	}
+}
+
+static void fail(struct md_tui **tui, const char *message, int with_errno)
+{
+	int error = errno;
+
+	leave_tui(tui);
+	errno = error;
+	if (with_errno)
+		perror(message);
+	else
+		fprintf(stderr, "%s\n", message);
 }
 
 int md_cli_live(int argc, char **argv, int iq)
@@ -116,15 +143,15 @@ int md_cli_live(int argc, char **argv, int iq)
 	uint64_t received = 0, limit = UINT64_MAX;
 	int channels = iq ? 2 : 1, selected = 0;
 	int status = EXIT_FAILURE;
-	int frequency_set = 0, option;
+	int frequency_set = 0, tui_requested = 0, option;
 
 	md_config_init(&config);
 	if (iq)
 		config.min_frequency = -1200;
 	opterr = 0;
 	while ((option = getopt(argc, argv,
-				iq ? ":ajr:F:f:l:u:w:s:t:Vh"
-				   : ":ajr:F:f:l:u:w:s:t:n:c:Vh")) != -1) {
+				iq ? ":ajTr:F:f:l:u:w:s:t:Vh"
+				   : ":ajTr:F:f:l:u:w:s:t:n:c:Vh")) != -1) {
 		double value = 0;
 
 		if (strchr("rncfluws", option) &&
@@ -145,6 +172,9 @@ int md_cli_live(int argc, char **argv, int iq)
 			break;
 		case 'j':
 			reporter.json = 1;
+			break;
+		case 'T':
+			tui_requested = 1;
 			break;
 		case 't':
 			trace_path = optarg;
@@ -288,20 +318,36 @@ int md_cli_live(int argc, char **argv, int iq)
 #endif
 	fprintf(stderr, "Reading stdin: %.0f Hz, %d channel(s), %s\n", rate,
 		channels, sample_bytes == 2 ? "S16_LE" : "FLOAT_LE");
+	if (tui_requested) {
+		char stream[128];
+
+		snprintf(stream, sizeof(stream), "%.0f Hz %s %d ch", rate,
+			 sample_bytes == 2 ? "S16_LE" : "FLOAT_LE", channels);
+		reporter.tui = md_tui_start(
+		    iq ? "morsedec-iqlive" : "morsedec-live", stream);
+		if (!reporter.tui) {
+			perror("Terminal user interface (-T)");
+			goto done;
+		}
+		md_tui_draw(reporter.tui, decoder, &geometry, 0, reporter.all);
+	}
 	while (!interrupted && received < limit) {
 		size_t count, want = geometry.hop_size;
 		ssize_t n;
+		int ready;
 #ifdef _WIN32
-		int ready = wait_stdin(MD_STDIN_WAIT);
+		ready = wait_stdin(MD_STDIN_WAIT);
 #else
 		struct pollfd input = {.fd = STDIN_FILENO, .events = POLLIN};
-		int ready = poll(&input, 1, MD_STDIN_WAIT);
+		ready = poll(&input, 1, MD_STDIN_WAIT);
 #endif
 
+		if (reporter.tui && md_tui_poll(reporter.tui))
+			break;
 		if (ready < 0) {
 			if (errno == EINTR)
 				continue;
-			perror("Poll stdin");
+			fail(&reporter.tui, "Poll stdin", 1);
 			goto done;
 		}
 		if (!ready)
@@ -313,14 +359,15 @@ int md_cli_live(int argc, char **argv, int iq)
 		if (n < 0) {
 			if (errno == EINTR || errno == EAGAIN)
 				continue;
-			perror("Read stdin");
+			fail(&reporter.tui, "Read stdin", 1);
 			goto done;
 		}
 		if (!n) {
 			if (pending) {
-				fputs(iq ? "Truncated I/Q pair at EOF\n"
-					 : "Truncated PCM frame at EOF\n",
-				      stderr);
+				fail(&reporter.tui,
+				     iq ? "Truncated I/Q pair at EOF"
+					: "Truncated PCM frame at EOF",
+				     0);
 				goto done;
 			}
 			break;
@@ -348,25 +395,26 @@ int md_cli_live(int argc, char **argv, int iq)
 				   selected);
 		if (!(iq ? md_process_iq(decoder, interleaved, count)
 			 : md_process(decoder, mono, count))) {
-			perror("Decode capture input");
+			fail(&reporter.tui, "Decode capture input", 1);
 			goto done;
 		}
 		received += count;
 		if (!md_cli_report(decoder, &geometry, &reporter)) {
-			perror("Output");
+			fail(&reporter.tui, "Output", 1);
 			goto done;
 		}
 	}
 	if (!md_flush(decoder)) {
-		perror("Drain decoder");
+		fail(&reporter.tui, "Drain decoder", 1);
 		goto done;
 	}
 	if (!md_cli_report(decoder, &geometry, &reporter)) {
-		perror("Output");
+		fail(&reporter.tui, "Output", 1);
 		goto done;
 	}
 	status = EXIT_SUCCESS;
 done:
+	leave_tui(&reporter.tui);
 	if (trace && fclose(trace)) {
 		perror("Close trace");
 		status = EXIT_FAILURE;
