@@ -30,17 +30,34 @@ meson compile -C build format-check
 meson install -C build
 ```
 
+On Windows, build from an MSYS2 **MINGW64** shell with the `mingw-w64-x86_64-*`
+packages. Use `-Dwerror=true` to turn warnings into errors.
+
+```sh
+# MSYS2 MINGW64 dependencies
+pacman -S --needed mingw-w64-x86_64-gcc mingw-w64-x86_64-meson \
+  mingw-w64-x86_64-ninja mingw-w64-x86_64-pkgconf mingw-w64-x86_64-fftw \
+  mingw-w64-x86_64-libsndfile
+meson setup build
+meson compile -C build
+meson compile -C build format-check   # needs mingw-w64-x86_64-clang
+```
+
+The Windows build produces `libmorsedec-1.dll` with an import library and the
+same tools with a `.exe` suffix. Executables in the build directory find the
+DLL beside them; `libfftw3-3.dll` and `libsndfile-1.dll` come from the MINGW64
+shell's `PATH`. Consumers that link the installed library must have the install
+`bin` directory on `PATH`.
+
 Use `-Dtools=disabled` for the library alone, `-Dtools=enabled` to require the
 file CLI, or `-Ddefault_library=static` for a static library. The stdin CLI is
 built whenever tools are enabled or auto. Installation includes
 `morsedec.h` and `morsedec.pc`; consumers can use `dependency('morsedec')` in
 Meson or `pkg-config --cflags --libs morsedec`.
 
-The current development target is Unix-like systems. On macOS, install
-`meson ninja fftw libsndfile pkgconf` through Homebrew and use the same commands.
-CI jobs cover Linux and macOS; local validation currently runs on Linux.
-Other operating-system ports are deferred. The core uses portable C11 and
-keeps file/device I/O in CLI tools to support those ports later.
+The library core is portable C11 and file/device I/O stays in the CLI tools. On
+macOS, install `meson ninja fftw libsndfile pkgconf` through Homebrew and use
+the same commands as Linux. CI covers Linux, macOS and Windows/MINGW64.
 
 ## Decode and inspect audio
 
