@@ -124,9 +124,9 @@ for stream behavior and shutdown handling.
 
 `-T` replaces the text snapshots with a two pane ncurses view on the terminal.
 The left pane lists every tracked channel with its frequency, estimated SNR,
-speed and state; the right pane shows the decoded messages, wrapped and
-scrollable, with the newest line following the channel that is currently
-decoding. `q` quits, `c` clears the messages, and the arrow, Page and Home/End
+speed and state; the right pane keeps one row per frequency and updates it
+in place. Long messages show their newest characters on the same row, with
+`<` marking omitted text. The rows are vertically scrollable. `q` quits, `c` clears the messages, and the arrow, Page and Home/End
 keys scroll the retained lines.
 
 ```sh
