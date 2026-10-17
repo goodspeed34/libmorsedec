@@ -105,9 +105,8 @@ flushes pending decoder output before exit. Empty input is valid. A signal is
 handled in the main processing loop so pending output and resources can be
 drained and released normally.
 .PP
-On Windows the tool checks pipe data availability at 100 ms intervals, waits
-on console input handles and reads regular files directly. It switches
-standard input to binary mode. Ctrl-C is delivered by the console
+On Windows the tool waits on the standard input handle instead of polling and
+switches standard input to binary mode. Ctrl-C is delivered by the console
 handler; SIGTERM and SIGPIPE do not exist, and a closed downstream pipe becomes
 a write error rather than a signal.
 .PP

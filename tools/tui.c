@@ -161,7 +161,7 @@ static void draw_channels(struct md_tui *tui, morsedec_decoder_t *decoder,
 			geometry->bin_spacing / 2)
 			marker = (int)index;
 	}
-	visible = (size_t)(rows - 3);
+	visible = (size_t)(rows - 2);
 	if (count > visible) {
 		if (marker >= 0) {
 			if ((size_t)marker < tui->channel_top)
