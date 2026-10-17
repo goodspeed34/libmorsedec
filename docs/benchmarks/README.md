@@ -1,7 +1,8 @@
 # Archived recording corpus evaluation
 
 For the current synthetic head-to-head evaluation and recording regression
-results, see [Comparison with Vail decoder](vail-comparison.md). This page retains
+results, see [WFST comparison](wfst-comparison.md). The preceding heuristic
+decoder evaluation is retained in [Comparison with Vail decoder](vail-comparison.md). This page retains
 the earlier tuning measurements below.
 
 The three recordings supplied in `CW_TEST_SIGNALS` were used to tune acquisition,

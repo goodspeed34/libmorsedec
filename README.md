@@ -2,8 +2,8 @@
 
 A portable C11 library for streaming amateur radio CW decoding, licensed under
 **GPL-3.0-or-later**. It uses FFTW3 for real/complex FFTs and combines
-multicarrier tracking, adaptive duration modeling, and word segmentation in a
-modular decoding pipeline.
+multicarrier tracking, adaptive duration modeling, a bounded streaming H ∘ C
+WFST decoder, and word interpretation in a modular decoding pipeline.
 
 The library discovers multiple signals, tracks a separate decoder and message
 for each, and exposes a procedural `md_` API through an opaque handle.
@@ -58,7 +58,9 @@ tools without it, or `-Dtui=auto` to accept whatever ncurses is available.
 Per-channel parallelism is enabled automatically when pthreads are available
 (winpthreads on MinGW). `-Dparallel=enabled` requires the backend;
 `-Dparallel=disabled` builds a serial library. Run regression checks with
-`meson test -C build`.
+`meson test -C build`. The Morse graph is committed as generated C data; normal
+builds need no Python. After editing `src/codes.h`, regenerate it with
+`python3 scripts/gen-wfst.py` and verify with `python3 scripts/gen-wfst.py --check`.
 
 Installation includes
 `morsedec.h` and `morsedec.pc`; consumers can use `dependency('morsedec')` in
@@ -264,21 +266,20 @@ in [docs/design.md](docs/design.md).
 
 ## Evaluation and current scope
 
-[Comparison with Vail](docs/benchmarks/vail-comparison.md) reproduces its 464-case
-synthetic grid: mean CER is **3.606% for libmorsedec versus 3.721% for Vail**,
-improved from libmorsedec's 10.439% baseline. On 120 additional synthetic cases,
-the figures are **4.478% versus 6.112%**. Measured streaming throughput is about
-**1,700× real time**, using about 12% more CPU than Vail on that workload. Some noisy
-and jittered conditions still favor Vail. Reproduction
-scripts and complete per-case reports are included.
+[WFST benchmark results](docs/benchmarks/wfst-comparison.md) compare the new decoder
+with legacy libmorsedec and Vail on identical seeded audio. On the 464-case grid,
+mean CER is **2.054% for WFST, 3.606% for legacy and 3.721% for Vail**. On 120
+additional synthetic cases it is **3.209%, 4.478% and 6.112%**, respectively.
+Both synthetic accuracy gates require lower mean and pooled CER than legacy.
+Some individual conditions still favor legacy or Vail.
 
-[Archived recording measurements](docs/benchmarks/README.md) document an earlier
-three-recording tuning evaluation. Combined character error rate fell from
-**47.65% to 14.12%**, ignoring whitespace while retaining punctuation and
-distinguishing O from 0. These recordings were used for tuning and do not
-establish accuracy on independent input. The current recording runner is in
-`benchmarks/`; media fixtures remain external. Rerunning those recordings after
-the current changes gives **19/170 errors (11.18% CER)**.
+The three archived tuning recordings improved from **19/170 legacy errors to
+17/170 WFST errors**, ignoring whitespace while retaining punctuation and O/0.
+One recording regressed from seven to eight errors. These recordings and the
+additional synthetic cases are development material, not independent validation.
+Full outputs, checksums, CPU measurements and reproduction commands accompany the
+[report](docs/benchmarks/wfst-comparison.md). Historical measurements remain in
+[the earlier Vail comparison](docs/benchmarks/vail-comparison.md).
 
 This remains an initial decoder implementation. Fast CW, difficult fading/QRM,
 and other receiver recordings need further validation; weak spectral sidelobes

@@ -19,6 +19,7 @@
 #ifndef MORSEDEC_INTERNAL_H
 #define MORSEDEC_INTERNAL_H
 #include "morsedec.h"
+#include "wfst_decode.h"
 #include <fftw3.h>
 #include <errno.h>
 #include <limits.h>
@@ -31,7 +32,7 @@
 #define MD_TIME_MAX 512
 #define MD_NODES 4096
 #define MD_EDGES 8192
-#define MD_PENDING 256
+#define MD_ACQUISITION_ELEMENTS 256
 #define MD_NEG (-1.0e30)
 
 struct md_filter {
@@ -48,12 +49,12 @@ struct md_statistics {
 	double mean[5], prior_mean[5], variance[5], covariance[5][5];
 	struct md_element window[14];
 	int count, learning, dirty, trained;
+	int acquisition_marks, acquisition_elements;
+	uint64_t committed_end;
 };
+/* Timestamp bridge used by the unchanged extraction module. */
 struct md_segment {
-	double score[MD_TIME_MAX], cont[MD_TIME_MAX], end[MD_TIME_MAX];
-	int on[MD_TIME_MAX], off[MD_TIME_MAX], bits[MD_TIME_MAX];
-	int index, on_run, off_run, on_max, off_max, window, keep;
-	uint64_t step, committed_end;
+	uint64_t step;
 };
 struct md_node {
 	int selector, code, kind, parent, outgoing;
@@ -92,10 +93,7 @@ struct md_channel {
 	double memory[MD_TIME_MAX][8];
 	struct md_statistics stats;
 	struct md_segment seg;
-	struct md_element pending[MD_PENDING];
-	int pending_count;
-	struct md_element character_elements[64];
-	int element_count;
+	struct md_wfst_decoder wfst;
 	struct md_word word;
 	struct md_message message;
 };
@@ -156,21 +154,29 @@ void md_channel_init(struct morsedec_decoder *d, struct md_channel *c, int bin);
 void md_signal_frame(const struct morsedec_decoder *d, struct md_channel *c,
 		     const float *spectrum, uint64_t frame);
 void md_segment_init(const struct morsedec_decoder *d, struct md_channel *c);
-void md_segment_commit(const struct morsedec_decoder *d, struct md_channel *c,
-		       struct md_element *elements, int count, int drop);
 void md_segment_step(const struct morsedec_decoder *d, struct md_channel *c,
 		     int bit, double probability, int drop);
+int md_wfst_graph_valid(void);
+void md_wfst_prepare_duration(const struct morsedec_decoder *d,
+			      struct md_channel *c, int kind, unsigned int age);
+void md_wfst_init(const struct morsedec_decoder *d, struct md_channel *c);
+/* One delayed keying observation per increasing channel tick; no allocation. */
+void md_wfst_advance(const struct morsedec_decoder *d, struct md_channel *c,
+		     double p_key, uint64_t current_tick, int low_snr);
+void md_wfst_check_convergence(const struct morsedec_decoder *d,
+			       struct md_channel *c);
+void md_wfst_flush(const struct morsedec_decoder *d, struct md_channel *c);
+void md_stats_observe(const struct morsedec_decoder *d, struct md_channel *c,
+		      const struct md_element *element);
+void md_stats_release(const struct morsedec_decoder *d, struct md_channel *c);
 void md_stats_init(const struct morsedec_decoder *d, struct md_statistics *s);
 double md_score(const struct md_statistics *s, int kind, double duration);
 void md_classify(const struct md_statistics *s, struct md_element *e,
 		 double scale);
+/* Compatibility notification from signal.c; flush releases acquisition only. */
 void md_stats_commit(const struct morsedec_decoder *d, struct md_channel *c,
 		     struct md_element *elements, int count, int flush);
 double md_speed(const struct md_statistics *s);
-void md_character_feed(const struct morsedec_decoder *d, struct md_channel *c,
-		       const struct md_element *e, int flush);
-const char *md_lookup(const char *pattern);
-void md_decode_pattern(const char *pattern, char *out, size_t capacity);
 int md_model_init(struct md_model *model);
 void md_word_reset(const struct morsedec_decoder *d, struct md_word *w);
 void md_word_feed(const struct morsedec_decoder *d, struct md_channel *c,

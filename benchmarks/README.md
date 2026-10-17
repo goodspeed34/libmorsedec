@@ -120,3 +120,69 @@ serial/parallel snapshot checks. Linux also injects partial worker-start and
 allocation failures. Exercise serial builds with `-Dparallel=disabled`, memory
 checks with `-Db_sanitize=address,undefined -Db_lundef=false`, and race checks in a
 separate build with `-Db_sanitize=thread -Db_lundef=false`.
+
+## WFST versus legacy accuracy gate
+
+[`wfst-comparison.md`](../docs/benchmarks/wfst-comparison.md) records the new
+comparison. Keep the legacy checkout and builds separate from the working tree:
+
+```sh
+mkdir -p build-wfst-bench/legacy-src
+git archive 072f6a7 | tar -x -C build-wfst-bench/legacy-src
+meson setup build-wfst-bench/legacy-build build-wfst-bench/legacy-src \
+  --buildtype=release -Db_ndebug=true -Dparallel=enabled -Dtui=disabled
+meson setup build-wfst-release --buildtype=release -Db_ndebug=true \
+  -Dparallel=enabled -Dtui=disabled
+meson compile -C build-wfst-bench/legacy-build
+meson compile -C build-wfst-release
+cc -O3 -Iinclude benchmarks/decode.c -Lbuild-wfst-bench/legacy-build \
+  -Wl,-rpath,'$ORIGIN/legacy-build' -lmorsedec -lsndfile \
+  -o build-wfst-bench/legacy-decode
+cc -O3 -Iinclude benchmarks/decode.c -Lbuild-wfst-release \
+  -Wl,-rpath,'$ORIGIN/../build-wfst-release' -lmorsedec -lsndfile \
+  -o build-wfst-bench/after-decode
+CFLAGS='-O3 -DNDEBUG -g -std=c99 -D_DEFAULT_SOURCE -Wall -Wextra -Wno-unused-parameter' \
+  OUT=build-wfst-bench bash build-vail/build.sh
+python3 benchmarks/wfst-compare.py --vail build-vail \
+  --vail-build build-vail/build-wfst-bench \
+  --decoder wfst=build-wfst-bench/after-decode \
+  --decoder legacy=build-wfst-bench/legacy-decode \
+  --decoder vail=build-vail/build-wfst-bench/vail_decode \
+  --library wfst=build-wfst-release/libmorsedec.so \
+  --library legacy=build-wfst-bench/legacy-build/libmorsedec.so \
+  --source wfst=. --source legacy=build-wfst-bench/legacy-src \
+  --cache build-wfst-bench/audio --output build-wfst-bench/grid.json \
+  --require-better wfst=legacy
+```
+
+Use the pinned Vail checkout described above. Add `--held-out --seeds 2` and use
+separate cache/output paths for the 120 additional cases. The option name is
+historical: these are development validation cases, not an untouched holdout.
+`--require-better` exits unsuccessfully unless **both mean and pooled CER** are
+strictly lower than legacy. The complete report and failed gates remain
+reviewable. `complete: true` is written only after binary/source integrity checks.
+`--reuse REPORT` reuses matching case/input/binary/source results; never rebuild
+or edit a measured decoder during a run.
+
+For CPU comparisons, compile each libmorsedec speed adapter with
+`-DMD_BENCH_SERIAL`, the same `-O3` flags and its matching library/rpath. This
+selects the existing one-thread API without changing library scheduling. Build
+Vail's speed adapter with `-DVAIL_BASELINE` as above. Then run:
+
+```sh
+python3 benchmarks/wfst-speed.py \
+  --decoder legacy=build-wfst-bench/legacy-speed \
+  --decoder wfst=build-wfst-bench/after-speed \
+  --decoder vail=build-wfst-bench/vail-speed \
+  --library legacy=build-wfst-bench/legacy-build/libmorsedec.so \
+  --library wfst=build-wfst-release/libmorsedec.so \
+  --audio build-wfst-bench/audio/w20_s3_t1_r0.wav \
+  --rounds 5 --cpu 2 --output build-wfst-bench/speed.json
+```
+
+Select an available Linux CPU or omit `--cpu` on other systems. Repeat `--audio`
+for additional workloads. The runner alternates decoder order, records 45 CPU
+samples per decoder/input by default, and checks input/binary integrity. CPU cost
+is reported separately from the accuracy gate; it is not inferred from CLI wall
+time. Construction, file I/O, teardown and explicit EOF flush are excluded;
+streaming acquisition/replay and the silent tail are included.

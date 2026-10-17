@@ -1,0 +1,32 @@
+{
+  "library_sha256": "933854c9f0aa0d472ae8cb11519e2826a2dc371d5f2eacf5faaff64cf5c174a2",
+  "method": "current-channel snapshots by ordinal; uppercase; remove whitespace",
+  "cases": [
+    {
+      "id": "UBlxpe5gvv0",
+      "reference": "AI5DD AI5DD 56N CO BK BK GA UR 55N 55N OK OK 73 AE0Q DE AI5DD 44 EE R 44 EE EE",
+      "decoded": "S  AI5DD AI5DD 56N CO BK BK GA IC 55N 55N OK MTK 73 AE0Q DE AI5DD 44EE IE44EE EE U  ",
+      "wav_sha256": "36ec130ff406702fbdfb37bf02c026e9e40813dc6a13507e33783347d64b4202",
+      "errors": 8,
+      "reference_characters": 57
+    },
+    {
+      "id": "9AhkEDs2Sko",
+      "reference": "D DE JO2QOT JO2QOT 5NN CA 5NN 100 TU JO2QOT TU K6XX",
+      "decoded": "DE JO2QOT  JO2QOT 5NN CA  5NN 100 TU  JO2QOT TU K6XX  ",
+      "wav_sha256": "b391a4ec4bb1170c23171b2072b041da8815f807599e0c8575ecdca23f374009",
+      "errors": 1,
+      "reference_characters": 40
+    },
+    {
+      "id": "9jgZ94TzRys",
+      "reference": "? WD4DAN WD4DAN GE ES FB UR 57N 57N CO BK BK TU GE UR 56N 56N GA GA 73 BK BK TU GA 73 DE W0ABE TU EE /",
+      "decoded": "WD4DAN  WD4DAN GE ES FB UR 57N 57N CO bk bkTUGE FN56N 56N GA GA73bk  bk TU GA73DE W0ABE TUEE / 2 W1ON  ",
+      "wav_sha256": "c14db00c4f23fc0ed8abe4e81e178798aa44781199104c9fc77b5b31c77967f3",
+      "errors": 8,
+      "reference_characters": 73
+    }
+  ],
+  "total_errors": 17,
+  "reference_characters": 170
+}

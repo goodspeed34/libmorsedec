@@ -290,7 +290,8 @@ int md_flush(morsedec_decoder_t *d)
 		return md_fail(EINVAL);
 	if (d->flushed)
 		return MORSEDEC_SUCCESS;
-	/* A second of silence covers FFT, ENV delay and SEG traceback. */
+	/* Drain FFT and delayed keying observations before WFST finalization.
+	 */
 	if (d->mode != 2) {
 		while (d->hop_fill)
 			sample(d, 0, 0);
@@ -304,7 +305,7 @@ int md_flush(morsedec_decoder_t *d)
 	for (size_t i = 0; i < d->count; i++) {
 		struct md_channel *c = d->order[i];
 		c->quiet = md_frames(d, 100);
-		md_stats_commit(d, c, NULL, 0, 1);
+		md_wfst_flush(d, c);
 		if (c->state == 0 && c->stats.trained) {
 			c->state = 1;
 			c->age = 0;
