@@ -1,0 +1,56 @@
+{
+  "abi": 2,
+  "library_sha256": "325fbb88c08c78be6c1df62be407c5d8bed6423345d544a2f4f416321c7379f6",
+  "method": "current-channel snapshots by ordinal; uppercase; remove whitespace",
+  "cases": [
+    {
+      "id": "UBlxpe5gvv0",
+      "reference": "AI5DD AI5DD 56N CO BK BK GA UR 55N 55N OK OK 73 AE0Q DE AI5DD 44 EE R 44 EE EE",
+      "decoded": "AI5DD  A5DD 56N CO BK BK GA UR 55N 55N OK OK 73 AE0QDE AI5DD 44EE R44EE EE U  ",
+      "wav_sha256": "36ec130ff406702fbdfb37bf02c026e9e40813dc6a13507e33783347d64b4202",
+      "errors": 2,
+      "reference_characters": 57
+    },
+    {
+      "id": "9AhkEDs2Sko",
+      "reference": "D DE JO2QOT JO2QOT 5NN CA 5NN 100 TU JO2QOT TU K6XX",
+      "decoded": "DE JO2QOT  JO2QOT 5NN CA  5NN 100 T JO2QOT TU K6XX  ",
+      "wav_sha256": "b391a4ec4bb1170c23171b2072b041da8815f807599e0c8575ecdca23f374009",
+      "errors": 2,
+      "reference_characters": 40
+    },
+    {
+      "id": "9jgZ94TzRys",
+      "reference": "? WD4DAN WD4DAN GE ES FB UR 57N 57N CO BK BK TU GE UR 56N 56N GA GA 73 BK BK TU GA 73 DE W0ABE TU EE /",
+      "decoded": "WD4DAN  WD4DAN GE ESFB UR 57N 57N CO bkTUGE FN56N 56N GA GA73bk  bkTUGA 73 DE W0ABE TUEE /10ON  ",
+      "wav_sha256": "c14db00c4f23fc0ed8abe4e81e178798aa44781199104c9fc77b5b31c77967f3",
+      "errors": 9,
+      "reference_characters": 73
+    }
+  ],
+  "total_errors": 13,
+  "reference_characters": 170,
+  "baseline_report": "docs/benchmarks/lattice-gate-recordings.json",
+  "baseline_sha256": "6314da90a9a3526a3e75b5dbbf8800fbd9fa6aaca0fe5042c251d13419acfdf6",
+  "baseline_errors": 13,
+  "gate_passed": true,
+  "runner_sha256": "9cfa49962bd6c29a4b048757b517e29193d0053b99b00e3819d4044d3e64a039",
+  "source_sha256": {
+    "src/band.c": "58e80cc194e8f21c55ec585b6de0cd36b6c5346861afed3b5927e7e75632f948",
+    "src/codes.h": "c85096c37306d08644f74f13804c24541a356bfca39ce73a04d14fff6e87e6c8",
+    "src/decode_compat.c": "ba8133a99caaf28d2046a63240d0367cd200b0cad2709bef2272a3795e1df62a",
+    "src/decoder.c": "47fdcfe1f08f61310b24a441cbb79e5f977cad70a81863970da0d4924897011b",
+    "src/frontend.c": "218879b1ba90085e5516ecd760ab0ff27b1323551ef3f037e1ad2a8ef2c3d5c5",
+    "src/internal.h": "8c6f984fa6f56609352413c3cfdca90c386e35af1fea42e33d220a6a79acc875",
+    "src/message.c": "05b90560ebba0b07a31e4e7b2b6335d7ecaced26ff5c6168c178b89fdb4fd78f",
+    "src/parallel.c": "c945d586e28f5bce84644eb26dabeea90de6eb58cb240108cf5a3a761148ebdd",
+    "src/signal.c": "cd378050856749fedff1bb0004b5a133eff50f876f4c86d538649a24a6d66ac9",
+    "src/statistics.c": "81efebd30677799782ec2965da64edc02a2b6ce3dd731e0c7b3a268ca86583dc",
+    "src/templates.h": "18ccae80f2b328684201dc1a07300b4a5a7cac6edbbdcf312db38438410d7138",
+    "src/wfst_decode.c": "352c58f924fda95e8c673e57642874d293f43ce1c7e71d332c46c2d66817838d",
+    "src/wfst_decode.h": "f95164161185d5bfbc8e18b5d990b3b250b43ba36526d300bab07d0f1d79c8ae",
+    "src/wfst_graph.h": "8f0cb2e42cf524089104fc262a85950dc0c4c0261b2ab53932450180caeb9f47",
+    "src/word.c": "97a2bb420ac1eb702603a4c141a3aebacd7d9c8c97cbea84aa489f9fa1b32601",
+    "include/morsedec.h": "2660dab4837b4b3d1c1a6d0484fc7bd51c6f3feecd0e497eeef15a00c22e52fe"
+  }
+}

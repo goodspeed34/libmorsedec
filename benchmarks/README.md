@@ -59,7 +59,7 @@ The merged-character regression checks can be run with sanitizers:
 
 ```sh
 cc -O1 -g -fsanitize=address,undefined -Iinclude -Isrc \
-  benchmarks/check-patterns.c src/*.c -lfftw3 -lm \
+  benchmarks/check-patterns.c src/*.c -lfftw3f -lm \
   -o build-perf/check-patterns
 build-perf/check-patterns
 ```
@@ -295,3 +295,26 @@ The optional `--baseline` argument verifies identical WAVs/references and exits
 nonzero if total errors exceed the archived report. The aggregate gate is at most **14
 errors / 170 reference characters**. Report individual recording regressions even
 when the aggregate passes. These are development corpora, not untouched holdouts.
+
+
+## Float API and repeat measurements
+
+Version 0.3.0 uses public ABI 2 (`float`) and `fftw3f`; rebuild each C adapter
+against its matching public header and library. `recordings.py` defaults to ABI 2;
+use `--abi 1` for archived double-API libraries. Never load an ABI-1 library using
+the ABI-2 ctypes layouts.
+
+To compare a new build against the merged lattice benchmark, add
+`--baseline-prefix docs/benchmarks/lattice-gate` to `archived-cer.py`. It reads
+`PREFIX-SET.json.gz` and uses that report's candidate results as the baseline,
+while preserving exact WAV/reference checks and strict noninferiority reporting.
+Without this argument, the original pre-lattice reports remain the baseline.
+Float experiments may report a failed strict gate when CER changes slightly;
+the complete measurements remain in the output and must be reported explicitly.
+This float experiment accepts tiny CER changes after precision experiments;
+strict gate failures remain explicit.
+
+A build with `-Dc_args=-DMD_FLOAT_LIBM` uses standard finite/absolute/min/max
+operations on the same float data and serves as a control for the IEEE bit helpers.
+The default helpers include NaN handling and signed zeros; they are not approximate
+transcendental functions. See [float refactor measurements](../docs/benchmarks/float-refactor.md).

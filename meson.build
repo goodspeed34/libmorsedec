@@ -1,9 +1,9 @@
-project('libmorsedec', 'c', version: '0.2.0', license: 'GPL-3.0-or-later',
+project('libmorsedec', 'c', version: '0.3.0', license: 'GPL-3.0-or-later',
   meson_version: '>=0.63.0', default_options: ['c_std=c11', 'warning_level=3'])
 cc = meson.get_compiler('c')
-fftw = dependency('fftw3', required: false)
+fftw = dependency('fftw3f', required: false)
 if not fftw.found()
-  fftw = declare_dependency(dependencies: cc.find_library('fftw3'),
+  fftw = declare_dependency(dependencies: cc.find_library('fftw3f'),
     compile_args: [], include_directories: include_directories('.'))
 endif
 math = cc.find_library('m', required: false)
@@ -41,7 +41,7 @@ if get_option('default_library') == 'static'
 endif
 lib = library('morsedec', sources, include_directories: inc,
   dependencies: [fftw, math] + thread_deps, c_args: cargs, gnu_symbol_visibility: 'hidden',
-  version: meson.project_version(), soversion: '1', install: true)
+  version: meson.project_version(), soversion: '2', install: true)
 consumer_args = []
 if get_option('default_library') == 'static'
   consumer_args += '-DMORSEDEC_STATIC'
@@ -53,7 +53,7 @@ subdir('docs/man')
 pkg = import('pkgconfig')
 pkg.generate(lib, name: 'libmorsedec', filebase: 'morsedec',
   description: 'Streaming multichannel amateur radio CW decoder',
-  extra_cflags: consumer_args, requires_private: 'fftw3', libraries_private: [math] + thread_deps)
+  extra_cflags: consumer_args, requires_private: 'fftw3f', libraries_private: [math] + thread_deps)
 sndfile = dependency('sndfile', required: get_option('tools'))
 if sndfile.found() and not get_option('tools').disabled()
   # tui.c contributes only its no-op stubs here: the file decoder shares the

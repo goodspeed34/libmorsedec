@@ -22,6 +22,7 @@
 #include "wfst_decode.h"
 #include <fftw3.h>
 #include <errno.h>
+#include <float.h>
 #include <limits.h>
 #include <math.h>
 #include <stdlib.h>
@@ -40,11 +41,11 @@
 #define MD_LATTICE_NONE UINT16_MAX
 #define MD_LATTICE_WORD_BEAM 8
 #define MD_WORD_SELECTORS 64
-#define MD_NEG (-1.0e30)
+#define MD_NEG (-1.0e30f)
 
 struct md_filter {
-	double ring[MD_TIME_MAX * 2];
-	double sum, acc;
+	float ring[MD_TIME_MAX * 2];
+	float sum, acc, correction;
 	int n, pos, primed;
 };
 struct md_element {
@@ -65,11 +66,11 @@ struct md_segment {
 };
 struct md_node {
 	int selector, code, kind, parent, outgoing;
-	double weight;
+	float weight;
 };
 struct md_edge {
 	int from, to, next;
-	double weight;
+	float weight;
 };
 struct md_model {
 	struct md_node nodes[MD_NODES];
@@ -85,7 +86,7 @@ struct md_lattice_node {
 	/* Acoustic suffix score from this node to a surviving WFST head.
 	 * Valid only when MD_LATTICE_NODE_FINAL is set.
 	 */
-	double final_score;
+	float final_score;
 	uint16_t first_edge; /* MD_LATTICE_NONE when no outgoing edges. */
 	uint16_t edge_count;
 	uint16_t max_depth; /* Maximum emitted-byte depth from root. */
@@ -93,9 +94,9 @@ struct md_lattice_node {
 };
 struct md_lattice_edge {
 	/* Incremental log score, excluding word-layer grammar scores. */
-	double acoustic_score;
+	float acoustic_score;
 	/* Existing boundary evidence: [0, 1], or 2 for forced word end. */
-	double word_space_probability;
+	float word_space_probability;
 	/* Channel ticks: first key-down through last key-down, exclusive.
 	 * The following gap is represented by boundary evidence.
 	 */
@@ -121,7 +122,7 @@ struct md_lattice {
 	uint16_t max_depth;
 };
 struct md_word_state {
-	double score;
+	float score;
 	int length, kind;
 };
 struct md_word {
@@ -132,7 +133,7 @@ struct md_word {
 };
 /* Joint lattice/grammar tokens; previous is a flattened node/beam index. */
 struct md_lattice_hyp {
-	double score;
+	float score;
 	uint16_t model_node, previous, edge;
 	uint8_t length, kind;
 };
@@ -140,7 +141,7 @@ struct md_lattice_work {
 	struct md_lattice_hyp hypotheses[MD_LATTICE_MAX_NODES]
 					[MD_LATTICE_WORD_BEAM];
 	struct md_lattice_hyp scratch[MD_LATTICE_WORD_BEAM];
-	double closure[MD_WORD_SELECTORS];
+	float closure[MD_WORD_SELECTORS];
 	uint16_t history_nodes[MD_WFST_HISTORY];
 	uint16_t node_history[MD_LATTICE_MAX_NODES];
 	struct md_lattice_node sorted_nodes[MD_LATTICE_MAX_NODES];
@@ -160,11 +161,11 @@ struct md_message {
 struct md_channel {
 	uint64_t id, next_frame, decode_frame;
 	int used, bin, state, age, last_signal, pinned, changed;
-	double offset, floor, envelope, strength, probability, square, power;
+	float offset, floor, envelope, strength, probability, square, power;
 	int mean_length, carrier, quiet;
 	struct md_filter floor_max, floor_min, env_avg, peak_hold;
 	struct md_filter max_short, thr_avg, thr_min;
-	double memory[MD_TIME_MAX][8];
+	float memory[MD_TIME_MAX][8];
 	struct md_statistics stats;
 	struct md_segment seg;
 	struct md_wfst_decoder wfst;
@@ -188,11 +189,11 @@ struct morsedec_decoder {
 	uint64_t frames, next_id;
 	int mode, flushed, iq;
 	size_t sample_pos, hop_fill;
-	double *audio, *window, *fft_input;
-	double *quadrature;
-	fftw_complex *fft_iq;
-	fftw_complex *fft_output;
-	fftw_plan plan;
+	float *audio, *window, *fft_input;
+	float *quadrature;
+	fftwf_complex *fft_iq;
+	fftwf_complex *fft_output;
+	fftwf_plan plan;
 	float *power, *smooth, *ratio, *history;
 	unsigned char *peaks;
 	struct md_channel *channels;
@@ -201,17 +202,80 @@ struct morsedec_decoder {
 	size_t thread_count;
 	int parallel_auto;
 	size_t count;
-	double noise;
+	float noise;
 	struct md_model *model;
 };
 
-static inline double md_clamp(double x, double lo, double hi)
+/* Exact binary32 operations. Standard math is the portable fallback. */
+static inline uint32_t md_float_bits(float x)
+{
+	uint32_t bits;
+	_Static_assert(sizeof(float) == sizeof(bits), "binary32 bit width");
+	memcpy(&bits, &x, sizeof(bits));
+	return bits;
+}
+static inline int md_finite(float x)
+{
+#if !defined(MD_FLOAT_LIBM) && defined(__STDC_IEC_559__) && FLT_RADIX == 2 &&  \
+    FLT_MANT_DIG == 24 && FLT_MAX_EXP == 128
+	return (md_float_bits(x) & UINT32_C(0x7f800000)) !=
+	       UINT32_C(0x7f800000);
+#else
+	return isfinite(x);
+#endif
+}
+static inline float md_abs(float x)
+{
+#if !defined(MD_FLOAT_LIBM) && defined(__STDC_IEC_559__) && FLT_RADIX == 2 &&  \
+    FLT_MANT_DIG == 24 && FLT_MAX_EXP == 128
+	uint32_t bits = md_float_bits(x) & UINT32_C(0x7fffffff);
+	memcpy(&x, &bits, sizeof(x));
+	return x;
+#else
+	return fabsf(x);
+#endif
+}
+/* Monotone integer keys preserve numeric ordering, including -0 < +0.
+ * NaNs use libm to preserve its signaling behavior. No aliasing casts.
+ */
+static inline float md_extremum(float x, float y, int maximum)
+{
+#if !defined(MD_FLOAT_LIBM) && defined(__STDC_IEC_559__) && FLT_RADIX == 2 &&  \
+    FLT_MANT_DIG == 24 && FLT_MAX_EXP == 128
+	uint32_t a = md_float_bits(x), b = md_float_bits(y);
+	if ((a & UINT32_C(0x7fffffff)) > UINT32_C(0x7f800000) ||
+	    (b & UINT32_C(0x7fffffff)) > UINT32_C(0x7f800000))
+		return maximum ? fmaxf(x, y) : fminf(x, y);
+	uint32_t ka = a ^ ((0u - (a >> 31)) | UINT32_C(0x80000000));
+	uint32_t kb = b ^ ((0u - (b >> 31)) | UINT32_C(0x80000000));
+	return (maximum ? ka > kb : ka < kb) ? x : y;
+#else
+	return maximum ? fmaxf(x, y) : fminf(x, y);
+#endif
+}
+static inline float md_min(float x, float y)
+{
+	return md_extremum(x, y, 0);
+}
+static inline float md_max(float x, float y)
+{
+	return md_extremum(x, y, 1);
+}
+static inline double md_clamp64(double x, double lo, double hi)
 {
 	return fmax(lo, fmin(hi, x));
 }
+static inline float md_clamp(float x, float lo, float hi)
+{
+	return md_max(lo, md_min(hi, x));
+}
 static inline int md_frames(const struct morsedec_decoder *d, int nominal)
 {
-	return (int)fmax(1, floor(nominal / d->tick_scale + 0.5));
+	/* Nominal delays are bounded by MD_TIME_MAX and tick_scale > 0. */
+	if (nominal <= 0)
+		return 1;
+	int frames = (int)(nominal / d->tick_scale + 0.5);
+	return frames > 0 ? frames : 1;
 }
 static inline int md_fail(int error)
 {
@@ -220,8 +284,8 @@ static inline int md_fail(int error)
 }
 
 void md_filter_init(struct md_filter *f, int n);
-double md_extreme(struct md_filter *f, double x, int maximum);
-double md_average(struct md_filter *f, double x);
+float md_extreme(struct md_filter *f, float x, int maximum);
+float md_average(struct md_filter *f, float x);
 int md_frontend_init(struct morsedec_decoder *d);
 void md_frontend_frame(struct morsedec_decoder *d);
 void md_band_frame(struct morsedec_decoder *d, const float *spectrum);
@@ -236,14 +300,14 @@ void md_signal_frame(const struct morsedec_decoder *d, struct md_channel *c,
 		     const float *spectrum, uint64_t frame);
 void md_segment_init(const struct morsedec_decoder *d, struct md_channel *c);
 void md_segment_step(const struct morsedec_decoder *d, struct md_channel *c,
-		     int bit, double probability, int drop);
+		     int bit, float probability, int drop);
 int md_wfst_graph_valid(void);
 void md_wfst_prepare_duration(const struct morsedec_decoder *d,
 			      struct md_channel *c, int kind, unsigned int age);
 void md_wfst_init(const struct morsedec_decoder *d, struct md_channel *c);
 /* One delayed keying observation per increasing channel tick; no allocation. */
 void md_wfst_advance(const struct morsedec_decoder *d, struct md_channel *c,
-		     double p_key, uint64_t current_tick, int low_snr);
+		     float p_key, uint64_t current_tick, int low_snr);
 void md_wfst_check_convergence(const struct morsedec_decoder *d,
 			       struct md_channel *c);
 void md_wfst_flush(const struct morsedec_decoder *d, struct md_channel *c);

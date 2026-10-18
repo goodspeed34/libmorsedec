@@ -160,8 +160,37 @@ complex_iq_power = 0.00025 * |FFT(w * (I+jQ))|^2
 The sample-rate factor preserves the calibrated power scale. The complex
 coefficient compensates for the FFT amplitude difference between a complex
 exponential and a real sinusoid of equal peak amplitude. Retained powers use
-`float`; non-finite or overflowing computed powers become zero. Most filtering
-and scoring uses `double`.
+`float`; non-finite or overflowing computed powers become zero. FFTW's
+single-precision `fftwf` frontend, sample/window buffers, extraction filters,
+WFST scores, lattice scores and word-grammar scores use `float`.
+
+### Precision and IEEE-754 operations
+
+Version 0.3.0 uses `float` for every public floating-point field, parameter and
+return value, with shared-library ABI 2. Geometry validation and window
+coefficient construction retain wider intermediate arithmetic. Duration-model
+covariance and acquisition likelihood estimation retain `double`: the existing
+partition likelihoods can be smaller than binary32's representable range.
+Normal-tail survival values and their differences also retain `double` before
+materializing float hazard tables; subtracting nearby rounded tails can erase
+small transition probabilities. These exceptions keep numerical range and
+initialization behavior stable while the streaming search uses binary32.
+
+On IEC 60559 binary32 targets, alias-safe `memcpy` bit copies implement finite
+classification, sign clearing for absolute value, and monotone integer keys for
+min/max. The keys distinguish signed zeros. NaN min/max operands use libm to
+preserve signaling behavior; non-IEEE builds use standard math fallbacks.
+`MD_FLOAT_LIBM` selects the standard-math implementation for controlled benchmarks.
+History hashes canonicalize signed zero because the event equality comparison
+treats both zeros as equal. No approximate logarithm, exponential or reciprocal
+square root is used.
+
+Sliding means use compensated float summation and re-sum on each bounded ring
+wrap. Integer frame ages saturate with integer comparisons, avoiding loss of
+integer precision in float conversions. Positive nominal delays use truncation
+after adding one half, giving the existing rounding without `floor`/`fmax` calls.
+Float conversion can change close beam decisions; [the float benchmark](benchmarks/float-refactor.md)
+records the resulting CER and CPU tradeoff.
 
 The centered sinc gives an effective main lobe of roughly 40 ms within the
 128 ms aperture. Very short marks therefore have wider spectra and less temporal
@@ -649,12 +678,12 @@ and traceback scratch are embedded in the channel. No streaming allocation is
 needed. Inactive slots retain their initialization-time allocations. Shared
 topology, frontend storage, worker resources and allocator overhead are outside
 the per-channel state-payload budget. On the current 64-bit build, a channel
-uses 523,152 bytes including its 618 word states and index slots, leaving
-1,136 bytes below the cap.
+uses 413,384 bytes including its 618 word states and index slots, leaving
+110,904 bytes below the cap. The preceding double implementation used 523,152 bytes.
 
 For `B` retained bins and `R` history frames, spectral history uses `4*B*R`
 bytes. Power, smoothing, ratio and peak arrays add approximately `13*B` bytes.
-Frontend arrays use approximately `32*N+16` bytes for audio or `56*N` for I/Q,
+Frontend arrays use approximately `16*N+8` bytes for audio or `28*N` for I/Q,
 excluding FFTW plan internals and allocator overhead. Word topology and worker
 storage are additional handle-owned allocations.
 
@@ -679,8 +708,10 @@ The [ham CW benchmark report](benchmarks/wfst-ham.md) records real-QSO results,
 a Vail `cwgen` sweep at every integer speed from 15 to 40 WPM, the original
 synthetic grids, source/input checksums, CPU measurements and remaining errors.
 Accuracy gates compare both mean and pooled CER. [CPU cost](benchmarks/lattice-speed.md)
-is measured separately; the lattice implementation uses 4.23–6.77 times the
-streaming CPU of the rebuilt pre-lattice control on five measured inputs.
+is measured separately; the preceding double lattice uses 4.23–6.77 times the
+streaming CPU of the rebuilt pre-lattice control on five measured inputs. The
+[float refactor](benchmarks/float-refactor.md) reduces CPU by 3.3–10.5% against
+that double lattice in a fresh comparison.
 Synthetic final-channel text and chronological recording snapshots use different
 assembly policies. The [lattice CER gate](benchmarks/lattice-gate.md) compares
 the lattice decoder with those archived results using identical WAV checksums

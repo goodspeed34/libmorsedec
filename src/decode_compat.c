@@ -8,7 +8,7 @@ void md_segment_init(const struct morsedec_decoder *d, struct md_channel *c)
 }
 
 void md_segment_step(const struct morsedec_decoder *d, struct md_channel *c,
-		     int bit, double probability, int drop)
+		     int bit, float probability, int drop)
 {
 	md_wfst_advance(d, c, probability, c->seg.step, bit);
 	if (drop)

@@ -8,6 +8,11 @@ _Static_assert(MD_WFST_GRAPH_DEGREE <= MD_WFST_DEGREE,
 _Static_assert(MD_WFST_GRAPH_NODES <= UINT8_MAX + 1,
 	       "History boundary states must fit uint8_t");
 
+static int32_t md_wfst_duration(uint64_t frames)
+{
+	return frames > INT_MAX / 4 ? INT_MAX / 4 : (int32_t)frames;
+}
+
 int md_wfst_graph_valid(void)
 {
 	unsigned char reachable[MD_WFST_GRAPH_NODES] = {1};
@@ -25,7 +30,7 @@ int md_wfst_graph_valid(void)
 				    &md_wfst_edges[n->first_edge + j];
 				if (e->target_node >= MD_WFST_GRAPH_NODES ||
 				    e->output_label >= MD_WFST_GRAPH_SYMBOLS ||
-				    !isfinite(e->log_weight))
+				    !md_finite(e->log_weight))
 					return 0;
 				int k = md_wfst_nodes[e->target_node]
 					    .duration_class;
@@ -89,8 +94,8 @@ void md_wfst_prepare_duration(const struct morsedec_decoder *d,
 		double next = md_wfst_log_survival(
 		    (a + .5) * d->tick_scale, c->stats.mean[kind],
 		    md_wfst_duration_variance(c, kind));
-		double cont =
-		    md_clamp(next - w->survival[kind], log(1e-6), log1p(-1e-6));
+		double cont = md_clamp64(next - w->survival[kind], log(1e-6),
+					 log1p(-1e-6));
 		w->continuation[kind][a] = (float)cont;
 		w->termination[kind][a] = (float)log(-expm1(cont));
 		w->survival[kind] = next;
@@ -127,16 +132,16 @@ void md_wfst_init(const struct morsedec_decoder *d, struct md_channel *c)
 	c->lattice_work.path_count = 0;
 	md_wfst_reset_search(w);
 	w->acquisition_active = c->stats.learning;
-	w->idle_stay = d->tick_scale * log1p(-MD_WFST_IDLE_START);
-	w->idle_start = log(-expm1(w->idle_stay));
-	double onset = MD_NEG;
+	w->idle_stay = d->tick_scale * log1pf(-MD_WFST_IDLE_START);
+	w->idle_start = logf(-expm1f(w->idle_stay));
+	float onset = MD_NEG;
 	for (int i = 0; i < md_wfst_nodes[0].edge_count; i++) {
 		const struct md_wfst_edge *e = &md_wfst_edges[i];
 		if (e->target_node && e->log_weight > onset)
 			onset = e->log_weight;
 	}
-	double odds =
-	    exp(-MD_WFST_BEAM_WIDE + w->idle_stay - w->idle_start - onset);
+	float odds =
+	    expf(-MD_WFST_BEAM_WIDE + w->idle_stay - w->idle_start - onset);
 	w->idle_threshold = odds / (1 + odds);
 	md_wfst_durations(d, c);
 }
@@ -144,10 +149,14 @@ void md_wfst_init(const struct morsedec_decoder *d, struct md_channel *c)
 static uint32_t md_wfst_hash(uint32_t parent, const struct md_wfst_event *e,
 			     uint8_t state)
 {
-	uint64_t bits;
+	uint32_t bits;
 	memcpy(&bits, &e->word_probability, sizeof(bits));
-	uint64_t acoustic_bits;
+	if (e->word_probability == 0)
+		bits = 0;
+	uint32_t acoustic_bits;
 	memcpy(&acoustic_bits, &e->acoustic_score, sizeof(acoustic_bits));
+	if (e->acoustic_score == 0)
+		acoustic_bits = 0;
 	uint64_t x =
 	    e->start ^ (e->ordinal * UINT64_C(0x9e3779b97f4a7c15)) ^ bits ^
 	    acoustic_bits ^ ((uint64_t)(uint32_t)e->duration << 19) ^
@@ -256,9 +265,9 @@ static uint32_t md_wfst_ancestor(const struct md_wfst_decoder *w, uint32_t a,
 	return a;
 }
 
-static double md_wfst_word_probability(const struct morsedec_decoder *d,
-				       const struct md_channel *c,
-				       uint64_t frames);
+static float md_wfst_word_probability(const struct morsedec_decoder *d,
+				      const struct md_channel *c,
+				      uint64_t frames);
 
 const char *md_wfst_text(uint16_t label)
 {
@@ -367,7 +376,7 @@ static int md_wfst_lattice_build(const struct morsedec_decoder *d,
 			w->trace[count++] = id;
 		uint16_t from = 0;
 		int complete = 1;
-		double suffix = t->character_score;
+		float suffix = t->character_score;
 		while (count) {
 			uint16_t id = w->trace[count - 1];
 			const struct md_wfst_event *e = &w->history[id].event;
@@ -509,7 +518,7 @@ static void md_wfst_lattice_update(const struct morsedec_decoder *d,
 		    c->lattice.edges[c->lattice_work.path[commit - 1]].to_node;
 		uint16_t prefix = c->lattice_work.node_history[node];
 		uint32_t depth[2] = {0, w->history[prefix].depth};
-		double prefix_score = 0;
+		float prefix_score = 0;
 		for (int i = 0; i < commit; i++)
 			prefix_score +=
 			    c->lattice.edges[c->lattice_work.path[i]]
@@ -531,7 +540,7 @@ static void md_wfst_lattice_update(const struct morsedec_decoder *d,
 				id = w->history[id].parent;
 			if (!id || c->lattice_work.history_nodes[id] != node)
 				continue;
-			double old_prefix = 0;
+			float old_prefix = 0;
 			for (uint16_t p = id; p; p = w->history[p].parent)
 				old_prefix +=
 				    w->history[p].event.acoustic_score;
@@ -621,18 +630,18 @@ static void md_wfst_reserve(const struct morsedec_decoder *d,
 	assert(w->free_count >= 2 * MD_WFST_BEAM);
 }
 
-static double md_wfst_word_probability(const struct morsedec_decoder *d,
-				       const struct md_channel *c,
-				       uint64_t frames)
+static float md_wfst_word_probability(const struct morsedec_decoder *d,
+				      const struct md_channel *c,
+				      uint64_t frames)
 {
-	double duration = (double)frames * d->tick_scale;
+	float duration = (float)frames * d->tick_scale;
 	if (duration > 150)
 		return 2;
-	double a = md_score(&c->stats, 3, duration);
+	float a = md_score(&c->stats, 3, duration);
 	/* Calibrate ambiguous boundaries before the word graph amplifies
 	 * their odds. Long silences still force a boundary above. */
-	double b = .5 * md_score(&c->stats, 4, duration);
-	return b / (a + b + 1e-12);
+	float b = .5f * md_score(&c->stats, 4, duration);
+	return b / (a + b + 1e-12f);
 }
 
 static unsigned int md_wfst_events(const struct md_channel *c,
@@ -652,8 +661,7 @@ static unsigned int md_wfst_events(const struct md_channel *c,
 			    .ordinal = source->mark_tick,
 			    .acoustic_score = t->character_score,
 			    .duration =
-				(int)fmin((double)(tick - source->run_start),
-					  INT_MAX / 4),
+				md_wfst_duration(tick - source->run_start),
 			    .word_probability = -1,
 			    .output_label = edge->output_label,
 			    .low = source->character_low,
@@ -667,7 +675,7 @@ static unsigned int md_wfst_events(const struct md_channel *c,
 	if (was_on != on) {
 		if (source->run_start) {
 			uint64_t length = tick - source->run_start;
-			int duration = (int)fmin((double)length, INT_MAX / 4);
+			int duration = md_wfst_duration(length);
 			present |= 1;
 			event[0] = (struct md_wfst_event){
 			    .start = source->run_start,
@@ -693,12 +701,12 @@ static unsigned int md_wfst_events(const struct md_channel *c,
 /* Threshold uses the local FFT-bin signal/noise power ratio at 0 dB.
  * This estimate is deliberately distinct from a 2,500 Hz benchmark SNR.
  */
-static double md_wfst_beam(const struct md_channel *c, uint16_t node, int low)
+static float md_wfst_beam(const struct md_channel *c, uint16_t node, int low)
 {
 	if (c->wfst.acquisition_active)
 		return MD_WFST_BEAM_NORMAL;
 	if (md_wfst_nodes[node].node_type != MD_WFST_MARK_NODE || low ||
-	    !c->mean_length || !isfinite(c->square) || c->square <= 2)
+	    !c->mean_length || !md_finite(c->square) || c->square <= 2)
 		return MD_WFST_BEAM_WIDE;
 	return MD_WFST_BEAM_CLEAR;
 }
@@ -806,14 +814,14 @@ static int md_wfst_near(uint64_t a, uint64_t b, uint64_t tolerance)
  * pay a diversity cost for nearby duration variants of the same label history.
  */
 static int md_wfst_rank(const struct morsedec_decoder *d, struct md_channel *c,
-			double best, int low)
+			float best, int low)
 {
 	struct md_wfst_decoder *w = &c->wfst;
 	uint64_t tolerance = (uint64_t)md_frames(d, 2);
 	int count = 0;
 	for (; count < MD_WFST_BEAM; count++) {
 		int chosen = -1;
-		double rank = MD_NEG;
+		float rank = MD_NEG;
 		for (int i = 0; i < w->candidate_count; i++) {
 			const struct md_wfst_candidate *t = &w->candidates[i];
 			if (t->accumulated_score <
@@ -871,8 +879,7 @@ static void md_wfst_close_gap(const struct morsedec_decoder *d,
 		struct md_wfst_event event = {
 		    .start = t->character_start,
 		    .ordinal = t->mark_tick,
-		    .duration = (int32_t)fmin((double)(w->tick - t->mark_tick),
-					      INT_MAX / 4),
+		    .duration = md_wfst_duration(w->tick - t->mark_tick),
 		    .word_probability = 2,
 		    .acoustic_score = t->character_score,
 		    .output_label = node->output_label ? node->output_label : 1,
@@ -894,7 +901,7 @@ static void md_wfst_close_gap(const struct morsedec_decoder *d,
 }
 
 static void md_wfst_step(const struct morsedec_decoder *d, struct md_channel *c,
-			 double p_key, uint64_t current_tick, int low_snr)
+			 float p_key, uint64_t current_tick, int low_snr)
 {
 	struct md_wfst_decoder *w = &c->wfst;
 	if (w->sealed || current_tick <= w->tick)
@@ -903,7 +910,8 @@ static void md_wfst_step(const struct morsedec_decoder *d, struct md_channel *c,
 	if (c->stats.dirty)
 		md_wfst_durations(d, c);
 	w->tick = current_tick;
-	p_key = isfinite(p_key) ? md_clamp(p_key, 1e-10, 1 - 1e-10) : .5;
+	p_key =
+	    md_finite(p_key) ? md_clamp(p_key, 1e-10f, 0x1.fffffep-1f) : .5f;
 	/* Exact idle shortcut: both onset edges would be outside the beam.
 	 * The previous convergence pass has already committed both histories.
 	 */
@@ -917,17 +925,17 @@ static void md_wfst_step(const struct morsedec_decoder *d, struct md_channel *c,
 		return;
 	}
 	/* The common gap log likelihood cancels during normalization. */
-	double observation[2] = {log(p_key / (1 - p_key)), 0};
+	float observation[2] = {logf(p_key / (1 - p_key)), 0};
 	/* Before the expected end of a calibrated dash, allow a frame of
 	 * interference without letting its negative evidence alone prune
 	 * the continuing mark. Onsets and dots retain the full likelihood.
 	 */
-	double dash_frames =
-	    exp(c->stats.mean[MD_WFST_DASH_DURATION]) / d->tick_scale;
+	float dash_frames =
+	    expf(c->stats.mean[MD_WFST_DASH_DURATION]) / d->tick_scale;
 	for (int i = 0; i < w->candidate_count; i++)
 		w->keys[w->candidate_keys[i]] = 0;
 	w->candidate_count = 0;
-	double best = MD_NEG;
+	float best = MD_NEG;
 	for (int i = 0; i < w->count; i++) {
 		const struct md_token *t = &w->tokens[w->bank][i];
 		const struct md_wfst_node *n =
@@ -940,22 +948,22 @@ static void md_wfst_step(const struct morsedec_decoder *d, struct md_channel *c,
 			const struct md_wfst_edge *e =
 			    &md_wfst_edges[n->first_edge + j];
 			int stay = e->target_node == t->current_node_id;
-			double duration =
+			float duration =
 			    n->duration_class == MD_WFST_NO_DURATION
 				? (stay ? w->idle_stay : w->idle_start)
 			    : stay ? w->continuation[n->duration_class]
 						    [t->frame_age]
 				   : w->termination[n->duration_class]
 						   [t->frame_age];
-			double acoustic =
+			float acoustic =
 			    observation[e->input_label == MD_WFST_GAP];
 			if (!w->acquisition_active && stay &&
 			    n->duration_class == MD_WFST_DASH_DURATION &&
 			    t->frame_age < dash_frames)
-				acoustic = fmax(acoustic, -4.0);
-			double score = t->accumulated_score + duration +
-				       e->log_weight + acoustic;
-			if (!isfinite(score) ||
+				acoustic = md_max(acoustic, -4.0f);
+			float score = t->accumulated_score + duration +
+				      e->log_weight + acoustic;
+			if (!md_finite(score) ||
 			    score < best - MD_WFST_BEAM_WIDE)
 				continue;
 			if (score > best)
@@ -1022,7 +1030,7 @@ static void md_wfst_step(const struct morsedec_decoder *d, struct md_channel *c,
 	}
 	md_wfst_check_convergence(d, c);
 	const struct md_token *best_token = &w->tokens[w->bank][0];
-	if (!w->acquisition_active && p_key < .1 && best_token->run_start &&
+	if (!w->acquisition_active && p_key < .1f && best_token->run_start &&
 	    md_wfst_nodes[best_token->current_node_id].node_type !=
 		MD_WFST_MARK_NODE &&
 	    current_tick - best_token->run_start >= (uint64_t)md_frames(d, 150))
@@ -1054,7 +1062,7 @@ static void md_wfst_replay(const struct morsedec_decoder *d,
 }
 
 void md_wfst_advance(const struct morsedec_decoder *d, struct md_channel *c,
-		     double p_key, uint64_t current_tick, int low_snr)
+		     float p_key, uint64_t current_tick, int low_snr)
 {
 	struct md_wfst_decoder *w = &c->wfst;
 	if (w->sealed || current_tick <= w->tick)
@@ -1122,8 +1130,8 @@ void md_wfst_flush(const struct morsedec_decoder *d, struct md_channel *c)
 			t->character_score += w->termination[k][t->frame_age];
 		}
 		if (t->run_start && w->tick >= t->run_start) {
-			int duration = (int)fmin(
-			    (double)(w->tick - t->run_start + 1), INT_MAX / 4);
+			int duration =
+			    md_wfst_duration(w->tick - t->run_start + 1);
 			struct md_wfst_event event = {
 			    .start = t->run_start,
 			    .ordinal = w->tick,
@@ -1138,8 +1146,8 @@ void md_wfst_flush(const struct morsedec_decoder *d, struct md_channel *c)
 			struct md_wfst_event event = {
 			    .start = t->character_start,
 			    .ordinal = t->mark_tick,
-			    .duration = (int32_t)fmin(
-				(double)(w->tick - t->mark_tick), INT_MAX / 4),
+			    .duration =
+				md_wfst_duration(w->tick - t->mark_tick),
 			    .word_probability = 2,
 			    .acoustic_score = t->character_score,
 			    .output_label = label ? label : 1,

@@ -38,7 +38,8 @@
 extern "C" {
 #endif
 
-#define MORSEDEC_VERSION "0.2.0"
+/* Version 0.3 uses float throughout the public API (shared-library ABI 2). */
+#define MORSEDEC_VERSION "0.3.0"
 #define MORSEDEC_SUCCESS 1
 #define MORSEDEC_FAILURE 0
 #define MORSEDEC_MESSAGE_CAPACITY 500
@@ -66,10 +67,10 @@ struct morsedec_config {
 	uint32_t sample_rate; /* Hz; default 48000. */
 	size_t fft_size;      /* 0: even length nearest 128 ms. */
 	size_t hop_size;      /* 0: nearest 10.625 ms; supported 5..20 ms. */
-	double min_frequency; /* Lower edge, Hz; signed IF offset for I/Q. */
-	double max_frequency; /* Exclusive upper edge, Hz, <= Nyquist. */
+	float min_frequency;  /* Lower edge, Hz; signed IF offset for I/Q. */
+	float max_frequency;  /* Exclusive upper edge, Hz, <= Nyquist. */
 	size_t max_channels;  /* Preallocated tracking slots; default 32. */
-	double initial_wpm;   /* 0: default duration priors (~23 WPM). */
+	float initial_wpm;    /* 0: default duration priors (~23 WPM). */
 };
 
 struct morsedec_geometry {
@@ -77,9 +78,9 @@ struct morsedec_geometry {
 	size_t fft_size;
 	size_t hop_size;
 	size_t spectrum_size;
-	double first_frequency;
-	double bin_spacing;
-	double frame_seconds;
+	float first_frequency;
+	float bin_spacing;
+	float frame_seconds;
 };
 
 struct morsedec_character {
@@ -87,18 +88,18 @@ struct morsedec_character {
 	enum morsedec_word_type word_type;
 	uint64_t ordinal; /* Monotonic position on the channel timebase. */
 	int low_snr;
-	double word_space_probability; /* 2.0 = forced word end. */
+	float word_space_probability; /* 2.0 = forced word end. */
 	int word_end; /* 0: none, 1: one space, 2: two spaces. */
 };
 
 struct morsedec_channel {
 	uint64_t id; /* Stable until retired; never an array index. */
 	enum morsedec_state state;
-	double frequency; /* Hz; signed offset from 0 Hz IF for I/Q. */
-	double snr;
-	double wpm;
-	double key_probability;
-	double strength;
+	float frequency; /* Hz; signed offset from 0 Hz IF for I/Q. */
+	float snr;
+	float wpm;
+	float key_probability;
+	float strength;
 	size_t character_count;
 };
 
@@ -171,15 +172,15 @@ MORSEDEC_API int md_get_channel(const morsedec_decoder_t *decoder, size_t index,
 /* Nonzero Hz selects/pins the nearest channel (negative allowed on I/Q
  * handles), 0 releases the pin. Use pin_frequency to select exactly 0 Hz.
  * Frequencies are clamped to the usable spectrum (10-bin guards). */
-MORSEDEC_API int md_set_frequency(morsedec_decoder_t *decoder, double hz);
+MORSEDEC_API int md_set_frequency(morsedec_decoder_t *decoder, float hz);
 /* Explicit pin/release operations; pin accepts 0 Hz and signed I/Q offsets. */
-MORSEDEC_API int md_pin_frequency(morsedec_decoder_t *decoder, double hz);
+MORSEDEC_API int md_pin_frequency(morsedec_decoder_t *decoder, float hz);
 MORSEDEC_API int md_unpin_frequency(morsedec_decoder_t *decoder);
 /* Returns -1 with no current channel; -1 Hz is also a valid I/Q offset.
  * Use get_state or get_channel to distinguish absence from a signed offset. */
-MORSEDEC_API double md_get_frequency(const morsedec_decoder_t *decoder);
-MORSEDEC_API double md_get_snr(const morsedec_decoder_t *decoder);
-MORSEDEC_API double md_get_wpm(const morsedec_decoder_t *decoder);
+MORSEDEC_API float md_get_frequency(const morsedec_decoder_t *decoder);
+MORSEDEC_API float md_get_snr(const morsedec_decoder_t *decoder);
+MORSEDEC_API float md_get_wpm(const morsedec_decoder_t *decoder);
 /* id=0 selects the current channel. A returned view lasts until the next
  * mutating call. No current channel: empty view. Unknown nonzero id: ENOENT. */
 MORSEDEC_API int md_get_characters(const morsedec_decoder_t *decoder,

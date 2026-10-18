@@ -5,12 +5,12 @@
 #include <stdint.h>
 
 #define MD_WFST_BEAM 100
-#define MD_WFST_BEAM_CLEAR 8.0
-#define MD_WFST_BEAM_NORMAL 8.0
-#define MD_WFST_BEAM_WIDE 10.0
-#define MD_WFST_DIVERSITY_COST 2.0
+#define MD_WFST_BEAM_CLEAR 8.0f
+#define MD_WFST_BEAM_NORMAL 8.0f
+#define MD_WFST_BEAM_WIDE 10.0f
+#define MD_WFST_DIVERSITY_COST 2.0f
 #ifndef MD_WFST_IDLE_START
-#define MD_WFST_IDLE_START .05
+#define MD_WFST_IDLE_START .05f
 #endif
 #define MD_WFST_ACQUISITION 4096
 #define MD_WFST_HISTORY 4096
@@ -52,7 +52,7 @@ struct md_wfst_node {
 	uint8_t node_type, duration_class;
 };
 struct md_token {
-	double accumulated_score, character_score;
+	float accumulated_score, character_score;
 	uint64_t run_start, mark_tick, character_start;
 	uint32_t text_hash;
 	uint16_t history[2], frame_age, current_node_id, text_depth;
@@ -63,7 +63,7 @@ struct md_token {
  * Domain 0 records physical intervals; domain 1 records text events. */
 struct md_wfst_event {
 	uint64_t start, ordinal;
-	double word_probability, acoustic_score;
+	float word_probability, acoustic_score;
 	int32_t duration;
 	uint16_t output_label;
 	uint8_t low, domain;
@@ -74,7 +74,7 @@ struct md_wfst_history {
 	uint8_t marked, state;
 };
 struct md_wfst_candidate {
-	double accumulated_score, rank_score;
+	float accumulated_score, rank_score;
 	uint32_t frame_age, text_hash;
 	uint16_t current_node_id, source, edge, text_depth;
 };
@@ -87,7 +87,8 @@ struct md_wfst_decoder {
 	uint16_t candidate_keys[MD_WFST_CANDIDATES];
 	uint16_t bucket_keys[MD_WFST_HISTORY];
 	unsigned int bucket_count;
-	double survival[5], idle_start, idle_stay, idle_threshold;
+	double survival[5];
+	float idle_start, idle_stay, idle_threshold;
 	uint16_t duration_age[5];
 	float continuation[5][MD_WFST_AGES + 1];
 	float termination[5][MD_WFST_AGES + 1];
@@ -95,7 +96,7 @@ struct md_wfst_decoder {
 	    text_commits;
 	uint32_t free_head, free_count, history_peak, history_high;
 	int bank, count, candidate_count, sealed;
-	double acquisition_probability[MD_WFST_ACQUISITION];
+	float acquisition_probability[MD_WFST_ACQUISITION];
 	uint8_t acquisition_low[MD_WFST_ACQUISITION];
 	uint64_t acquisition_start, acquisition_replays, acquisition_drops;
 	unsigned int acquisition_head, acquisition_count;

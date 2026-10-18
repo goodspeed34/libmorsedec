@@ -18,7 +18,7 @@ for module responsibilities, signal processing, timing, and implementation trade
 
 ## Build
 
-Dependencies: a C11 compiler, Meson >= 0.63, Ninja, FFTW3 (double precision).
+Dependencies: a C11 compiler, Meson >= 0.63, Ninja, FFTW3 (single precision, `fftw3f`).
 The file-audio CLI uses libsndfile; the audio and I/Q stdin tools need no audio
 I/O library but link ncurses for the optional `-T` terminal view.
 
@@ -44,9 +44,9 @@ meson compile -C build
 meson compile -C build format-check   # needs mingw-w64-x86_64-clang
 ```
 
-The Windows build produces `libmorsedec-1.dll` with an import library and the
+The Windows build produces `libmorsedec-2.dll` with an import library and the
 same tools with a `.exe` suffix. Executables in the build directory find the
-DLL beside them; `libfftw3-3.dll` and `libsndfile-1.dll` come from the MINGW64
+DLL beside them; `libfftw3f-3.dll` and `libsndfile-1.dll` come from the MINGW64
 shell's `PATH`. Consumers that link the installed library must have the install
 `bin` directory on `PATH`.
 
@@ -164,9 +164,13 @@ created. Explicit parallel requests report initialization failures. Reset retain
 the pool, and deletion joins its workers. Calls on each handle still require
 serialization, including queries, and processing completes all work before return.
 
+Version 0.3.0 changes all public floating-point fields, parameters, and return
+values to `float` and uses shared-library ABI 2. Rebuild consumers and change
+FFI bindings from binary64 to binary32. The FFT frontend now links `fftw3f`.
+
 Version 0.2.0 renames every public function from `morsedec_*` to `md_*`.
 Update call sites and dynamic symbol lookups, then rebuild consumers against
-shared-library ABI 1. Public data types, constants, and the `morsedec.h` header
+the current shared-library ABI. Public data types, constants, and the `morsedec.h` header
 retain their names. Internal helpers remain hidden from the shared library.
 
 ```c
@@ -266,7 +270,14 @@ in [docs/design.md](docs/design.md).
 
 ## Evaluation and current scope
 
-The [lattice CER gate](docs/benchmarks/lattice-gate.md) compares the current
+The [float refactor benchmark](docs/benchmarks/float-refactor.md) records the
+current float API and decoder. Mean CER is **1.571%** on the QSO sweep,
+**0.966%** on the primary grid, and **2.826%** on the additional grid;
+recorded-QSO errors remain **13/170**. Small CER changes versus the merged
+double decoder are disclosed. On five CPU inputs, the float version uses
+**3.3–10.5% less streaming CPU** and **21.0% less per-channel memory**.
+
+The preceding [lattice CER gate](docs/benchmarks/lattice-gate.md) compares the double
 decoder with the archived pre-lattice benchmark on identical audio. Mean CER
 is **1.522%** on the 936-case QSO sweep, **0.966%** on the primary grid and
 **2.749%** on the additional grid. All three mean/pooled CER gates pass.

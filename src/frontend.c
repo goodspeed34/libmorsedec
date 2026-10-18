@@ -27,11 +27,11 @@ int md_frontend_init(struct morsedec_decoder *d)
 	d->window = calloc(n, sizeof(*d->window));
 	if (d->iq) {
 		d->quadrature = calloc(n, sizeof(*d->quadrature));
-		d->fft_iq = fftw_alloc_complex(n);
+		d->fft_iq = fftwf_alloc_complex(n);
 	} else {
-		d->fft_input = fftw_alloc_real(n);
+		d->fft_input = fftwf_alloc_real(n);
 	}
-	d->fft_output = fftw_alloc_complex(d->iq ? n : n / 2 + 1);
+	d->fft_output = fftwf_alloc_complex(d->iq ? n : n / 2 + 1);
 	if (!d->audio || !d->window || !d->fft_output ||
 	    (d->iq ? !d->quadrature || !d->fft_iq : !d->fft_input))
 		return md_fail(ENOMEM);
@@ -50,11 +50,11 @@ int md_frontend_init(struct morsedec_decoder *d)
 	if (fabs(sum) < 1e-12)
 		return md_fail(EINVAL);
 	if (d->iq)
-		d->plan = fftw_plan_dft_1d((int)n, d->fft_iq, d->fft_output,
-					   FFTW_FORWARD, FFTW_ESTIMATE);
+		d->plan = fftwf_plan_dft_1d((int)n, d->fft_iq, d->fft_output,
+					    FFTW_FORWARD, FFTW_ESTIMATE);
 	else
-		d->plan = fftw_plan_dft_r2c_1d((int)n, d->fft_input,
-					       d->fft_output, FFTW_ESTIMATE);
+		d->plan = fftwf_plan_dft_r2c_1d((int)n, d->fft_input,
+						d->fft_output, FFTW_ESTIMATE);
 	return d->plan ? MORSEDEC_SUCCESS : md_fail(ENOMEM);
 }
 
@@ -71,7 +71,7 @@ void md_frontend_frame(struct morsedec_decoder *d)
 			d->fft_input[i] = d->audio[pos] * d->window[i];
 		}
 	}
-	fftw_execute(d->plan);
+	fftwf_execute(d->plan);
 	for (int j = 0; j < d->bins; j++) {
 		int k = d->first_bin + j;
 		/* Signed bins are contiguous in the public spectrum; FFTW
@@ -79,15 +79,14 @@ void md_frontend_frame(struct morsedec_decoder *d)
 		 */
 		if (k < 0)
 			k += (int)n;
-		double re = d->fft_output[k][0], im = d->fft_output[k][1];
+		float re = d->fft_output[k][0], im = d->fft_output[k][1];
 		/* A complex exponential has twice the FFT amplitude of a real
 		 * sinusoid with the same peak amplitude. Match the audio scale.
 		 */
-		double power = (re * re + im * im) * (d->iq ? 0.00025 : 0.001);
+		float power = (re * re + im * im) * (d->iq ? 0.00025f : 0.001f);
 
-		d->power[j] = isfinite(power) && power <= 3.402823466e38
-				  ? (float)power
-				  : 0;
+		d->power[j] =
+		    md_finite(power) && power <= FLT_MAX ? (float)power : 0;
 	}
 	md_band_frame(d, d->power);
 }

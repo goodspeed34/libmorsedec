@@ -1,5 +1,5 @@
 .\" SPDX-License-Identifier: GPL-3.0-or-later
-.TH LIBMORSEDEC 3 "2026-10-16" "libmorsedec 0.2.0" "Library Functions Manual"
+.TH LIBMORSEDEC 3 "2026-10-16" "libmorsedec 0.3.0" "Library Functions Manual"
 .SH NAME
 libmorsedec \- streaming multichannel Morse code decoding library
 .SH SYNOPSIS
@@ -26,7 +26,10 @@ The library does not open audio or SDR devices, read files, resample input, or
 deliver callbacks.
 Processing is synchronous: the caller may share channel work with persistent
 workers and waits for all work before returning.
-The FFT frontend uses FFTW3 double precision.
+The FFT frontend uses FFTW3 single precision (fftw3f).
+Version 0.3.0 uses float for all public floating-point fields and signatures
+and shared-library ABI 2. Rebuild consumers and update foreign-function
+bindings.
 The public header supports C and C++ linkage.
 .SH FUNCTION INDEX
 Every public function has its own section 3 manual page.
@@ -152,13 +155,13 @@ Must be at least one, no greater than N, and represent 5 through 20 ms.
 Zero selects floor(sample_rate*0.010625+0.5).
 Default zero.
 .TP
-.B double min_frequency
+.B float min_frequency
 Retained lower band edge in Hz.
 Audio requires a nonnegative edge; I/Q permits signed offsets from 0 Hz IF,
 no lower than -sample_rate/2.
 Default 200 from md_config_init().
 .TP
-.B double max_frequency
+.B float max_frequency
 Exclusive retained upper edge in Hz, greater than min_frequency and no greater
 than sample_rate/2.
 Both edges must be finite.
@@ -169,7 +172,7 @@ Number of preallocated channel slots; must be positive.
 Default 32.
 No additional slots are allocated during streaming.
 .TP
-.B double initial_wpm
+.B float initial_wpm
 Zero selects the duration model's default priors, approximately 23 WPM.
 A finite value from 5 through 80 shifts those priors toward the requested
 speed.
@@ -205,14 +208,14 @@ Effective samples or complex pairs per second.
 .B size_t fft_size, hop_size, spectrum_size
 Actual FFT length, hop length and retained bin count.
 .TP
-.B double first_frequency
+.B float first_frequency
 Frequency of retained bin zero in Hz; signed IF offset for I/Q.
 .TP
-.B double bin_spacing
+.B float bin_spacing
 sample_rate/fft_size in Hz.
 Bin j is first_frequency+j*bin_spacing.
 .TP
-.B double frame_seconds
+.B float frame_seconds
 hop_size/sample_rate in seconds.
 .PP
 Requested edges map to bin numbers using floor(frequency*N/sample_rate+0.5).
@@ -232,21 +235,21 @@ IDs from different handles are independent.
 .B enum morsedec_state state
 Decoder state listed below.
 .TP
-.B double frequency
+.B float frequency
 Tracked FFT-bin center in Hz.
 For I/Q, a signed offset from the stream IF center at 0 Hz.
 .TP
-.B double snr
+.B float snr
 Internal signal-to-noise estimate in dB, derived from confident delayed marks.
 It is not a calibrated RF measurement and may be unrepresentative at startup.
 .TP
-.B double wpm
+.B float wpm
 Current duration-model speed estimate using the PARIS timing convention.
 .TP
-.B double key_probability
+.B float key_probability
 Current soft keying observation probability, between zero and one.
 .TP
-.B double strength
+.B float strength
 Internal dimensionless envelope-strength indicator, not dB or RF power.
 .TP
 .B size_t character_count
@@ -294,7 +297,7 @@ Use the ordinal together with the handle and channel ID to apply revisions.
 .B int low_snr
 Nonzero when the decoded character includes low-SNR evidence.
 .TP
-.B double word_space_probability
+.B float word_space_probability
 Word-boundary evidence; 2.0 is a forced boundary marker, not a probability.
 .TP
 .B int word_end
@@ -558,7 +561,7 @@ Do not infer a guaranteed range from the accepted initial_wpm parameter.
 The existing three-recording corpus was used for tuning and is not an
 independent accuracy evaluation.
 .SH VERSION
-This manual describes libmorsedec 0.2.0, shared-library ABI 1.
+This manual describes libmorsedec 0.3.0, shared-library ABI 2.
 All public function names use md_.
 Version 0.2.0 replaced the original morsedec_ function symbols without
 aliases;

@@ -51,6 +51,11 @@ def main():
     p.add_argument("--source", type=Path, required=True)
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--sets", default="qso,grid,additional")
+    p.add_argument(
+        "--baseline-prefix",
+        type=Path,
+        help="Use PREFIX-SET.json.gz paired reports as baselines",
+    )
     p.add_argument("--jobs", type=int, default=4)
     p.add_argument("--filter", default="")
     a = p.parse_args()
@@ -63,6 +68,22 @@ def main():
             + [a.source / "include/morsedec.h"]
         },
     )
+    runner_hash = sha(__file__)
+    options = a.library.parent / "meson-info/intro-buildoptions.json"
+    if options.exists():
+        prov["build_options"] = {
+            o["name"]: o["value"]
+            for o in json.loads(options.read_text())
+            if o["name"]
+            in (
+                "buildtype",
+                "optimization",
+                "b_ndebug",
+                "b_sanitize",
+                "c_args",
+                "parallel",
+            )
+        }
     tasks = []
     reports = {}
     for name in a.sets.split(","):
@@ -104,6 +125,22 @@ def main():
                 for r in base["cases"]
             ]
             oldprov = base["decoders"]["wfst"]
+        if a.baseline_prefix:
+            basefile = Path(str(a.baseline_prefix) + "-" + name + ".json.gz")
+            base = json.loads(gzip.decompress(basefile.read_bytes()))
+            if not base.get("complete"):
+                raise RuntimeError("Incomplete baseline: " + str(basefile))
+            oldrows = [
+                dict(
+                    id=r["id"],
+                    case=r["case"],
+                    sha256=r["sha256"],
+                    reference=r["reference"],
+                    baseline=r["candidate"],
+                )
+                for r in base["cases"]
+            ]
+            oldprov = base["candidate"]
         rows = [r for r in oldrows if a.filter in r["id"]]
         reports[name] = dict(
             complete=False,
@@ -113,13 +150,17 @@ def main():
             candidate=prov,
             cases=[],
             expected_cases=len(oldrows),
-            runner_sha256=sha(__file__),
+            runner_sha256=runner_hash,
         )
         for r in rows:
             tasks.append((name, cache / (r["id"] + ".wav"), r))
     a.output.mkdir(parents=True, exist_ok=True)
     checkpoint = a.output / "checkpoint.jsonl"
-    identity = hashlib.sha256(json.dumps(prov, sort_keys=True).encode()).hexdigest()
+    identity = hashlib.sha256(
+        json.dumps(
+            dict(decoder=prov, runner_sha256=runner_hash), sort_keys=True
+        ).encode()
+    ).hexdigest()
     saved = {}
     if checkpoint.exists():
         for line in checkpoint.read_text().splitlines():
@@ -192,6 +233,8 @@ def main():
         raise RuntimeError("Binary changed")
     if any(sha(a.source / x) != v for x, v in prov["source_sha256"].items()):
         raise RuntimeError("Source changed")
+    if sha(__file__) != runner_hash:
+        raise RuntimeError("Runner changed")
     for name, d in reports.items():
         if not d["cases"]:
             continue

@@ -143,8 +143,8 @@ static void update_class(struct md_statistics *s, int kind, double x)
 	double inv;
 
 	s->variance[kind] =
-	    md_clamp((1 - alpha) * s->variance[kind] + alpha * delta * delta,
-		     lo * lo, hi * hi);
+	    md_clamp64((1 - alpha) * s->variance[kind] + alpha * delta * delta,
+		       lo * lo, hi * hi);
 	for (int i = 0; i < 5; i++)
 		for (int j = 0; j < 5; j++)
 			p[i][j] = s->covariance[i][j] + 0.003 * prior[i][j];

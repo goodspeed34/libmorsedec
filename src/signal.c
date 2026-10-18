@@ -25,7 +25,7 @@ void md_filter_init(struct md_filter *f, int n)
 }
 
 /* Block suffix extrema: constant amortized work and first-value priming. */
-double md_extreme(struct md_filter *f, double x, int maximum)
+float md_extreme(struct md_filter *f, float x, int maximum)
 {
 	int n = f->n;
 
@@ -39,32 +39,41 @@ double md_extreme(struct md_filter *f, double x, int maximum)
 	}
 	f->ring[++f->pos] = x;
 	if (f->pos == 2 * n - 1) {
-		double acc = x;
+		float acc = x;
 
 		for (int i = n - 2; i >= 0; i--) {
 			f->ring[i] = acc;
-			acc = maximum ? fmax(acc, f->ring[i + n])
-				      : fmin(acc, f->ring[i + n]);
+			acc = maximum ? md_max(acc, f->ring[i + n])
+				      : md_min(acc, f->ring[i + n]);
 		}
 		f->acc = x;
 		f->pos -= n;
 		return acc;
 	}
-	f->acc = maximum ? fmax(f->acc, x) : fmin(f->acc, x);
-	return maximum ? fmax(f->acc, f->ring[f->pos - n])
-		       : fmin(f->acc, f->ring[f->pos - n]);
+	f->acc = maximum ? md_max(f->acc, x) : md_min(f->acc, x);
+	return maximum ? md_max(f->acc, f->ring[f->pos - n])
+		       : md_min(f->acc, f->ring[f->pos - n]);
 }
 
-double md_average(struct md_filter *f, double x)
+/* Compensated binary32 summation bounds cancellation in sliding means. */
+static void md_filter_add(struct md_filter *f, float value)
+{
+	float delta = value - f->correction;
+	float next = f->sum + delta;
+	f->correction = (next - f->sum) - delta;
+	f->sum = next;
+}
+
+float md_average(struct md_filter *f, float x)
 {
 	f->ring[f->pos] = x;
-	/* Re-sum each wrap to bound accumulated roundoff. */
 	if (!f->pos) {
-		f->sum = 0;
+		f->sum = f->correction = 0;
 		for (int i = 0; i < f->n; i++)
-			f->sum += f->ring[i];
+			md_filter_add(f, f->ring[i]);
 	} else {
-		f->sum += x - f->acc;
+		md_filter_add(f, -f->acc);
+		md_filter_add(f, x);
 	}
 	f->pos = (f->pos + 1) % f->n;
 	f->acc = f->ring[f->pos];
@@ -98,16 +107,16 @@ void md_channel_init(struct morsedec_decoder *d, struct md_channel *c, int bin)
 void md_signal_frame(const struct morsedec_decoder *d, struct md_channel *c,
 		     const float *s, uint64_t frame)
 {
-	double shape[21], shoulder = 0, outer = 0;
-	double mx, mn, amp, prom, sample, v, input;
-	double (*mem)[8] = c->memory;
+	float shape[21], shoulder = 0, outer = 0;
+	float mx, mn, amp, prom, sample, v, input;
+	float (*mem)[8] = c->memory;
 	int old_carrier = c->carrier;
 	int found = 0, offset = 0;
 
 	/* Track an undilated power maximum behind a peakiness gate. */
 	for (int off = -2; off <= 2; off++) {
 		int i = c->bin + off;
-		if (d->ratio[i] > 7.5 && s[i] > s[i - 1] && s[i] > s[i + 1]) {
+		if (d->ratio[i] > 7.5f && s[i] > s[i - 1] && s[i] > s[i + 1]) {
 			found = 1;
 			offset = off;
 			break;
@@ -115,39 +124,42 @@ void md_signal_frame(const struct morsedec_decoder *d, struct md_channel *c,
 	}
 	if (found) {
 		int move;
-		c->offset = pow(0.97, d->tick_scale) * c->offset +
-			    (1 - pow(0.97, d->tick_scale)) * offset;
+		c->offset = powf(0.97f, d->tick_scale) * c->offset +
+			    (1 - powf(0.97f, d->tick_scale)) * offset;
 		move = (int)nearbyint(c->offset);
 		c->bin += move;
 		c->offset -= move;
 	}
-	c->bin = (int)md_clamp(c->bin, 10, d->bins - 11);
-	c->power = pow(0.97, d->tick_scale) * c->power +
-		   (1 - pow(0.97, d->tick_scale)) * s[c->bin];
+	if (c->bin < 10)
+		c->bin = 10;
+	if (c->bin > d->bins - 11)
+		c->bin = d->bins - 11;
+	c->power = powf(0.97f, d->tick_scale) * c->power +
+		   (1 - powf(0.97f, d->tick_scale)) * s[c->bin];
 	mx = md_extreme(&c->floor_max, d->noise, 1);
 	mn = md_extreme(&c->floor_min, mx, 0);
-	c->floor = pow(0.99, d->tick_scale) * c->floor +
-		   (1 - pow(0.99, d->tick_scale)) * mn;
+	c->floor = powf(0.99f, d->tick_scale) * c->floor +
+		   (1 - powf(0.99f, d->tick_scale)) * mn;
 	if (c->floor == 0)
 		c->floor = d->noise;
-	if (c->floor < 1e-20)
+	if (c->floor < 1e-20f)
 		c->floor = s[c->bin];
 	for (int i = 0; i < 21; i++)
-		shape[i] = s[c->bin + i - 10] / (c->floor + 1e-12);
+		shape[i] = s[c->bin + i - 10] / (c->floor + 1e-12f);
 	for (int i = 4; i <= 10; i++) {
-		double power = log(shape[10 - i] * shape[10 + i] + 1e-12);
+		float power = logf(shape[10 - i] * shape[10 + i] + 1e-12f);
 
 		if (i <= 8)
 			shoulder += power;
 		if (i >= 6)
 			outer += power;
 	}
-	amp = sqrt(shape[10]);
-	prom = fmax(0, amp - exp(shoulder / 16));
+	amp = sqrtf(shape[10]);
+	prom = md_max(0, amp - expf(shoulder / 16));
 	/* Bound threshold adaptation on nearly noiseless signals. Otherwise
 	 * tiny floor estimates give long marks enough leverage to hide the
 	 * following shorter marks, despite their ample absolute SNR. */
-	prom = fmin(prom, 200);
+	prom = md_min(prom, 200);
 
 	/* Delay taps and filter lengths are expressed in physical time. */
 	memmove(mem + 1, mem, (size_t)md_frames(d, 38) * sizeof(*mem));
@@ -155,46 +167,48 @@ void md_signal_frame(const struct morsedec_decoder *d, struct md_channel *c,
 	mem[0][0] = amp;
 	mem[0][1] = prom;
 	/* Dimensionless log power contrast against ten shoulder bins. */
-	mem[0][3] = log(shape[10] + 1e-12) - shoulder / 10;
-	mem[0][5] = log(shape[10] + 1e-12) - outer / 10;
-	sample =
-	    fmin(mem[md_frames(d, 1)][1], fmax(mem[md_frames(d, 2)][1], prom));
+	mem[0][3] = logf(shape[10] + 1e-12f) - shoulder / 10;
+	mem[0][5] = logf(shape[10] + 1e-12f) - outer / 10;
+	sample = md_min(mem[md_frames(d, 1)][1],
+			md_max(mem[md_frames(d, 2)][1], prom));
 	mem[0][2] = sample;
 	c->envelope = md_average(&c->env_avg, sample);
-	c->carrier = c->envelope > (old_carrier ? 1.0 : 1.3);
+	c->carrier = c->envelope > (old_carrier ? 1.0f : 1.3f);
 	c->quiet = c->carrier ? 0 : c->quiet + (c->quiet < md_frames(d, 100));
 	c->strength = md_extreme(&c->peak_hold, c->envelope, 1);
 	v = md_average(&c->thr_avg, md_extreme(&c->max_short, sample, 1));
-	mem[0][4] = 0.4 * fmax(v - 0.8, 0) + 0.8;
+	mem[0][4] = 0.4f * md_max(v - 0.8f, 0) + 0.8f;
 	if (mem[md_frames(d, 13)][2] <
-		fmax(mem[md_frames(d, 12)][2], mem[md_frames(d, 14)][2]) ||
-	    mem[1][4] > 3 || mem[md_frames(d, 13)][2] <= 0.5 * (mem[1][6] + 3))
+		md_max(mem[md_frames(d, 12)][2], mem[md_frames(d, 14)][2]) ||
+	    mem[1][4] > 3 || mem[md_frames(d, 13)][2] <= 0.5f * (mem[1][6] + 3))
 		input = 3;
 	else
-		input = fmin(3, 0.35 * fmax(mem[md_frames(d, 14)][1] - 0.8, 0) +
-				    0.8);
-	v = fmax(md_extreme(&c->thr_min, input, 0), mem[md_frames(d, 23)][4]);
+		input = md_min(
+		    3,
+		    0.35f * md_max(mem[md_frames(d, 14)][1] - 0.8f, 0) + 0.8f);
+	v = md_max(md_extreme(&c->thr_min, input, 0), mem[md_frames(d, 23)][4]);
 	mem[0][6] = v;
-	input = fmax(0.3, mem[md_frames(d, 36)][1]) - v;
-	input = input > 5 ? 0.9999 : input < -5 ? -0.9999 : tanh(input);
-	c->probability = c->carrier ? 0.5 * input + 0.5 : 0.003;
+	input = md_max(0.3f, mem[md_frames(d, 36)][1]) - v;
+	input = input > 5 ? 0.9999f : input < -5 ? -0.9999f : tanhf(input);
+	c->probability = c->carrier ? 0.5f * input + 0.5f : 0.003f;
 	{
 		/* Use the same delayed time as the keying observation. A high
 		 * amplitude alone is insufficient evidence of a tonal mark. */
-		double contrast = mem[md_frames(d, 36)][3];
+		float contrast = mem[md_frames(d, 36)][3];
 		/* Short marks extend into the inner shoulders. Infer their
 		 * width from the full timing model, so hand-keyed dots alone do
 		 * not weaken noise rejection. Apply the latest estimate to both
 		 * observations at the same delayed time. */
-		double fast = md_clamp((md_speed(&c->stats) - 28) / 6, 0, 1);
+		float fast = md_clamp((md_speed(&c->stats) - 28) / 6, 0, 1);
 		contrast += fast * (mem[md_frames(d, 36)][5] - contrast);
-		double confidence = 0.5 * tanh(2 * (contrast - log(8))) + 0.5;
+		float confidence =
+		    0.5f * tanhf(2 * (contrast - logf(8))) + 0.5f;
 		c->probability =
-		    fmax(0.00005, fmin(c->probability, confidence));
+		    md_max(0.00005f, md_min(c->probability, confidence));
 	}
-	if (c->probability > 0.8) {
+	if (c->probability > 0.8f) {
 		int n = c->mean_length;
-		double delayed = mem[md_frames(d, 36)][0];
+		float delayed = mem[md_frames(d, 36)][0];
 		c->square = (c->square * n + delayed * delayed) / (n + 1);
 		if (n < md_frames(d, 2048))
 			c->mean_length++;
@@ -203,7 +217,7 @@ void md_signal_frame(const struct morsedec_decoder *d, struct md_channel *c,
 	 * advances. */
 	uint64_t previous_decode = c->decode_frame;
 	c->seg.step = frame;
-	md_segment_step(d, c, c->envelope < 1.3, c->probability,
+	md_segment_step(d, c, c->envelope < 1.3f, c->probability,
 			old_carrier && !c->carrier);
 	if (c->stats.learning && c->quiet == md_frames(d, 75))
 		md_stats_commit(d, c, NULL, 0, 1);
