@@ -1,7 +1,9 @@
 # Archived recording corpus evaluation
 
-For the current synthetic head-to-head evaluation and recording regression
-results, see [WFST fine tuning](wfst-tuning.md). The preceding heuristic
+For the lattice decoder accuracy gate, see [lattice CER results](lattice-gate.md).
+Its [CPU measurements](lattice-speed.md) compare the earlier decoder and Vail.
+For the preceding synthetic head-to-head evaluation and recording regression
+results, see [15–40 WPM ham CW results](wfst-ham.md). The preceding heuristic
 decoder evaluation is retained in [Comparison with Vail decoder](vail-comparison.md). This page retains
 the earlier tuning measurements below.
 

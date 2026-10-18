@@ -33,6 +33,13 @@
 #define MD_NODES 4096
 #define MD_EDGES 8192
 #define MD_ACQUISITION_ELEMENTS 256
+#define MD_CHANNEL_MEMORY_LIMIT (512u * 1024u)
+#define MD_LATTICE_MAX_NODES 64
+#define MD_LATTICE_MAX_EDGES 128
+#define MD_LATTICE_MAX_DEPTH 26
+#define MD_LATTICE_NONE UINT16_MAX
+#define MD_LATTICE_WORD_BEAM 8
+#define MD_WORD_SELECTORS 64
 #define MD_NEG (-1.0e30)
 
 struct md_filter {
@@ -68,6 +75,50 @@ struct md_model {
 	struct md_node nodes[MD_NODES];
 	struct md_edge edges[MD_EDGES];
 	int count, edge_count, kind, failed;
+	uint16_t selectors[MD_WORD_SELECTORS];
+	int selector_count;
+};
+enum md_lattice_node_flags {
+	MD_LATTICE_NODE_FINAL = 1u << 0,
+};
+struct md_lattice_node {
+	/* Acoustic suffix score from this node to a surviving WFST head.
+	 * Valid only when MD_LATTICE_NODE_FINAL is set.
+	 */
+	double final_score;
+	uint16_t first_edge; /* MD_LATTICE_NONE when no outgoing edges. */
+	uint16_t edge_count;
+	uint16_t max_depth; /* Maximum emitted-byte depth from root. */
+	uint16_t flags;
+};
+struct md_lattice_edge {
+	/* Incremental log score, excluding word-layer grammar scores. */
+	double acoustic_score;
+	/* Existing boundary evidence: [0, 1], or 2 for forced word end. */
+	double word_space_probability;
+	/* Channel ticks: first key-down through last key-down, exclusive.
+	 * The following gap is represented by boundary evidence.
+	 */
+	uint64_t start_frame;
+	uint64_t end_frame;
+	/* WFST symbol-table index; prosigns may expand to two bytes. */
+	uint16_t character_label;
+	/* Source node is implicit in its outgoing-edge list. */
+	uint16_t to_node;
+	uint16_t next_edge; /* MD_LATTICE_NONE terminates the list. */
+	uint8_t low_snr;
+};
+/* Node zero is the committed root. Live nodes are stored in topological
+ * order, with edges targeting higher node indices. Depth counts emitted
+ * bytes after expanding WFST symbols, including both bytes of a prosign.
+ */
+struct md_lattice {
+	struct md_lattice_node nodes[MD_LATTICE_MAX_NODES];
+	struct md_lattice_edge edges[MD_LATTICE_MAX_EDGES];
+	uint64_t forced_commits;
+	uint16_t node_count;
+	uint16_t edge_count;
+	uint16_t max_depth;
 };
 struct md_word_state {
 	double score;
@@ -79,12 +130,35 @@ struct md_word {
 	struct md_word_state slots[27];
 	int count, saved;
 };
+/* Joint lattice/grammar tokens; previous is a flattened node/beam index. */
+struct md_lattice_hyp {
+	double score;
+	uint16_t model_node, previous, edge;
+	uint8_t length, kind;
+};
+struct md_lattice_work {
+	struct md_lattice_hyp hypotheses[MD_LATTICE_MAX_NODES]
+					[MD_LATTICE_WORD_BEAM];
+	struct md_lattice_hyp scratch[MD_LATTICE_WORD_BEAM];
+	double closure[MD_WORD_SELECTORS];
+	uint16_t history_nodes[MD_WFST_HISTORY];
+	uint16_t node_history[MD_LATTICE_MAX_NODES];
+	struct md_lattice_node sorted_nodes[MD_LATTICE_MAX_NODES];
+	uint16_t node_order[MD_LATTICE_MAX_NODES];
+	uint16_t path[MD_LATTICE_MAX_DEPTH];
+	uint8_t counts[MD_LATTICE_MAX_NODES];
+	int path_count;
+};
+_Static_assert(MD_LATTICE_MAX_NODES *MD_LATTICE_WORD_BEAM < MD_LATTICE_NONE &&
+		   MD_NODES < MD_LATTICE_NONE &&
+		   MD_LATTICE_MAX_DEPTH <= UINT8_MAX,
+	       "Lattice hypotheses must fit their compact indices");
 struct md_message {
 	struct morsedec_character chars[MORSEDEC_MESSAGE_CAPACITY];
 	size_t count;
 };
 struct md_channel {
-	uint64_t id, next_frame;
+	uint64_t id, next_frame, decode_frame;
 	int used, bin, state, age, last_signal, pinned, changed;
 	double offset, floor, envelope, strength, probability, square, power;
 	int mean_length, carrier, quiet;
@@ -94,9 +168,16 @@ struct md_channel {
 	struct md_statistics stats;
 	struct md_segment seg;
 	struct md_wfst_decoder wfst;
+	struct md_lattice lattice;
+	struct md_lattice_work lattice_work;
 	struct md_word word;
 	struct md_message message;
 };
+/* Initialization must also account for separately allocated word states,
+ * channel index slots and any future rescoring workspace.
+ */
+_Static_assert(sizeof(struct md_channel) <= MD_CHANNEL_MEMORY_LIMIT,
+	       "Inline channel state exceeds the per-channel RAM budget");
 struct md_parallel;
 
 struct morsedec_decoder {
@@ -166,6 +247,7 @@ void md_wfst_advance(const struct morsedec_decoder *d, struct md_channel *c,
 void md_wfst_check_convergence(const struct morsedec_decoder *d,
 			       struct md_channel *c);
 void md_wfst_flush(const struct morsedec_decoder *d, struct md_channel *c);
+const char *md_wfst_text(uint16_t label);
 void md_stats_observe(const struct morsedec_decoder *d, struct md_channel *c,
 		      const struct md_element *element);
 void md_stats_release(const struct morsedec_decoder *d, struct md_channel *c);
@@ -183,6 +265,10 @@ void md_word_feed(const struct morsedec_decoder *d, struct md_channel *c,
 		  const struct morsedec_character *character);
 void md_word_emit(const struct morsedec_decoder *d, struct md_channel *c,
 		  int flush);
+int md_word_rescore(const struct morsedec_decoder *d, struct md_channel *c,
+		    int require_text);
+void md_word_lattice_commit(const struct morsedec_decoder *d,
+			    struct md_channel *c, int edges);
 void md_message_merge(struct md_message *m,
 		      const struct morsedec_character *batch, size_t count);
 #endif

@@ -199,6 +199,9 @@ void md_signal_frame(const struct morsedec_decoder *d, struct md_channel *c,
 		if (n < md_frames(d, 2048))
 			c->mean_length++;
 	}
+	/* Lattice lookahead may delay publication while symbol evidence
+	 * advances. */
+	uint64_t previous_decode = c->decode_frame;
 	c->seg.step = frame;
 	md_segment_step(d, c, c->envelope < 1.3, c->probability,
 			old_carrier && !c->carrier);
@@ -216,7 +219,9 @@ void md_signal_frame(const struct morsedec_decoder *d, struct md_channel *c,
 			c->age = 0;
 		}
 	} else if (c->state == 1) {
-		c->age = c->changed ? 0 : c->age + 1;
+		c->age = c->changed || c->decode_frame > previous_decode
+			     ? 0
+			     : c->age + 1;
 		if (c->age > md_frames(d, 1000) && !c->pinned)
 			c->state = 3;
 	} else if (c->state == 2) {

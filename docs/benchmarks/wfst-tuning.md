@@ -1,5 +1,8 @@
 # WFST impulse and word-boundary tuning
 
+The subsequent [15–40 WPM ham CW optimization](wfst-ham.md) supersedes these
+results. This report preserves the previous tuning step.
+
 Measured on 2026-10-18 against the baseline at `2e5b832`. Two targeted scoring
 changes remove the reported regressions against legacy. They also improve mean
 and pooled CER on both complete synthetic grids and reduce archived recording

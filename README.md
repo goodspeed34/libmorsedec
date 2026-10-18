@@ -3,7 +3,7 @@
 A portable C11 library for streaming amateur radio CW decoding, licensed under
 **GPL-3.0-or-later**. It uses FFTW3 for real/complex FFTs and combines
 multicarrier tracking, adaptive duration modeling, a bounded streaming H ∘ C
-WFST decoder, and word interpretation in a modular decoding pipeline.
+WFST decoder with a bounded character lattice and word-grammar rescoring.
 
 The library discovers multiple signals, tracks a separate decoder and message
 for each, and exposes a procedural `md_` API through an opaque handle.
@@ -266,19 +266,30 @@ in [docs/design.md](docs/design.md).
 
 ## Evaluation and current scope
 
-[WFST benchmark results](docs/benchmarks/wfst-tuning.md) compare the new decoder
+The [lattice CER gate](docs/benchmarks/lattice-gate.md) compares the current
+decoder with the archived pre-lattice benchmark on identical audio. Mean CER
+is **1.522%** on the 936-case QSO sweep, **0.966%** on the primary grid and
+**2.749%** on the additional grid. All three mean/pooled CER gates pass.
+Recorded-QSO errors are **13/170**, compared with **14/170** before; two
+individual clips each regress by one edit. [Measured CPU cost](docs/benchmarks/lattice-speed.md)
+increased **4.23–6.77×** versus the rebuilt pre-lattice control on five inputs;
+these still run **263–392× real time** on the measured host.
+
+The preceding [WFST benchmark results](docs/benchmarks/wfst-ham.md) compare that decoder
 with legacy libmorsedec and Vail on identical seeded audio. On the 464-case grid,
-mean CER is **1.949% for WFST, 3.606% for legacy and 3.721% for Vail**. On 120
-additional synthetic cases it is **3.088%, 4.478% and 6.112%**, respectively.
+mean CER is **1.138% for WFST, 3.606% for legacy and 3.721% for Vail**. On 120
+additional synthetic cases it is **2.917%, 4.478% and 6.112%**, respectively.
 Both synthetic accuracy gates require lower mean and pooled CER than legacy.
-Some individual conditions still favor legacy or Vail.
+A ham QSO sweep covers every integer speed from 15 through 40 WPM: mean CER
+is **1.840% for WFST, 4.756% for legacy and 5.795% for Vail** across 936 cases.
+Some individual cases still favor legacy or Vail.
 
 The three archived tuning recordings improved from **19/170 legacy errors to
-15/170 WFST errors**, ignoring whitespace while retaining punctuation and O/0.
+14/170 WFST errors**, ignoring whitespace while retaining punctuation and O/0.
 One recording regressed from seven to eight errors. These recordings and the
 additional synthetic cases are development material, not independent validation.
 Full outputs, checksums, CPU measurements and reproduction commands accompany the
-[report](docs/benchmarks/wfst-tuning.md). Historical measurements remain in
+[report](docs/benchmarks/wfst-ham.md). Historical measurements remain in
 [the earlier Vail comparison](docs/benchmarks/vail-comparison.md).
 
 This remains an initial decoder implementation. Fast CW, difficult fading/QRM,

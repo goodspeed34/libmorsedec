@@ -123,8 +123,8 @@ separate build with `-Db_sanitize=thread -Db_lundef=false`.
 
 ## WFST versus legacy accuracy gate
 
-[`wfst-tuning.md`](../docs/benchmarks/wfst-tuning.md) records the current fine
-tuning and its evidence. [`wfst-comparison.md`](../docs/benchmarks/wfst-comparison.md)
+[`wfst-ham.md`](../docs/benchmarks/wfst-ham.md) records the current ham CW
+optimization and its evidence. [`wfst-comparison.md`](../docs/benchmarks/wfst-comparison.md)
 preserves the previous comparison. Keep the legacy checkout and builds separate from the working tree:
 
 ```sh
@@ -187,3 +187,111 @@ samples per decoder/input by default, and checks input/binary integrity. CPU cos
 is reported separately from the accuracy gate; it is not inferred from CLI wall
 time. Construction, file I/O, teardown and explicit EOF flush are excluded;
 streaming acquisition/replay and the silent tail are included.
+
+## Ham QSO speed sweep
+
+Use `benchmarks/wfst-compare.py --speed-sweep --seeds 2` with the decoder,
+library, source, cache and output arguments above. This generates 936 cases:
+every integer speed from 15 through 40 WPM, three ham QSO messages, six reception
+conditions and two deterministic seeds. Conditions are clean, −3 dB noise,
+20% timing jitter, two impulses per second, fading and an overlapping carrier.
+The interfering transmission ends before the target, preserving the meaning of
+the final-current-channel scoring policy. No speed or frequency hints are given.
+
+The runner emits `by_wpm` summaries for all case sets. Keep `--speed-sweep` and
+`--held-out` separate. These are development cases from Vail's `cwgen`; the
+archived radio recordings remain a separate acceptance check using chronological
+snapshots. Current results and source provenance are in
+[the ham CW report](../docs/benchmarks/wfst-ham.md).
+
+## SNR sensitivity measurement
+
+`wfst-sensitivity.py` holds the decoder fixed and measures Gaussian-noise curves
+for three ham QSO messages, four seeds and every integer speed from 15 to 40 WPM.
+The default sweep covers +3, 0 and −1 through −12 dB, using Vail's 2.5 kHz,
+key-down SNR convention. It records complete outputs, empty decodes, input hashes,
+clipping counts, source/binary provenance and mean/pooled CER for each cell.
+The same seeded noise realization is used across SNR levels and generator modes.
+
+Stock `cwgen` has peak tone amplitude 0.3 and clips its 16-bit output increasingly
+at negative SNR. To distinguish clipping from Gaussian-noise sensitivity, build
+a second generator with amplitude 0.03; its noise amplitude scales by the same
+factor, retaining the requested nominal SNR:
+
+```sh
+mkdir -p build-wfst-sensitivity
+sed 's/amp = 0.3/amp = 0.03/' build-vail/tools/cwgen.c \
+  > build-wfst-sensitivity/cwgen-headroom.c
+cc -O3 -DNDEBUG -std=c99 -D_DEFAULT_SOURCE -Ibuild-vail/tools \
+  build-wfst-sensitivity/cwgen-headroom.c -lm \
+  -o build-wfst-sensitivity/cwgen-headroom
+python3 benchmarks/wfst-sensitivity.py --vail build-vail \
+  --generator stock=build-vail/build-wfst-bench/cwgen \
+  --generator headroom=build-wfst-sensitivity/cwgen-headroom \
+  --generator-source stock=build-vail/tools/cwgen.c \
+  --generator-source headroom=build-wfst-sensitivity/cwgen-headroom.c \
+  --decoder build-wfst-bench/after-decode \
+  --library build-wfst-release/libmorsedec.so \
+  --cache build-wfst-sensitivity/audio \
+  --output build-wfst-sensitivity/snr.json --seeds 4 --jobs 4
+```
+
+Thresholds at 1%, 5% and 10% mean CER require all higher tested SNR levels to pass
+as well. Isolated nonmonotonic passing cells are reported separately; thresholds
+are never interpolated. `--speeds`, `--snrs` and `--seeds` support refinement;
+use the equals form, such as `--snrs=-3,-4,-5`, when the list begins with a
+negative number. `--reuse`
+accepts matching case definitions, runner, decoder and generator provenance.
+Parallel jobs use separate WAVs and decoder processes; they do not measure CPU
+throughput. Keep decoder sources and measured binaries unchanged during a run.
+
+Measured thresholds and complete case evidence are in the
+[SNR sensitivity report](../docs/benchmarks/wfst-sensitivity.md).
+
+## Replay the archived CER gate
+
+The [lattice CER report](../docs/benchmarks/lattice-gate.md) compares against the
+latest pre-lattice reports, including the SNR sweeps. Preserve those reports as
+baselines. Generate or retain their cached WAVs using the commands above:
+`build-wfst-range/audio`, `build-wfst-bench/audio`,
+`build-wfst-bench/held-out-audio`, and `build-wfst-sensitivity/audio`.
+The replay runner verifies every WAV against its archived SHA-256 before decoding.
+Missing or different audio stops the run; it cannot silently substitute a new seed.
+
+Build from a fixed checkout and leave its source and binaries unchanged until
+measurement finishes:
+
+```sh
+meson setup build-lattice --buildtype=release -Db_ndebug=true \
+  -Dparallel=enabled -Dtui=disabled
+meson compile -C build-lattice
+cc -O3 -Iinclude benchmarks/decode.c -Lbuild-lattice \
+  -Wl,-rpath,'$ORIGIN' -lmorsedec -lsndfile -o build-lattice/decode
+python3 benchmarks/archived-cer.py \
+  --decoder build-lattice/decode --library build-lattice/libmorsedec.so \
+  --source . --output build-lattice/cer --jobs 8 \
+  --sets qso,grid,additional,snr-full,snr-refined
+python3 benchmarks/recordings.py --library build-lattice/libmorsedec.so \
+  --audio build/corpus --baseline docs/benchmarks/wfst-ham-recordings.json \
+  --output build-lattice/recordings.json
+```
+
+Synthetic replay accepts equality and requires **both mean and pooled CER to be
+no worse on each complete dataset**. It uses exact rational means and integer
+edit totals, checks binary/source integrity, and exits nonzero on failure or an
+incomplete selection. The default datasets are `qso,grid,additional`; the two SNR
+reports share 1,440 cases and are replayed only once per identical input/reference.
+An append-only checkpoint allows the same command to resume interrupted work.
+Changed binary/library/source or WAV/reference hashes invalidate cached results.
+`--filter` is for diagnosis and cannot pass a full-dataset gate.
+
+For live decoder-to-decoder comparisons, `wfst-compare.py --require-not-worse
+candidate=baseline` applies the same noninferiority rule. The existing
+`--require-better` option still requires strictly lower mean and pooled CER.
+Equality was checked to pass the former and fail the latter.
+
+Recordings retain their separate chronological, whitespace-free scoring policy.
+The optional `--baseline` argument verifies identical WAVs/references and exits
+nonzero if total errors exceed the archived report. The aggregate gate is at most **14
+errors / 170 reference characters**. Report individual recording regressions even
+when the aggregate passes. These are development corpora, not untouched holdouts.

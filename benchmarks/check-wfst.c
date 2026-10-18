@@ -138,7 +138,11 @@ static void md_pattern_check(const char *code, const char *expected, size_t hop,
 	md_allocation_guard = 0;
 	assert(c->wfst.acoustic_commits == acoustic &&
 	       c->wfst.text_commits == text);
-	assert(!c->wfst.recoveries && !c->wfst.forced_decisions);
+	assert(!c->wfst.recoveries);
+	/* Bounded text-prefix decisions may occur before acoustic convergence.
+	 * Clean symbols must not require a physical-history pressure fallback.
+	 */
+	assert(c->wfst.forced_decisions == c->lattice.forced_commits);
 	md_decode_time += clock() - start;
 	md_delete(d);
 }
@@ -211,6 +215,79 @@ static void md_convergence_check(void)
 	md_delete(d);
 }
 
+static void md_lattice_score_check(void)
+{
+	struct morsedec_decoder *d = md_direct(8000, 85);
+	struct md_channel *c = d->current;
+	struct md_lattice *l = &c->lattice;
+	l->node_count = 3;
+	l->edge_count = 2;
+	l->max_depth = 1;
+	l->nodes[0] =
+	    (struct md_lattice_node){.first_edge = 0, .edge_count = 2};
+	for (int i = 1; i < 3; i++)
+		l->nodes[i] =
+		    (struct md_lattice_node){.first_edge = MD_LATTICE_NONE,
+					     .max_depth = 1,
+					     .flags = MD_LATTICE_NODE_FINAL};
+	l->edges[0] = (struct md_lattice_edge){.character_label = md_label("E"),
+					       .start_frame = 1,
+					       .end_frame = 2,
+					       .word_space_probability = 2,
+					       .to_node = 1,
+					       .next_edge = 1};
+	l->edges[1] = (struct md_lattice_edge){.character_label = md_label("E"),
+					       .start_frame = 1,
+					       .end_frame = 2,
+					       .acoustic_score = 10,
+					       .word_space_probability = .99,
+					       .to_node = 2,
+					       .next_edge = MD_LATTICE_NONE};
+	md_allocation_guard = 1;
+	assert(md_word_rescore(d, c, 1) == 1);
+	md_allocation_guard = 0;
+	/* A forced boundary is a constraint, not a +100 character-path bonus.
+	 */
+	assert(c->lattice_work.path[0] == 1);
+	assert(!c->message.count);
+	md_delete(d);
+}
+
+static void md_lattice_depth_check(void)
+{
+	struct morsedec_decoder *d = md_direct(8000, 85);
+	struct md_channel *c = d->current;
+	struct md_wfst_decoder *w = &c->wfst;
+	w->acquisition_active = 0;
+	for (int branch = 0; branch < 2; branch++) {
+		uint32_t head = 0;
+		for (int i = 1; i <= MD_LATTICE_MAX_DEPTH + 1; i++)
+			head = md_history_fixture(
+			    w, head,
+			    (struct md_wfst_event){
+				.start = (uint64_t)i,
+				.ordinal = (uint64_t)i,
+				.output_label = md_label(branch ? "T" : "E"),
+				.word_probability = .001,
+				.domain = 1});
+		w->tokens[0][branch].history[1] = (uint16_t)head;
+	}
+	w->count = 2;
+	md_allocation_guard = 1;
+	md_wfst_check_convergence(d, c);
+	assert(w->text_commits > 0);
+	assert(c->lattice.max_depth <= MD_LATTICE_MAX_DEPTH);
+	md_wfst_flush(d, c);
+	md_allocation_guard = 0;
+	assert(w->text_commits == MD_LATTICE_MAX_DEPTH + 1);
+	assert(c->lattice.forced_commits);
+	assert(c->lattice.node_count <= MD_LATTICE_MAX_NODES);
+	assert(c->lattice.edge_count <= MD_LATTICE_MAX_EDGES);
+	assert(c->lattice.max_depth <= MD_LATTICE_MAX_DEPTH);
+	assert(w->free_count == MD_WFST_HISTORY - 1);
+	md_delete(d);
+}
+
 static void md_pressure_check(void)
 {
 	struct morsedec_decoder *d = md_direct(8000, 85);
@@ -218,37 +295,44 @@ static void md_pressure_check(void)
 	struct md_wfst_decoder *w = &c->wfst;
 	w->acquisition_active = 0;
 	uint32_t heads[2] = {0};
+	/* A 26-byte text window cannot accumulate thousands of live labels.
+	 * Exhaust the shared pool through competing physical histories instead.
+	 */
 	for (int branch = 0; branch < 2; branch++) {
-		uint64_t ordinal = 1;
 		int count =
-		    branch ? MD_WFST_HISTORY / 2 : MD_WFST_HISTORY / 2 - 1;
+		    branch ? MD_WFST_HISTORY / 2 - 1 : MD_WFST_HISTORY / 2 - 2;
 		for (int i = 0; i < count; i++)
 			heads[branch] = md_history_fixture(
 			    w, heads[branch],
-			    (struct md_wfst_event){
-				.ordinal = ordinal++,
-				.output_label = md_label(branch ? "T" : "E"),
-				.word_probability = .001,
-				.domain = 1});
+			    (struct md_wfst_event){.start = (uint64_t)i * 5 + 1,
+						   .ordinal =
+						       (uint64_t)(i + 1) * 5,
+						   .duration = i % 2 ? -5 : 5});
+		uint32_t text = md_history_fixture(
+		    w, 0,
+		    (struct md_wfst_event){.start = 1,
+					   .ordinal = 5,
+					   .output_label =
+					       md_label(branch ? "T" : "E"),
+					   .acoustic_score = branch ? -100 : 0,
+					   .word_probability = .001,
+					   .domain = 1});
+		w->tokens[0][branch].history[0] = (uint16_t)heads[branch];
+		w->tokens[0][branch].history[1] = (uint16_t)text;
 	}
 	assert(!w->free_count);
-	w->tick = 10000;
+	w->tick = 20000;
 	w->count = 2;
-	w->tokens[0][0].history[1] = heads[0];
-	w->tokens[0][1].history[1] = heads[1];
-	w->tokens[0][1].accumulated_score = -1;
+	w->tokens[0][1].accumulated_score = -100;
 	md_frames_feed(d, .001, 1);
-	assert(w->forced_decisions == 1 && !w->recoveries);
-	assert(w->text_commits == MD_WFST_HISTORY / 2 - 1);
+	assert(w->forced_decisions > c->lattice.forced_commits);
+	assert(!w->recoveries && w->text_commits == 1);
 	assert(w->free_count == MD_WFST_HISTORY - 1);
-	assert(c->message.count &&
-	       c->message.count <= MORSEDEC_MESSAGE_CAPACITY);
-	for (size_t i = 0; i < c->message.count; i++)
-		assert(c->message.chars[i].character == 'E');
-	/* Freed nodes must be reusable after forced commitment. */
+	assert(c->message.count == 1 && c->message.chars[0].character == 'E');
+	/* Reclaimed nodes remain reusable for normal streaming. */
 	md_pattern_feed(d, ".-", 5);
 	md_frames_feed(d, .001, 300);
-	assert(w->text_commits == MD_WFST_HISTORY / 2);
+	assert(w->text_commits == 2);
 	assert(c->message.chars[c->message.count - 1].character == 'A');
 	md_delete(d);
 }
@@ -258,25 +342,39 @@ static void md_duration_check(void)
 	struct morsedec_decoder *d = md_direct(8000, 40);
 	struct md_channel *c = d->current;
 	struct md_wfst_decoder *w = &c->wfst;
-	for (int k = 0; k < 5; k++) {
-		md_wfst_prepare_duration(d, c, k, MD_WFST_AGES);
-		double survival = 1;
-		for (int age = 1; age <= MD_WFST_AGES; age++) {
-			double cont = w->continuation[k][age];
-			double end = w->termination[k][age];
-			assert(isfinite(cont) && isfinite(end) && cont < 0 &&
-			       end < 0);
-			assert(fabs(exp(cont) + exp(end) - 1) < 1e-6);
-			if (age <= 10)
-				survival *= exp(cont);
+	for (int phase = 0; phase < 2; phase++) {
+		if (phase) {
+			/* Release acquisition without changing STA's variances.
+			 * Replay must rebuild even fully materialized tables.
+			 */
+			c->stats.learning = 0;
+			md_frames_feed(d, .001, 1);
+			assert(!w->acquisition_active);
 		}
-		double sigma = sqrt(2 * c->stats.variance[k]);
-		double expected =
-		    erfc((log(10.5 * d->tick_scale) - c->stats.mean[k]) /
-			 sigma) /
-		    erfc((log(.5 * d->tick_scale) - c->stats.mean[k]) / sigma);
-		assert(fabs(survival - expected) < 2e-5);
+		for (int k = 0; k < 5; k++) {
+			md_wfst_prepare_duration(d, c, k, MD_WFST_AGES);
+			double survival = 1;
+			for (int age = 1; age <= MD_WFST_AGES; age++) {
+				double cont = w->continuation[k][age];
+				double end = w->termination[k][age];
+				assert(isfinite(cont) && isfinite(end) &&
+				       cont < 0 && end < 0);
+				assert(fabs(exp(cont) + exp(end) - 1) < 1e-6);
+				if (age <= 10)
+					survival *= exp(cont);
+			}
+			double sigma = sqrt(
+			    2 * fmax(c->stats.variance[k], phase ? .04 : .25));
+			double expected =
+			    erfc(
+				(log(10.5 * d->tick_scale) - c->stats.mean[k]) /
+				sigma) /
+			    erfc((log(.5 * d->tick_scale) - c->stats.mean[k]) /
+				 sigma);
+			assert(fabs(survival - expected) < 2e-5);
+		}
 	}
+
 	double previous = w->continuation[0][5];
 	c->stats.mean[0] += log(2.0);
 	c->stats.dirty = 1;
@@ -360,23 +458,32 @@ static void md_sentence_check(void)
 /* Initial timing can be wrong; calibration must recover the first word too. */
 static void md_acquisition_check(void)
 {
-	struct morsedec_decoder *d = md_direct(8000, 85);
-	const char *text = "R TNX FER";
-	for (size_t i = 0; text[i]; i++) {
-		if (text[i] == ' ')
-			continue;
-		md_pattern_feed(d, md_code_find((unsigned char)text[i]), 9);
-		if (text[i + 1])
-			md_frames_feed(d, .001, text[i + 1] == ' ' ? 63 : 27);
+	struct morsedec_decoder *d;
+	const int dots[] = {3, 5, 8, 9};
+	for (size_t speed = 0; speed < sizeof(dots) / sizeof(dots[0]);
+	     speed++) {
+		d = md_direct(8000, 85);
+		int dot = dots[speed];
+		const char *text = "R TNX FER";
+		for (size_t i = 0; text[i]; i++) {
+			if (text[i] == ' ')
+				continue;
+			md_pattern_feed(d, md_code_find((unsigned char)text[i]),
+					dot);
+			if (text[i + 1])
+				md_frames_feed(d, .001,
+					       text[i + 1] == ' ' ? 7 * dot
+								  : 3 * dot);
+		}
+		md_frames_feed(d, .001, 300);
+		md_allocation_guard = 1;
+		md_wfst_flush(d, d->current);
+		md_allocation_guard = 0;
+		md_text_check(d, text);
+		assert(d->current->wfst.acquisition_replays == 1);
+		assert(!d->current->wfst.forced_decisions);
+		md_delete(d);
 	}
-	md_frames_feed(d, .001, 300);
-	md_allocation_guard = 1;
-	md_wfst_flush(d, d->current);
-	md_allocation_guard = 0;
-	md_text_check(d, text);
-	assert(d->current->wfst.acquisition_replays == 1);
-	assert(!d->current->wfst.forced_decisions);
-	md_delete(d);
 
 	/* Acquisition is bounded even when a pinned carrier stays quiet first.
 	 */
@@ -443,6 +550,44 @@ static void md_audio_check(uint32_t rate)
 	md_delete(d);
 }
 
+static void md_ham_qso_check(void)
+{
+	struct morsedec_decoder *d = md_direct(8000, 85);
+	const char *text = "W7QRS DE JA1XYZ UR 5NN CPY?";
+	for (size_t i = 0; text[i]; i++) {
+		if (text[i] == ' ')
+			continue;
+		md_pattern_feed(d, md_code_find((unsigned char)text[i]), 5);
+		if (text[i + 1])
+			md_frames_feed(d, .001, text[i + 1] == ' ' ? 35 : 15);
+	}
+	md_frames_feed(d, .001, 300);
+	md_text_check(d, text);
+	md_delete(d);
+
+	/* A standalone acknowledgment must acquire without a frequency hint,
+	 * even when broad initial timing leaves multiple acoustic histories. */
+	struct morsedec_config config;
+	md_config_init(&config);
+	config.max_channels = 1;
+	d = md_new_with_threads(&config, 1);
+	assert(d && !d->current);
+	uint64_t position = 0;
+	size_t dot = config.sample_rate / 20; /* 24 WPM. */
+	md_audio_feed(d, &position, 3 * config.sample_rate, 0);
+	md_audio_feed(d, &position, 3 * dot, 1); /* T */
+	md_audio_feed(d, &position, 3 * dot, 0);
+	md_audio_feed(d, &position, dot, 1); /* U */
+	md_audio_feed(d, &position, dot, 0);
+	md_audio_feed(d, &position, dot, 1);
+	md_audio_feed(d, &position, dot, 0);
+	md_audio_feed(d, &position, 3 * dot, 1);
+	md_audio_feed(d, &position, 4 * config.sample_rate, 0);
+	assert(d->current && d->current->stats.trained);
+	md_text_check(d, "TU");
+	md_delete(d);
+}
+
 static void md_public_lifecycle_check(void)
 {
 	struct morsedec_decoder *d = md_direct(8000, 85);
@@ -477,9 +622,12 @@ int main(void)
 	md_sentence_check();
 	md_acquisition_check();
 	md_convergence_check();
+	md_lattice_score_check();
+	md_lattice_depth_check();
 	md_pressure_check();
 	md_duration_check();
 	md_stream_check();
+	md_ham_qso_check();
 	md_public_lifecycle_check();
 	md_audio_check(8000);
 	md_audio_check(48000);

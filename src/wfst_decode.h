@@ -5,9 +5,10 @@
 #include <stdint.h>
 
 #define MD_WFST_BEAM 100
-#ifndef MD_WFST_BEAM_LOG
-#define MD_WFST_BEAM_LOG 8.0
-#endif
+#define MD_WFST_BEAM_CLEAR 8.0
+#define MD_WFST_BEAM_NORMAL 8.0
+#define MD_WFST_BEAM_WIDE 10.0
+#define MD_WFST_DIVERSITY_COST 2.0
 #ifndef MD_WFST_IDLE_START
 #define MD_WFST_IDLE_START .05
 #endif
@@ -51,11 +52,10 @@ struct md_wfst_node {
 	uint8_t node_type, duration_class;
 };
 struct md_token {
-	double accumulated_score;
-	uint64_t run_start, mark_tick;
-	uint32_t history[2];
-	uint32_t frame_age;
-	uint16_t current_node_id;
+	double accumulated_score, character_score;
+	uint64_t run_start, mark_tick, character_start;
+	uint32_t text_hash;
+	uint16_t history[2], frame_age, current_node_id, text_depth;
 	uint8_t run_low, character_low;
 };
 /* Pool indices belong to one channel; zero denotes the committed root.
@@ -63,26 +63,26 @@ struct md_token {
  * Domain 0 records physical intervals; domain 1 records text events. */
 struct md_wfst_event {
 	uint64_t start, ordinal;
-	double word_probability;
+	double word_probability, acoustic_score;
 	int32_t duration;
 	uint16_t output_label;
 	uint8_t low, domain;
 };
 struct md_wfst_history {
 	struct md_wfst_event event;
-	uint32_t parent, depth, next;
-	uint8_t marked;
+	uint16_t parent, depth, next;
+	uint8_t marked, state;
 };
 struct md_wfst_candidate {
-	double accumulated_score;
-	uint32_t frame_age;
-	uint16_t current_node_id, source, edge;
+	double accumulated_score, rank_score;
+	uint32_t frame_age, text_hash;
+	uint16_t current_node_id, source, edge, text_depth;
 };
 struct md_wfst_decoder {
 	struct md_token tokens[2][MD_WFST_BEAM];
 	struct md_wfst_candidate candidates[MD_WFST_CANDIDATES];
 	struct md_wfst_history history[MD_WFST_HISTORY];
-	uint32_t buckets[MD_WFST_BUCKETS], trace[MD_WFST_HISTORY];
+	uint16_t buckets[MD_WFST_BUCKETS], trace[MD_WFST_HISTORY];
 	uint16_t keys[MD_WFST_KEYS], selected[MD_WFST_BEAM];
 	uint16_t candidate_keys[MD_WFST_CANDIDATES];
 	uint16_t bucket_keys[MD_WFST_HISTORY];
@@ -104,6 +104,8 @@ struct md_wfst_decoder {
 
 _Static_assert(MD_WFST_HISTORY > 2 * MD_WFST_BEAM + 1,
 	       "History must hold a full frame of survivor events");
+_Static_assert(MD_WFST_HISTORY <= UINT16_MAX && MD_WFST_AGES <= UINT16_MAX,
+	       "History indices and token ages must fit uint16_t");
 _Static_assert(
     MD_WFST_KEYS > MD_WFST_CANDIDATES && !(MD_WFST_KEYS & (MD_WFST_KEYS - 1)),
     "Candidate index requires a spare slot and power-of-two capacity");

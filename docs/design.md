@@ -1,122 +1,122 @@
 # Decoder design and architecture
 
-libmorsedec is a synchronous C11 library for decoding simultaneous Morse carriers
-from mono audio, complex I/Q, or calibrated power spectra. Frequency analysis and
-carrier discovery are shared within a decoder handle. Each tracked channel owns
-its extraction filters, adaptive timing model, acoustic/character search, word
-scores and message history.
+libmorsedec is a synchronous C11 library for decoding simultaneous Morse
+carriers from mono audio, complex I/Q, or calibrated power spectra. The current
+optimization target is ham CW QSOs at 15–40 WPM. That range is a tuning and
+validation target, not an API speed limit.
 
-The acoustic/character decoder is a streaming, duration-aware weighted finite-state
-transducer (WFST) implementing the H ∘ C layer. A separate word graph interprets
-its committed characters. Word evidence does not feed back into the acoustic
-search. The host owns devices, input transport, call scheduling and persistent
-transcripts; the library provides processing calls and polled snapshots.
+A decoder handle shares frequency analysis and carrier discovery across its
+channels. Each channel owns its signal filters, adaptive duration statistics,
+streaming acoustic/character search, word scores and bounded message snapshot.
+The host supplies input, schedules calls, polls output and archives transcripts.
 
-This document describes the implementation in `src/`. Public ownership rules,
-arguments and error contracts are specified in [the library manuals](man/README.md)
-and [`include/morsedec.h`](../include/morsedec.h).
+The acoustic/character search implements a duration-aware H ∘ C weighted
+finite-state transducer (WFST): H models keyed/unkeyed durations, and C maps
+legal Morse prefixes to character labels. A bounded lattice retains alternative
+labels for the ham vocabulary, report, callsign and generic-word graph. Word
+evidence helps select characters before text commitment, as well as spacing and
+word classifications. Duration learning continues to use agreed physical runs.
 
-## Data flow and module boundaries
+Public arguments, errors and buffer contracts are defined in
+[`include/morsedec.h`](../include/morsedec.h) and the
+[library manuals](man/README.md). This document explains the implementation and
+its tradeoffs. Accuracy measurements belong in the
+[ham CW benchmark report](benchmarks/wfst-ham.md).
+
+## Pipeline and source layout
 
 ```mermaid
 flowchart TD
-    PCM[Mono PCM or complex I/Q] --> FFT[Window and FFT]
+    SAMPLES[Mono PCM or complex I/Q] --> FFT[Window and FFT]
     FFT --> BAND[Band analysis and spectral history]
-    EXT[External calibrated power frames] --> BAND
-    BAND --> TRACK[Carrier discovery and per-channel tracking]
-    TRACK --> SIGNAL[Envelope extraction and soft keying probability]
-    SIGNAL --> HC[Duration-aware H ∘ C token passing]
-    HC -->|Agreed physical intervals| STA[Adaptive duration statistics]
-    STA -->|Updated emission model| HC
-    STA -->|Timing-derived contrast width| SIGNAL
-    HC -->|Converged output symbols| WORD[Word graph and boundary interpretation]
-    WORD --> MSG[Bounded revisable message snapshots]
-    MSG --> HOST[Host queries and transcript archive]
+    SPECTRA[Calibrated power spectra] --> BAND
+    BAND --> CHANNELS[Carrier discovery and channel tracking]
+    CHANNELS --> SIGNAL[Delayed soft keying observations]
+    SIGNAL --> WFST[Duration-aware H composed with C]
+    WFST -->|Agreed physical intervals| STA[Adaptive duration statistics]
+    STA -->|Duration distributions| WFST
+    STA -->|Estimated spectral width| SIGNAL
+    WFST -->|Bounded lattice and gap evidence| WORD[Word rescoring]
+    WORD -->|Selected prefix| WFST
+    WORD --> MESSAGE[Revisable bounded snapshots]
+    MESSAGE --> HOST[Host transcript archive]
 ```
-
-FFT and band analysis run on the calling thread. The complete per-channel path
-runs as one job on either the caller or a persistent worker. Every spectrum frame
-ends with a barrier before channel selection and sorting. There are no stage
-queues, callbacks or asynchronously delivered messages.
 
 | Source | Responsibility |
 | --- | --- |
-| `decoder.c` | Construction, geometry, input entry points, reset/flush and public queries |
-| `frontend.c` | Sample rings, analysis window, FFTW plans and calibrated retained-bin power |
-| `band.c` | Spectral history, peak evidence, channel slots, replay scheduling, merging and selection |
-| `signal.c` | Frequency tracking, envelope filters, carrier state and delayed keying observations |
-| `decode_compat.c` | Forward the extractor's `md_segment_*` hooks into WFST decoding |
-| `statistics.c` | Five duration distributions, physical-interval learning and boundary scores |
-| `wfst_decode.c` / `.h` | Bounded token passing, duration hazards, acquisition replay and convergence |
-| `wfst_graph.h` | Generated immutable acoustic/character topology and output strings |
-| `word.c` | Word-model construction, per-channel word scores and revisable annotations |
-| `message.c` | Merge overlapping annotated batches and retain bounded snapshots |
+| `src/decoder.c` | Construction, configuration, input APIs, reset/flush and queries |
+| `src/frontend.c` | Sample rings, window, FFTW plans and calibrated power |
+| `src/band.c` | Spectral history, discovery, channel slots, merging and selection |
+| `src/signal.c` | Pitch tracking, normalization, carrier state and soft keying |
+| `src/decode_compat.c` | Bridge extraction hooks and source-frame timestamps to WFST |
+| `src/statistics.c` | Five duration classes, interval learning and boundary scores |
+| `src/wfst_decode.c`, `.h` | Token passing, histories, convergence and acquisition replay |
+| `src/wfst_graph.h` | Generated immutable acoustic/character graph |
+| `src/word.c`, `src/templates.h` | Word grammar, vocabulary and annotations |
+| `src/message.c` | Merge annotated output and retain bounded snapshots |
+| `src/parallel.c` | Optional persistent workers for independent channel jobs |
 
-`src/internal.h` connects these modules. `segment.c` and `character.c` are no
-longer part of the decoder. The remaining `struct md_segment` contains only
-`step`, a source-frame timestamp written by `signal.c`; it is not a segmentation
-buffer. Internal helpers use the same `md_` prefix as public functions but are
-hidden from the shared-library interface.
+`src/internal.h` connects the modules. The extraction hook named
+`md_segment_step()` forwards a probability and timestamp; `struct md_segment`
+contains only that timestamp. Character segmentation is performed by the WFST.
+File formats, devices, stdin transport, terminal UI and transcript presentation
+belong to consumers under `tools/`.
 
-## Ownership and lifecycle
+## Handle ownership and lifecycle
 
-A handle owns its configuration, FFT geometry and buffers, spectral history,
-channel slots, channel-order/job arrays, worker pool and word-model graph.
-Construction builds the word model and allocates a word-score array for every
-configured channel slot. The word graph is read-only during processing; scores
-and character windows belong to individual channels. The static WFST graph is
-shared immutable storage in the library image, while all WFST runtime state is
-channel-owned. Separate handles have independent mutable decoding state.
+Construction copies configuration and allocates the FFT buffers, spectral
+history, channel slots, channel-order/job arrays, word graph, per-slot word
+scores and optional workers. The word graph is immutable after construction.
+The static WFST graph is shared immutable library storage. Mutable state is
+owned by a handle or one of its channels.
 
-All stream storage is reserved at construction. Creating or retiring a channel
-uses an existing slot. Processing, pinning, reset and flush reuse allocations;
-there is no allocation or deallocation in the streaming decoder path. Destruction
-joins workers and releases storage without implicitly flushing output.
+All configured channel slots reserve their storage up front. Creating or
+retiring a track reuses a slot. Processing, pinning, reset and flush reuse the
+existing allocations. Destruction joins workers and frees storage; it does not
+implicitly flush output.
 
-### Input modes
+### Input and call boundaries
 
-`md_new()` and `md_new_with_threads()` create real-audio handles.
-`md_new_iq()` and `md_new_iq_with_threads()` create complex I+jQ handles. Audio
-frequencies are nonnegative Hz; I/Q frequencies are signed offsets from the input
-IF center at 0 Hz. I/Q counts and sample rates refer to complex pairs, with input
-laid out as `I0,Q0,I1,Q1,...`.
+Audio handles accept normalized mono float PCM or signed 16-bit PCM. I/Q handles
+accept interleaved `I0,Q0,I1,Q1,...`; their sample rates and counts refer to
+complex pairs. Either type can instead receive complete power-spectrum frames.
 
-Either handle can accept externally computed power spectra instead of samples.
-The first successful processing call selects sample or spectrum mode until reset;
-a zero-count sample call also selects sample mode. Float and signed 16-bit
-representations can be mixed within sample mode. Switching real audio to I/Q
-requires a different handle.
+The first successful processing call selects sample or external-spectrum mode
+until reset. A zero-count sample call also selects sample mode. Float and s16
+representations can be mixed within sample mode. Handle type fixes real audio
+versus complex I/Q.
 
-Sample calls accept arbitrary chunk sizes. A partial hop stays buffered, and a
-call may produce zero, one or many spectrum frames. The host must serialize all
-calls on one handle, including queries and use of borrowed views. Independent
-handles can process concurrently. Construction and destruction must also be
-serialized with FFTW planner operations in the host application.
+Sample calls accept arbitrary chunk sizes and retain incomplete hops. A call can
+produce zero, one or many analysis frames. Non-finite float components become
+zero; finite components are clamped to [-1,1]. Signed 16-bit components are
+scaled by 1/32768. Input storage is borrowed only during the call.
 
-### Flush and reset
+All calls on one handle, including queries and use of borrowed snapshots, must
+be serialized. Separate handles can process concurrently. Construction and
+destruction must also be serialized with FFTW planner operations in the host.
 
-`md_flush()` is an end-of-stream operation:
+### Reset and end of stream
 
-1. For sample input, complete any partial hop with zeros, then process one second
-   of zero samples. For spectrum input, process 100 nominal ticks of zero power.
-2. For every surviving channel, release eligible acquisition, replay any pending
-   WFST acquisition observations, and finalize the best remaining acoustic path.
-3. Flush the word layer, update channel eligibility and reselect the current
-   channel.
-4. Seal the handle. Queries remain available; further input and pin/unpin
-   operations require reset. Repeated flush is idempotent.
+`md_reset()` clears channels, pins, timing, messages, sample rings, counters and
+input-mode choice. Configuration, geometry, handle type, storage and worker
+budget remain available. The frame counter restarts; the channel-ID allocator
+continues increasing so a reset does not reuse previous IDs.
 
-`md_reset()` discards the active channels, pins, buffered input, learned timing,
-messages and input-mode choice. It preserves configuration, handle type, geometry,
-allocated storage and worker budget. The frame counter restarts at zero; the
-channel-ID allocator continues increasing so old IDs are not reused by reset.
+`md_flush()` completes the stream synchronously:
+
+1. Complete a partial sample hop with zeros, then process one second of silence.
+   External-spectrum mode instead receives 100 nominal ticks of zero power.
+2. Finalize each surviving channel, including pending acquisition replay,
+   acoustic/text history commitment and forced word output.
+3. Update channel eligibility and select the current channel.
+4. Seal the handle. Queries remain available; further input or pin changes
+   require reset. Repeated flush succeeds without producing more output.
 
 ## Frequency analysis and timebase
 
-### Geometry and calibration
+### Geometry
 
-Let `fs` be the sample rate, `N` the FFT size and `H` the hop size. Automatic
-geometry is:
+For sample rate `fs`, FFT size `N` and hop size `H`, automatic geometry is:
 
 ```text
 N = 2 * floor(fs * 0.064 + 0.5)
@@ -125,20 +125,27 @@ bin_spacing = fs / N
 frame_seconds = H / fs
 ```
 
-Defaults give a 128 ms aperture and 10.625 ms cadence: `N=6144, H=510` at
-48 kHz, or `N=1024, H=85` at 8 kHz. Both have 7.8125 Hz bin spacing. Explicit
-FFT sizes must be even, at least 64 and fit an `int`; the hop must be no larger
-than `N` and represent 5–20 ms. There is no internal resampling or decimation.
+Defaults are a 128 ms aperture and 10.625 ms cadence: `N=6144, H=510` at 48 kHz,
+or `N=1024, H=85` at 8 kHz. Both have 7.8125 Hz bin spacing. Explicit FFT sizes
+must be even, at least 64 and fit an `int`. The hop must fit the FFT and represent
+5–20 ms. The library does not resample or decimate input.
 
-Requested band boundaries are rounded with `floor(frequency*N/fs + 0.5)`; the
-rounded upper boundary is exclusive, subject to the Nyquist limit. At least
-32 bins must remain. Per-channel neighborhoods require ten guard bins at either
-end. The default audio band, 200–1200 Hz, retains 128 bins starting at 203.125 Hz;
-pinning is clamped to the usable interior. `md_get_geometry()` reports the actual
-grid. Changing FFT size changes both analysis timing and the Hz width of the
-fixed-bin neighborhoods.
+Band boundaries are rounded with `floor(frequency*N/fs + 0.5)`. The upper bound
+is exclusive, with the appropriate Nyquist limit. At least 32 bins must remain;
+channel neighborhoods need ten guard bins at each end. The default audio band
+is 200–1200 Hz, retaining 128 bins beginning at 203.125 Hz. Frequency pinning is
+clamped to the usable interior. `md_get_geometry()` reports the actual grid.
 
-The frontend applies a three-term cosine window multiplied by a centered sinc:
+I/Q frequencies are signed offsets from 0 Hz IF. The default I/Q band is
+−1200–1200 Hz. Positive complex rotation, `I=cos` and `Q=sin`, produces positive
+frequency. Negative FFT bins are remapped into ascending signed-frequency order.
+The complex grid includes negative Nyquist and excludes positive Nyquist. The
+library stores no RF-center offset and performs no DC or I/Q-imbalance correction.
+
+### Window and external-spectrum contract
+
+The frontend applies a three-term cosine window multiplied by a centered sinc,
+then executes an unnormalized FFT:
 
 ```text
 a = 2*pi*25*(i - N/2) / fs
@@ -146,36 +153,29 @@ sinc(a) = sin(a)/a, with sinc(0) = 1
 w[i] = (0.42 - 0.5*cos(2*pi*i/N) + 0.08*cos(4*pi*i/N))
        * sinc(a) * (8000/fs)
 
-real audio power = 0.001   * |FFT(w * audio)|^2
-complex IQ power = 0.00025 * |FFT(w * (I+jQ))|^2
+real_audio_power = 0.001   * |FFT(w * audio)|^2
+complex_iq_power = 0.00025 * |FFT(w * (I+jQ))|^2
 ```
 
-The FFT is unnormalized. The window's sample-rate factor maintains the calibrated
-power scale; the complex coefficient compensates for the amplitude difference
-between a complex exponential and a real sinusoid of equal peak amplitude.
-Absolute power matters for acquisition and selection, not only power ratios.
-The sinc narrows the effective temporal response to roughly 40 ms despite the
-128 ms aperture, limiting separation of very short Morse elements.
+The sample-rate factor preserves the calibrated power scale. The complex
+coefficient compensates for the FFT amplitude difference between a complex
+exponential and a real sinusoid of equal peak amplitude. Retained powers use
+`float`; non-finite or overflowing computed powers become zero. Most filtering
+and scoring uses `double`.
 
-Float sample components are clamped to [-1,1], with non-finite values replaced by
-zero. Signed 16-bit components are divided by 32768. Retained power is stored as
-`float`; non-finite or overflowing computed powers become zero. Most internal
-filtering and scoring uses `double`.
+The centered sinc gives an effective main lobe of roughly 40 ms within the
+128 ms aperture. Very short marks therefore have wider spectra and less temporal
+separation. Changing FFT size also changes the physical width of all fixed-bin
+tracking and shoulder neighborhoods.
 
-The forward complex FFT maps `I=cos(2*pi*f*t), Q=sin(2*pi*f*t)` to positive `f`.
-Negative FFT indices are remapped into an ascending signed-frequency grid.
-Negative Nyquist is available; positive Nyquist is excluded for complex input.
-The handle stores no RF-center offset and performs no DC or I/Q-imbalance
-correction. Those operations belong to the host.
+`md_process_spectrum()` bypasses the frontend. Each call supplies exactly one
+linear-power frame on the reported grid, using the same cadence, power scale
+and analysis alignment. Nonpositive or non-finite bins become zero. A dB
+waterfall or differently normalized FFT does not satisfy this contract.
 
-`md_process_spectrum()` bypasses windowing and FFT, supplying one complete frame
-on the retained grid. Input must match the frontend's ordering, cadence, scale
-and analysis alignment. Nonpositive or non-finite powers become zero. An
-arbitrary dB waterfall is not an equivalent input.
+### Physical time and two kinds of replay
 
-### Frame units and spectral replay
-
-The nominal timing unit is `MD_TICK = 0.010625` seconds. For the configured hop:
+Timing models use a nominal tick of `MD_TICK = 0.010625` seconds:
 
 ```text
 tick_scale = frame_seconds / MD_TICK
@@ -184,453 +184,512 @@ scaled_decay = nominal_decay ^ tick_scale
 model_duration = observed_frames * tick_scale
 ```
 
-The handle's frame counter advances once per spectrum frame, including flush
-padding. Source ordinals derive from channel processing of those frames; they
-are not wall-clock timestamps.
+The frame counter advances for every spectrum frame, including flush padding.
+Source ordinals use this processing timebase, not wall-clock time.
 
-Each `md_band_frame()` call performs this sequence:
+Band history retains 200 nominal ticks, about 2.125 seconds. Newly discovered
+channels start at the oldest retained frame and process at most four historical
+frames per incoming frame until caught up. In sample mode, processing skips
+frames before half an FFT aperture plus 20 ms so the effective main lobe can
+arrive. Historical processing uses original source frame numbers, the current
+shared noise estimate and live peakiness evidence.
 
-1. Advance the frame counter and periodically mark duplicate channels for removal.
-2. Store the new spectrum and update smoothed power and peakiness evidence.
-3. Retire marked slots, suppress nearby candidates and create new channels.
-4. Periodically update the shared noise estimate from the center of the band.
-5. Dispatch channels with historical frames to process, then wait for completion.
-6. Select the current channel and sort enumeration by frequency.
+This spectral catch-up reruns the channel pipeline. The WFST's separate
+acquisition replay caches only soft observations and does not rerun DSP.
 
-Spectral history spans 200 nominal ticks, about 2.125 seconds. A new channel
-starts from the oldest retained frame and processes at most four historical
-frames per incoming frame until caught up. Sample mode skips frames before half
-the FFT aperture plus 20 ms, allowing the effective main lobe to arrive. Replay
-uses historical spectra and original source frame numbers. Channels use the
-current shared noise estimate while processing replayed frames, while peakiness
-evidence is live rather than replayed.
+## Carrier discovery and signal extraction
 
-This spectral catch-up is separate from the soft-observation acquisition replay
-inside the WFST described below.
+### Shared band analysis
 
-## Channel tracking and soft keying
+For each input frame, `md_band_frame()`:
 
-Band peakiness compares smoothed power at each bin with the larger of the powers
-five bins to either side. After history warmup, local maxima with peakiness above
-3.5 become acquisition candidates. Existing tracks suppress candidates within
-two bins. Periodic merging handles tracks within three bins, preferring pinned
-or current channels, then carrier evidence and retained message length.
+1. Advances the frame counter and periodically merges duplicate tracks.
+2. Stores the spectrum and updates smoothed power and peakiness evidence.
+3. Retires marked slots, suppresses nearby candidates and discovers new tracks.
+4. Periodically refreshes the shared noise estimate.
+5. Dispatches channel catch-up jobs and waits for completion.
+6. Selects the current channel and sorts enumeration by frequency.
 
-Each channel tracks a nearby undilated power maximum within two bins, gated by
-peakiness above 7.5. A smoothed fractional-bin offset produces integer moves;
-consumed moves are removed from the accumulator. Tracking remains within the
-ten-bin guards. It follows gradual drift, but nearby signals can distract the
-first-qualifying-peak search.
+Peakiness compares smoothed power with the larger shoulder power five bins to
+either side. After history warmup, local maxima above 3.5 become candidates.
+Existing tracks suppress candidates within two bins. Periodic merging handles
+tracks within three bins, preferring pins/current selection, then carrier
+presence and retained message length.
 
-The shared noise estimate is the upper median of up to 40 central retained
-power bins, refreshed every 32 frames. For each channel, a running maximum over
-11 frames followed by a running minimum over 51 frames rejects transient noise
-changes; a slow exponential smoother turns that result into the channel's
-normalization floor. The floor is normalized with a small epsilon, and center
-amplitude minus the shoulder-derived background estimate gives prominence.
-Prominence is bounded at 200 to keep nearly noiseless long marks from
-dominating threshold adaptation; the amplitude used for the SNR query is not
-bounded this way.
-Temporal filters suppress isolated excursions and estimate carrier presence,
-strength and an adaptive keying threshold.
+The shared noise estimate is the upper median of up to 40 central retained bins,
+refreshed every `frames(32)` frames. It assumes that this band region provides
+useful background evidence.
 
-Carrier detection has hysteresis: enter above normalized envelope 1.3 and remain
-above 1.0. The keying decision compares prominence delayed by 36 nominal ticks
-(about 382.5 ms) with an adaptive threshold. A hyperbolic tangent converts the
-difference into a soft probability. With no detected carrier, the preliminary
-probability is 0.003.
+### Per-channel observations
+
+Pitch tracking examines undilated maxima within two bins, gated by peakiness
+above 7.5. A smoothed fractional offset produces integer bin moves. Tracking
+stays within the ten-bin guards; nearby signals can distract the search.
+
+Each channel normalizes power against a noise floor derived from an 11-tick
+running maximum, a 51-tick running minimum and exponential smoothing. Center
+amplitude minus shoulder-derived background gives prominence, capped at 200
+for threshold adaptation. A 71-tick average drives carrier hysteresis: enter
+above envelope 1.3 and remain above 1.0. A 141-tick peak hold reports strength.
+
+Additional extrema and averaging filters build an adaptive keying threshold.
+Prominence delayed by 36 nominal ticks, about 382.5 ms, is compared with that
+threshold and mapped through `tanh` to a preliminary key probability. Without
+carrier, the preliminary probability is 0.003.
 
 A tonal-confidence gate caps this probability using delayed center-to-shoulder
-log-power contrast. It blends from shoulder offsets 4–8 to offsets 6–10 as the
-current timing estimate moves from 28 to 34 WPM, allowing the broader spectra of
-short marks. Its mapping is `0.5*tanh(2*(contrast - log(8))) + 0.5`; the final
-probability has a floor of 0.00005. High broadband amplitude alone therefore does
-not imply a high mark probability. The current carrier flag, delayed keying
-features and latest timing estimate participate in the same observation.
+log-power contrast. Shoulder offsets blend from 4–8 bins to 6–10 bins as the
+current timing estimate moves from 28 to 34 WPM, accommodating wider short-mark
+spectra. The mapping is:
 
-`signal.c` passes the probability, source frame and an envelope-based low-SNR flag
-through `md_segment_step()` to `md_wfst_advance()`. Carrier drop requests an extra
-convergence check, not an EOF decision. Sustained quiet also notifies STA when
-its acquisition-release threshold is reached.
+```text
+confidence = 0.5*tanh(2*(contrast - log(8))) + 0.5
+p_key = max(0.00005, min(preliminary_probability, confidence))
+```
 
-Internal channel lifetime states are acquisition, decoding, sustained-carrier
-waiting and retirement. Training, pinning, carrier transitions and inactivity
-drive those states. Retirement frees the slot and removes its messages from
-public queries. Automatic current-channel selection considers decoding channels
-with recent output activity and compares smoothed absolute power, switching only
-when a candidate exceeds the current channel's power by a factor of four.
-A pin protects the selected track from automatic switching and retirement;
-other channels continue decoding, and pitch tracking continues on the pinned
-channel.
+High broadband amplitude alone is insufficient evidence for a mark. The current
+carrier flag, delayed features and latest timing estimate all affect the result.
+The extractor forwards `p_key`, the source frame and an envelope-based low-SNR
+flag to WFST. Carrier drop requests another convergence check; it is not EOF.
 
-## Duration statistics
+### Selection and retirement
 
-STA maintains five classes in log-duration units:
+Internal channel states represent acquisition, decoding, sustained-carrier
+waiting and retirement. Training, pinning, carrier changes and inactivity drive
+transitions. Automatic selection considers decoding channels with recent output
+activity and switches only when another eligible channel has more than four
+times the current channel's smoothed absolute power.
+
+A pin protects its track from automatic switching and retirement. Pitch tracking
+and other channels continue processing. Retirement makes the old channel ID and
+message unavailable to public queries; its slot can be reused with a new ID.
+
+## Adaptive duration statistics
+
+The per-channel statistics state (`c->stats`, called STA below) maintains five
+distributions in log-duration units:
 
 | Class | Meaning | Static class prior |
-| --- | --- | ---: |
+| ---: | --- | ---: |
 | 0 | Dot | 0.58 |
 | 1 | Dash | 0.42 |
 | 2 | Intra-character gap | 0.65 |
-| 3 | Inter-character gap | 0.23 |
-| 4 | Inter-word gap | 0.12 |
+| 3 | Character gap | 0.23 |
+| 4 | Word gap | 0.12 |
 
-Marks have positive physical durations and gaps negative durations. STA receives
-agreed physical intervals, not the duration-class choices made by individual
-WFST paths. It rejects zero durations and already committed end ordinals,
-ignores leading gaps before any mark, and collects alternating intervals into
-a 14-element window.
+Physical marks have positive durations and gaps negative durations. Statistics
+receive agreed physical intervals, rather than individual WFST paths' class
+assignments. Zero durations, repeated end ordinals and leading gaps before the
+first mark are rejected. Alternating intervals fill a 14-element window.
 
-Seven marks and seven gaps trigger reestimation. The estimator sorts their log
-durations, scores possible partitions into the five classes, and combines
-within-class residuals with covariance-based regularization and partition
-priors. Missing classes are inferred using dot-relative ratios. Gaps of at least
-60 nominal ticks are replaced for partition fitting by the longest shorter gap,
-or the current word-gap mean if none exists. They are excluded from individual
-class updates so acquisition silence and long pauses do not set sender timing.
+Seven marks and seven gaps trigger reestimation. The estimator sorts log
+durations and scores partitions using within-class residuals, covariance-based
+regularization and partition priors. Missing classes are inferred from
+dot-relative ratios. For partition fitting, gaps of at least 60 nominal ticks
+are replaced by the longest shorter gap, or the current word-gap mean if none
+exists. Such long pauses are excluded from individual class updates.
 
-The inferred means classify the window; covariance-aware updates then adapt the
-stored means and variances. Bounds constrain variances, and mean constraints
-keep dashes above dots and word gaps above character gaps. Updated statistics
-invalidate WFST duration caches. `initial_wpm`, when supplied, shifts the initial
-means and regularization; it does not fix the sender speed or mark the model as
-trained. The reported PARIS WPM estimate combines dot, dash and intra-character
+Inferred means classify the window. Covariance-aware updates then adapt stored
+means and variances, with bounds on variances and constraints keeping dash means
+above dots and word-gap means above character gaps. Updates invalidate WFST
+duration tables. The reported PARIS WPM combines dot, dash and intra-character
 gap means.
 
-Two consumers use STA differently:
+`initial_wpm` shifts the initial means and their regularization. It is a hint,
+not a fixed speed or a training flag; supported nonzero hints are 5–80 WPM.
+Without a hint, the initial timing prior is approximately 23 WPM.
 
-- WFST scoring uses discretized lognormal survival probabilities with a minimum
-  predictive log-duration standard deviation of 0.2.
-- `md_score()` supplies the estimator's interval classification and the text
-  layer's character-gap/word-gap boundary evidence. Its weighted density scores
-  include broad gap-tail terms; they are not the WFST continuation hazards.
+Two scoring interfaces use these statistics:
 
-## Streaming H ∘ C search
+- WFST uses discretized lognormal survival probabilities with a predictive
+  variance floor determined by acquisition state.
+- `md_score()` uses weighted duration densities and broad gap-tail terms for
+  interval classification and text-boundary evidence. These are distinct from
+  WFST continuation and termination probabilities.
 
-### Immutable graph
+## Streaming acoustic and character search
+
+### Immutable H ∘ C graph
 
 [`scripts/gen-wfst.py`](../scripts/gen-wfst.py) reads `src/codes.h` and generates
-`src/wfst_graph.h`. The full graph has 256 nodes, 831 edges and 50 output-label
-entries, including empty output and unknown `*`. Normal builds use the committed
-arrays and require no graph construction or Python runtime.
+`src/wfst_graph.h`: 256 nodes, 831 edges and 50 output-label entries, including
+empty output and unknown `*`. Normal library builds use these committed arrays.
+The graph requires no runtime construction or Python interpreter.
 
-A node stores its first-edge offset, edge count, output label, node type and
-duration class. An edge stores a target node, destination observation label,
-output label and log weight. Integer indices avoid per-node heap objects.
-Output labels reference immutable strings, including lowercase prosign pairs.
+The topology combines a Morse prefix trie with duration states:
 
-The graph combines a Morse prefix trie with duration states:
+| State | Consumed observation and outgoing behavior |
+| --- | --- |
+| Idle | Repeat silence or start a root dot/dash |
+| Dot/dash | Repeat keyed input, then enter a legal gap class |
+| Intra-character gap | Repeat silence, then extend the current Morse prefix |
+| Character gap | Repeat silence, then emit the completed symbol at the next root mark |
+| Word gap | Repeat silence; start a root mark or emit the symbol while returning to idle |
 
-- Idle consumes silence or starts a root dot/dash.
-- A dot/dash state repeats the keyed observation, then enters a legal gap class.
-- An intra-character gap repeats silence, then extends the current prefix.
-- A character gap repeats silence, then emits its completed symbol when the next
-  root dot/dash begins.
-- A word gap can either begin the next root mark or emit its symbol while
-  returning to idle during continued silence.
+Every edge consumes one observation; this graph has no epsilon closure. Dot and
+dash labels both consume keyed evidence, distinguished by duration and prefix
+destination. Gap labels consume silence. Static class priors apply on entry;
+illegal trie paths are removed without renormalizing outgoing priors. H ∘ C
+contains no dictionary or character-frequency weights. Labels refer to immutable
+strings, including lowercase prosign pairs.
 
-Every edge consumes one observation; there are no epsilon edges or runtime
-closure passes in this graph. Dot and dash input labels both consume `p_key`;
-their duration classes and prefix destinations distinguish them. All gap classes
-consume `1-p_key`. Static class priors apply when entering mark or gap classes;
-removing illegal trie paths does not renormalize those priors. There are no
-character-frequency or dictionary weights in H ∘ C.
+Regenerate with `python3 scripts/gen-wfst.py`; `--check` verifies the committed
+graph. `--subset` is a development option that replaces the generated graph;
+regenerate without it to restore the full table.
 
-Regenerate the complete graph with `python3 scripts/gen-wfst.py`; verify it with
-`--check`. `--subset E,T,A,N,S,O` writes a development subset to the same file;
-regenerate without that option to restore the complete topology.
+### Duration and acoustic scores
 
-### Duration and observation scores
+Each token holds a node, frame age, accumulated score, physical-run start, most
+recent mark frame, current character start and incremental score, a text-history
+hash, low-SNR flags and two history heads. Node age and physical-run
+duration differ: word-gap and idle states can belong to one continuous silence.
 
-A token records its current node, accumulated score, duration age, physical-run
-start, most recent mark frame, low-SNR flags, and two history indices. Duration
-age is the number of observations in the current graph state; physical-run
-start can span both a word-gap state and idle.
+Predictive variance is separate from STA's learned variance:
 
-For class `k`, let `S_k(t)` be the lognormal survival probability using STA's mean
-and `max(variance[k], 0.04)`. With frame width `dt = tick_scale`, the duration
-score at age `a` is:
+| Phase | Variance used for duration prediction | Minimum log-duration SD |
+| --- | --- | ---: |
+| Initial acquisition | `max(STA_variance[k], 0.25)` | 0.5 |
+| Released search and replay | `max(STA_variance[k], 0.04)` | 0.2 |
+
+The broader initial distribution admits senders far from the initial speed
+prior. Once acquisition releases, narrower predictions distinguish characters
+without making a few precise intervals excessively confident. These floors do
+not overwrite STA's stored variances.
+
+For lognormal survival `S_k(t)`, age `a` and `dt = tick_scale`:
 
 ```text
-continue(a) = S_k((a + 0.5)*dt) / S_k((a - 0.5)*dt)
-terminate(a) = 1 - continue(a)
+continue_k(a) = S_k((a + 0.5)*dt) / S_k((a - 0.5)*dt)
+terminate_k(a) = 1 - continue_k(a)
 ```
 
-The engine stores their logarithms as `float`, computes stable upper tails and
-bounds both probabilities away from zero. Tables are computed lazily through the
-largest age needed in each class and invalidated after a timing update. An update
-changes subsequent transition scores; it does not rescore previously accumulated
-path likelihoods. Age saturates at 2,048 frames, after which the last continuation
-and termination scores form a geometric tail. Source timestamps still retain the
-full physical run length.
+The decoder evaluates stable log upper tails and bounds continuation to
+[1e-6, 1−1e-6]. It caches log continuation and termination as `float`, computing
+only visited ages. Timing updates invalidate the tables. Age saturates at 2,048
+frames, after which the last probabilities give a geometric tail while physical
+source timestamps continue advancing.
 
-Idle has no STA duration class. Its nominal onset probability is 0.05 per tick,
-scaled to `q = 1 - (1 - 0.05)^dt` per observation. Staying in idle adds `log(1-q)`;
-starting a mark adds `log(q)` as well as that mark's static prior.
+Idle uses an onset probability of 0.05 per nominal tick:
 
-Each candidate adds the source state's continuation/termination score, edge
-weight and destination observation score. Conceptually the observations are
-`log(p_key)` for marks and `log(1-p_key)` for silence. The implementation subtracts
-the common silence term, using `log(p_key/(1-p_key))` for marks and zero for gaps.
-Scores are normalized after every frame, so this common offset has no effect on
-path ranking. Non-finite probabilities become 0.5; finite inputs are clamped
-away from zero and one.
+```text
+q = 1 - (1 - 0.05)^dt
+idle_stay_score = log(1-q)
+idle_onset_score = log(q)
+```
+
+Candidate scores add the source continuation/termination score, static edge
+weight and destination acoustic evidence. The common silence likelihood is
+subtracted, leaving `log(p_key/(1-p_key))` for marks and zero for gaps. Scores
+are normalized each frame. Non-finite probabilities become 0.5; finite values
+are clamped to [1e-10, 1−1e-10].
 
 After acquisition, a dash self-loop before its predicted median end
-(`frame_age * tick_scale < exp(mean[dash])`) floors the mark log odds at −4.
-This caps the damage from a brief negative observation during an unfinished
-dash while keeping onset, dot, gap and late-dash evidence unchanged. Acquisition
-uses the original likelihood so this tolerance cannot alter initial speed
-calibration; replay uses the calibrated model and enables the floor. This is a
-robust search score, rather than an exact acoustic likelihood. Broad probability
-clipping also admitted false marks and damaged fast/noisy decoding during tuning.
+(`frame_age * tick_scale < exp(STA_mean[dash])`) floors negative mark log odds at
+−4. This limits damage from a brief dropout during an unfinished dash. Onsets,
+dots, gaps and later dash frames keep their original evidence. This adjustment
+makes the acoustic score a robust search criterion rather than an exact
+likelihood model.
 
-### Token passing and pruning
+### Adaptive beam and diversity pruning
 
-Each channel has two token banks of capacity 100 and scratch space for 400
-candidates. `md_wfst_advance()` accepts strictly increasing source ticks; sealed
-searches and duplicate or older ticks are ignored. A normal search step:
+Each channel has two banks of 100 tokens and scratch for 400 candidates. Steps
+accept strictly increasing source ticks; sealed searches and duplicate/older
+ticks are ignored. Expansion reserves history capacity, refreshes duration tables
+and scores legal transitions. Candidates merge only when state, age, text-history
+reference, current character start and last mark agree. Different text histories
+can survive in the same physical WFST state.
 
-1. Reserve history capacity and refresh any invalidated duration-model state.
-2. Expand outgoing edges from every active token and score candidate transitions.
-3. Recombine candidates with identical `(node, age)`, retaining the higher score.
-4. Discard candidates more than eight natural-log units below the frame's best
-   score, then retain at most the best 100. Equal scores retain expansion order.
-5. Materialize survivor tokens and their completed physical/text events into the
-   next bank, normalize scores, swap banks and check convergence.
+The beam is measured in natural-log score units below the best candidate:
 
-Candidate records carry score, destination state/age and source/edge indices.
-Only survivors copy full tokens and intern events. Candidate hashes clear only
-occupied slots. A single committed-root idle token can skip expansion when both
-mark-onset arcs would fall outside the beam; this is equivalent to pruning those
-arcs in the normal loop.
+| Destination/evidence | Width |
+| --- | ---: |
+| Gap or idle state, low-SNR flag, or unavailable/at-most-0 dB local estimate | 10 |
+| Mark with a positive local SNR estimate | 8 |
+| Acquisition, before calibrated replay | 8 |
 
-Recombination does not preserve different histories at the same `(node, age)`.
-Together with beam pruning, it makes this a bounded Viterbi search, not a retained
-posterior distribution. If expansion yields no token, the search records a
-recovery and restarts from idle without retracting already emitted output.
+Local SNR uses the learned key-down central-bin power relative to its noise
+floor: `square - 1` is the signal/noise power ratio. It is not a 2,500 Hz reference
+SNR. A 6-unit mark beam regressed the archived CER gate; the measured design
+retains 8 units for marks. The idle shortcut uses the widest beam, preserving
+its pruning guarantee.
 
-### Independent histories and convergence
+Rank selection keeps at most 100 candidates. After each selection, nearby
+variants of its exact label history pay a 2.0 selection-score penalty. Variants
+must share the WFST node and differ by at most two nominal ticks in age, character start
+and last mark. A hash rejects different histories quickly; full label comparison
+resolves collisions. Before rank pruning, tokens with identical label histories
+and physical boundaries within one nominal tick merge. Acquisition retains the
+original physical-state merging and skips the diversity penalty. The penalty
+changes bank membership, not acoustic scores.
+Ties retain expansion order. Banks are restored to acoustic score order for
+recovery and acquisition. No surviving candidates causes an idle restart.
 
-Each token points into two parent-linked history trees sharing one 4,096-entry
-pool. Entry zero is the committed root, leaving 4,095 usable events:
+### Physical histories and the text lattice
 
-| History | Event content | Commit destination |
-| --- | --- | --- |
-| Acoustic | Physical run start/end, signed duration and low-SNR flag | `md_stats_observe()` |
-| Text | Output label, final-mark ordinal, following-gap duration and low-SNR flag | `md_word_feed()` and `md_word_emit()` |
+Tokens retain separate physical and text histories in a fixed 4,096-entry pool.
+Index zero is the committed root. Pool links, hash values and traceback indices
+use 16 bits; the event and bucket capacities are unchanged. Text events record
+incremental acoustic scores, first/last mark frames, output labels, following-gap
+evidence and the post-label WFST state. Frame normalization never becomes an
+edge score: each token separately accumulates the score since its last label.
 
-Identical parent/event pairs are interned. Acoustic events are created only when
-the physical key state changes; word-gap-to-idle transitions remain one unkeyed
-run. This lets paths agree on physical intervals and train STA while still
-disagreeing about character boundaries.
+The common physical ancestor commits agreed run durations to STA. Text histories
+are instead projected into a per-channel DAG with at most **64 nodes, 128 edges
+and 26 emitted bytes**. Prosign pairs consume two bytes of this window. Paths
+join at equal source-time boundaries, post-label WFST states, symbol depths and
+byte depths. A mid-gap release also requires equal gap ages at a join. Nodes
+are sorted topologically before word rescoring. Parallel arcs
+retain different labels, timing, boundary evidence or acoustic scores. Each
+terminal carries its unfinished acoustic suffix, keeping heads with different
+numbers of completed labels comparable.
 
-`md_wfst_check_convergence()` finds the lowest common ancestor of all active
-history heads separately in each tree. It commits every newly common event in
-chronological order, processes acoustic events before text, removes committed
-roots, rebases remaining chains and reclaims unreachable entries. Live ancestors
-are never overwritten. Hash rebuilding and reclamation use fixed channel-owned
-scratch arrays.
+A common text prefix can commit while its divergent suffix remains in the
+lattice. Before exceeding the depth, node or edge capacity, the word rescorer
+chooses a prefix from the represented alternatives. The oldest selected prefix
+commits and its nodes are reclaimed. Compatible continuations at the same DAG
+boundary survive, with their accumulated scores rebased to the selected prefix.
+On capacity overflow, higher acoustic score paths are represented first; this
+is an approximation, not an exhaustive posterior distribution.
 
-Before expansion, the pool must have room for two events per possible survivor.
-If collection cannot reserve 200 entries, the decoder keeps its best token,
-commits that path's completed histories and discards competitors. Internal
-counters record forced decisions, recoveries, history occupancy, commits and
-acquisition replay/drop counts. These counters are not public confidence values.
+History pressure first requests lattice rescoring and reclamation. If that
+cannot reserve 200 entries for the next frame, the acoustic search retains its
+best unfinished token. Acoustic convergence remains independent of speculative
+word hypotheses. Counters record forced decisions, recoveries, occupancy,
+commits and acquisition replays/drops; these are not confidence estimates.
 
-Convergence means agreement among the retained histories. It is not a calibrated
-probability of correctness. Forced pool-pressure commits and explicit EOF
-selection are best-path decisions. Characters passed to the word layer are not
-revised by subsequent acoustic evidence.
+## Acquisition, replay and finalization
 
-### Initial acquisition and bounded observation replay
+Initial text is withheld while statistics learn. Acoustic convergence still
+provides physical intervals. A per-channel ring retains 4,096 soft probabilities,
+low-SNR flags and original source ticks: about 43.5 seconds at default cadence.
+Overflow drops the oldest observation and increments a counter. A source-tick
+discontinuity restarts the cached sequence.
 
-Text events are suppressed while STA is learning, but acoustic convergence
-continues to provide timing evidence. A 4,096-frame ring records soft keying
-probabilities and low-SNR flags with their source ticks. At the default cadence
-this retains about 43.5 seconds. A full ring overwrites its oldest observation
-and increments a drop counter; a source-tick discontinuity restarts the cached
-sequence.
+Acquisition can release through these paths:
 
-A complete 14-interval learning window ends acquisition and marks the channel as
-trained. Acquisition can also end after 75 quiet nominal ticks, or after the
-256-interval acquisition limit, provided at least three marks have been agreed.
-A pinned channel can release after one mark, but three marks are still required
-for this shorter release path to mark it as trained. A carrier drop alone does
-not end acquisition.
+| Trigger | Requirement and result |
+| --- | --- |
+| Full statistics window | Fourteen alternating intervals trigger reestimation and mark the channel trained |
+| Quiet or acquisition limit | At least three agreed marks, plus 75 quiet nominal ticks or 256 acquisition intervals, release and train |
+| Pinned short input | One agreed mark can release during quiet/at the limit; fewer than three marks do not mark it trained |
+| Short-transmission best path | At exactly 75 quiet nominal ticks, at least four marks across committed evidence and the best acoustic history permit committing that path and applying the normal release rule |
+| Explicit EOF | Pending observations replay even if normal acquisition did not complete |
 
-When learning ends, WFST resets its token/history search and replays the retained
-observations using the current STA model. It enables text events, suppresses
-STA updates during replay and preserves the committed-time guard against later
-duplicate observations. It does not rerun DSP or band analysis. A short release
-may still use initial timing priors if no full estimation window was available.
-Explicit EOF also replays pending observations even if normal learning did not
-complete.
+The short-transmission rule lets an acknowledgment such as TU train before an
+unselected channel retires. It requires more evidence than natural convergence;
+a three-mark fragment cannot acquire solely through that best-path decision.
+Carrier drop alone does not end acquisition. A release with fewer than fourteen
+intervals can still use the initial STA means.
 
-Replay happens inside the advancing or flushing call and is bounded by the ring
-capacity. It can increase that call's latency. Overflow can lose initial text;
-this mechanism provides bounded storage, not unlimited acquisition recovery.
+On release, the decoder clears its token/history search, invalidates duration
+tables and replays retained observations using the released model's variance
+floor. Replay enables text events, suppresses duplicate STA training and advances
+the committed-time guard. It does not rerun band analysis or signal extraction.
+The narrower floor applies even when STA means and variances have not changed.
 
-### Text emission and end of stream
+Replay runs inside the advancing or flushing call and is bounded by ring
+capacity. It can increase that call's latency. Ring overflow can lose initial
+text; the mechanism does not provide unlimited acquisition recovery.
 
-A committed output label expands into one or more character records. Ordinals
-are `final_mark_frame * 256 + byte_index`, preserving source identity for prosign
-pairs. Low-SNR flags accumulate along the surviving character path. Intermediate
-bytes of a multi-byte label get boundary evidence 0.001. For the final byte,
-normal streaming output evaluates the stored following-gap duration against
-STA's character-gap and word-gap scores at commit time:
+At EOF, every surviving token closes its physical run and contributes its
+termination score and pending symbol, using unknown `*` where needed. The word
+rescorer chooses among these alternatives before final commitment. After 150
+nominal ticks of observed silence in the best gap hypothesis, pending labels
+are released while preserving physical gap states and ages. Other surviving
+duration tails need not reach idle first. Released labels are not emitted twice
+when their gap eventually ends. An empty transcript may win over
+spurious letters. Finalization releases eligible statistics, forces word output
+and seals the channel; repeated flushes are inert. Channel retirement tracks
+completed candidate-label times separately from published text, so waiting for
+lattice convergence does not retire an actively decoded station.
+
+## Word interpretation and output
+
+### Boundary evidence and word grammar
+
+A lattice output label expands into one or two bytes during rescoring and into
+character records when its prefix commits. Ordinals
+are `final_mark_frame * 256 + byte_index`, preserving source positions for
+prosign pairs. Low-SNR flags accumulate along the retained character path.
+Intermediate bytes of a multi-byte label receive boundary evidence 0.001.
+
+For the final byte, following-gap duration is scored at text commit time:
 
 ```text
-boundary = 0.5 * word_gap_score / (character_gap_score + 0.5 * word_gap_score + 1e-12)
+a = md_score(STA, character_gap, duration)
+b = 0.5 * md_score(STA, word_gap, duration)
+boundary = b / (a + b + 1e-12)
 ```
 
-The word-gap multiplier calibrates ambiguous boundary odds before the word
-graph amplifies them. It removes a spurious space in clean 30 WPM digit groups;
-it does not depend on the decoded characters. Gaps longer than 150 nominal ticks
-use the forced-boundary sentinel 2.0. Once a single idle token remains after at least 150 ticks of physical silence, WFST also
-flushes pending word output. Natural convergence can be delayed by surviving gap
-alternatives and by initial acquisition; there is no fixed emission-latency
-contract.
+The word-gap multiplier calibrates ambiguous boundary odds before word scoring.
+Gaps over 150 nominal ticks use the forced-boundary sentinel 2.0. A single idle
+token also forces pending word output after 150 ticks of physical silence.
+EOF forces the final boundary.
 
-At explicit EOF, WFST ranks tokens using their current scores plus the duration
-termination score, retaining one best path. It closes the unfinished physical
-run and emits any unfinished terminal prefix. An unfinished nonterminal prefix
-emits `*`. A symbol closed this way receives boundary sentinel 2.0. Histories and
-the word layer are flushed and the channel search is sealed.
+The handle's word graph combines vocabulary, report/prosign patterns, callsign
+grammar and generic fallbacks. Emitting nodes match literals or character classes;
+selector nodes combine non-emitting paths. Outgoing weights are normalized and
+stored as log scores. Each channel owns a score array and rolling 26-character
+window with saved boundary states.
 
-## Word interpretation and message snapshots
+Generic wildcard words accept punctuation at the digit fallback emission cost,
+−5.303, so an unknown token such as CPY? can retain attached punctuation. Dedicated
+punctuation paths remain available. This does not require expected messages or
+callsigns in the vocabulary.
 
-The word graph is constructed once per handle from dictionary entries,
-report/prosign patterns, callsign grammar and generic fallbacks. Emitting nodes
-match literals or character classes; selector nodes combine non-emitting paths.
-Outgoing model weights are normalized and stored as log scores. Each channel
-updates its own scores and keeps a rolling 26-character window with saved
-boundary states.
+For each character, emitting states advance from their parents, then selectors
+update in construction order with the root last. Boundary evidence biases the
+root's new-word hypothesis. Repetition handling can preserve boundaries in
+repeated exchanges. Emission reconstructs word types and space counts, merges
+the window into the message and normalizes all scores, including the root.
+A forced word flush resets the window after merging it.
 
-For each committed character, emitting nodes advance from their parents, then
-selectors update in construction order with the root last. Boundary evidence
-biases the root's new-word hypothesis. Repetition handling can preserve plausible
-boundaries across repeated exchanges. Emission reconstructs word classes and
-space counts, merges the annotated window into the message, and normalizes all
-word scores including the root. A forced word flush resets this window after
-merging it.
+### Joint lattice and grammar Viterbi pass
 
-The word model revises labels and spacing, not the input character sequence. It
-is not composed into H ∘ C and cannot recover character alternatives discarded
-by Viterbi recombination or pruning.
+The word layer maintains at most eight hypotheses per lattice node. Each carries
+a combined score, grammar state, word length and a bounded predecessor index.
+Consuming grammar transitions add the existing literal/class emission and graph
+scores to the lattice arc's incremental acoustic score. Epsilon selectors
+propagate in creation order, with the root closed last; root closure receives
+the existing gap-boundary evidence. Selector scratch is fixed at 64 entries and
+model construction rejects larger selector graphs. The joint search uses
+normalized log probabilities for both word closure and continuation, derived
+from the existing boundary evidence. A forced boundary constrains continuation
+without adding an artificial path-length bonus. The existing relative-odds
+annotation pass runs only after prefix selection.
 
-Each message holds at most 500 character records. New batches can overlap old
-output by ordinal: the message layer retains an identical overlapping prefix
-and replaces the remaining suffix. Equality includes character byte, word type,
+The root is seeded from the committed prefix's word-state scores. Prosigns use a
+fixed intermediate beam between their two bytes. Terminal ranking adds the
+unfinished acoustic suffix. Traceback follows at most 26 arcs, and only the
+selected prefix reaches the existing annotation/message update machinery.
+Alternatives with the same grammar state and word length merge within each
+node's beam. This bounded approximation can change character identities before
+commitment; it cannot recover paths already discarded by either beam or a
+capacity decision. Forced prefixes are final, while word annotations retain
+their existing revision behavior. If grammar beam pruning leaves no complete
+path, a bounded acoustic Viterbi pass supplies the safety decision using the
+same workspace.
+
+### Snapshots and host transcripts
+
+Each channel retains at most 500 character records. Annotated batches can
+overlap older output by ordinal. `message.c` keeps an identical overlapping
+prefix and replaces the remaining suffix; equality includes the byte, word type,
 ordinal, low-SNR flag, boundary evidence and space count. Overflow drops oldest
-records in chunks of up to 125 to make room.
+records in chunks of up to 125.
 
-`md_get_characters()` borrows the current array until the next mutation;
-`md_get_text()` copies bytes and annotated spaces into caller storage. Queries
-do not consume messages. Channel enumeration is sorted by frequency and can
-change every frame. Nonzero channel IDs remain stable until retirement or reset;
-query ID zero means the current channel. A missing nonzero ID fails with
-`ENOENT`, while an absent current channel returns an empty snapshot.
+`md_get_characters()` borrows an array until the next mutating call.
+`md_get_text()` copies complete text and annotated spaces into caller storage.
+Queries do not consume output. Channel enumeration is sorted by frequency and
+can change each frame; nonzero channel IDs remain stable until retirement or
+reset. Query ID zero means the current channel. An absent current channel gives
+an empty snapshot; an unknown nonzero ID fails with `ENOENT`.
 
-A persistent consumer should archive records by handle, channel ID and ordinal,
+Persistent consumers should archive records by handle, channel ID and ordinal,
 apply overlapping revisions, and collect final output after flush. Appending
-every snapshot duplicates text. Retired channels and records evicted from a
-message are no longer queryable. Scalar frequency absence is reported as -1,
-which also overlaps a possible I/Q offset; state or enumeration disambiguates it.
-
-The command-line tools remain consumers of this API. File/raw audio handling,
-stdin transport, sample-format conversion, terminal UI, shutdown and transcript
-presentation live under `tools/`, not in the library.
+every snapshot duplicates text. Retired channels and evicted records are no
+longer queryable. Frequency getters return −1 when no current channel exists;
+state or enumeration disambiguates that sentinel from a valid −1 Hz I/Q offset.
 
 ## Concurrency and resource bounds
 
 ### Per-channel workers
 
-Thread budgets include the caller. Zero requests automatic scheduling, one
-creates no workers, and larger values request parallel channel processing.
-Automatic mode resolves the online CPU count; budgets are capped by configured
-channel capacity. `md_get_thread_count()` reports this resolved maximum, not the
-number of participants currently working.
+The optional backend uses pthreads, including winpthreads on MinGW. Thread
+budgets include the caller: zero selects the online CPU count automatically,
+one creates no workers, and larger values explicitly request parallel processing.
+Budgets are capped by channel capacity. `md_get_thread_count()` reports this
+resolved maximum, not current participation.
 
-The optional backend uses pthreads, including winpthreads on MinGW. Automatic
-worker initialization failure cleans up partial state and falls back to serial;
-explicit requests propagate initialization errors. A build without the backend
-rejects explicit budgets above one with `ENOTSUP`. Reset preserves workers;
-deletion wakes and joins them before releasing decoder storage.
+Automatic worker initialization failure cleans up partial state and falls back
+to serial. Explicit requests propagate errors. Without the backend, explicit
+budgets above one fail with `ENOTSUP`. Reset preserves workers; deletion wakes
+and joins them before releasing storage.
 
-Band analysis builds a preallocated job list after its serial history, lifecycle
-and shared noise updates. Automatic scheduling stays serial below four runnable
-channels; explicit parallel scheduling can use two. Workers and the caller claim
-channel jobs through a mutex, and only the required workers are signaled.
-Workers receive the caller's floating-point environment on every dispatch.
+FFT, band analysis, lifecycle updates and shared noise estimation run on the
+caller. A preallocated job list assigns complete channel pipelines to the caller
+and persistent workers. Automatic scheduling stays serial below four runnable
+channels; explicit scheduling can use two. Jobs are claimed through a mutex,
+only required workers are signaled, and each dispatch copies the caller's
+floating-point environment to workers.
 
-One job advances at most four historical spectrum frames through that channel's
-entire signal/WFST/STA/word/message pipeline. A calibration event within the job
-can additionally replay up to 4,096 cached soft observations. Shared band state,
-configuration, frame counters and word topology remain read-only during these
-jobs. A generation/barrier protocol waits for all signaled workers before
-selection, sorting or the next frame can run. EOF's final channel-commit loop is
-serial.
+Each job advances at most four historical frames through signal extraction,
+WFST, statistics, words and messages. Acquisition can additionally replay up to
+4,096 observations. Shared band state and graph topology are read-only during
+jobs. A barrier waits for all signaled workers before selection, sorting or the
+next frame. EOF's final channel-commit loop is serial.
 
-Processing remains synchronous and performs no blocking I/O. Synchronization can
-wait for OS scheduling, and worker wakeups can cost more than they save on small
-workloads. The library assigns no CPU affinity or scheduling priority. Bounded
-work and allocation-free processing do not constitute a hard real-time deadline
+Processing is synchronous and performs no blocking I/O or callbacks. Mutexes,
+barriers and OS scheduling can still delay a call. The library assigns no CPU
+affinity or scheduling priority. Fixed storage and bounded work do not imply a
+hard real-time deadline guarantee.
+
+### Storage limits
+
+| Storage | Capacity |
+| --- | ---: |
+| Token banks per channel | Two banks of 100 |
+| Candidate scratch per channel | 400 records |
+| Acoustic/text event pool per channel | 4,096 entries including root |
+| History/candidate hash tables per channel | 8,192 / 1,024 slots |
+| Duration tables per channel | Five classes through age 2,048, continuation and termination |
+| Acquisition ring per channel | 4,096 probability/flag pairs |
+| Character lattice per channel | 64 nodes, 128 edges, 26 emitted bytes |
+| Joint word hypotheses per lattice node | 8 |
+| Epsilon selectors in the shared word model | 64 |
+| Word annotation window per channel | 26 characters |
+| Message snapshot per channel | 500 records |
+| Handle-owned word model | Up to 4,096 nodes and 8,192 edges |
+
+Traceback, selection and reclamation scratch also use fixed channel arrays.
+A compile-time assertion bounds inline channel storage to 512 KiB. Construction
+also checks separately allocated word-state scores and both channel index slots
+against that same total budget. Lattice, grammar hypotheses, sorting, selector
+and traceback scratch are embedded in the channel. No streaming allocation is
+needed. Inactive slots retain their initialization-time allocations. Shared
+topology, frontend storage, worker resources and allocator overhead are outside
+the per-channel state-payload budget. On the current 64-bit build, a channel
+uses 523,152 bytes including its 618 word states and index slots, leaving
+1,136 bytes below the cap.
+
+For `B` retained bins and `R` history frames, spectral history uses `4*B*R`
+bytes. Power, smoothing, ratio and peak arrays add approximately `13*B` bytes.
+Frontend arrays use approximately `32*N+16` bytes for audio or `56*N` for I/Q,
+excluding FFTW plan internals and allocator overhead. Word topology and worker
+storage are additional handle-owned allocations.
+
+A smaller sample rate reduces FFT storage, but does not shrink fixed channel
+arrays. Channel capacity is therefore a major memory choice.
+
+## Verification and current limits
+
+`meson test -C build` runs pattern, WFST and serial/parallel checks, plus static
+graph regeneration when Python is available. Coverage includes the complete
+Morse table at three hop periods, live/EOF output, separate history convergence,
+pool pressure/reuse, duration normalization and updates, both predictive widths,
+replay cache invalidation, initial speed mismatch, acquisition overflow,
+attached punctuation and unhinted short acknowledgments.
+
+Public audio checks cover 8 and 48 kHz. Other checks cover non-finite
+observations, reset/flush and multiple-carrier equivalence. Linux link wrappers
+guard streaming allocation/free and inject worker/allocation failures. Serial
+and ASan/UBSan builds exercise the same implementation.
+
+The [ham CW benchmark report](benchmarks/wfst-ham.md) records real-QSO results,
+a Vail `cwgen` sweep at every integer speed from 15 to 40 WPM, the original
+synthetic grids, source/input checksums, CPU measurements and remaining errors.
+Accuracy gates compare both mean and pooled CER. [CPU cost](benchmarks/lattice-speed.md)
+is measured separately; the lattice implementation uses 4.23–6.77 times the
+streaming CPU of the rebuilt pre-lattice control on five measured inputs.
+Synthetic final-channel text and chronological recording snapshots use different
+assembly policies. The [lattice CER gate](benchmarks/lattice-gate.md) compares
+the lattice decoder with those archived results using identical WAV checksums
+and scoring conventions. These development results are not an API accuracy
 guarantee.
 
-### Memory
-
-| Channel-owned WFST storage | Capacity |
-| --- | ---: |
-| Active/next token banks | 100 tokens each |
-| Candidate scratch | 400 records |
-| Shared acoustic/text event pool | 4,096 entries, including root |
-| History hash / candidate hash | 8,192 / 1,024 slots |
-| Duration continuation/termination tables | Five classes through age 2,048 |
-| Acquisition observations | 4,096 probability/flag pairs |
-
-Traceback, selection and reclamation scratch are also fixed channel arrays. On
-the measured 64-bit build, `struct md_wfst_decoder` is 393,624 bytes; a compile-time
-assertion limits it to 512 KiB. `struct md_channel` is 506,832 bytes before its
-separate word-score allocation. These are ABI/compiler-dependent sizes, not
-portable packing guarantees. All configured slots reserve storage, even when
-inactive.
-
-For `B` retained bins and `R` history frames, spectral history costs `4*B*R`
-bytes. Power, smoothing, ratio and peak arrays add about `13*B` bytes. The real
-frontend owns approximately `32*N+16` bytes of arrays; the complex frontend owns
-`56*N`, excluding FFTW plan internals and allocator overhead. Each channel also
-owns `word_model_node_count * sizeof(struct md_word_state)` bytes of word scores.
-The bounded word-model node/edge arrays belong to the handle; WFST node/edge
-arrays are shared immutable storage.
-
-Reducing sample rate reduces FFT storage, but does not shrink the fixed channel
-arrays. Configured channel capacity therefore has a substantial memory cost.
-
-## Verification and limits
-
-`meson test -C build` runs pattern, WFST and serial/parallel regression checks;
-when Python is available it also checks regeneration of the complete static
-graph. WFST checks cover all Morse table entries at three hop periods, live and
-EOF emission, independent acoustic/text convergence, pool pressure and reuse,
-duration normalization and updates, saturated ages, initial timing mismatch,
-acquisition overflow, reset/flush and public audio input at 8 and 48 kHz. Linux
-link wrappers reject allocation/free during guarded streaming operations and
-inject worker-start/allocation failures in parallel checks. Static/serial and
-ASan/UBSan configurations exercise the same implementation.
-
-The [WFST benchmark report](benchmarks/wfst-comparison.md) records comparisons
-with legacy libmorsedec and Vail, exact source/input checksums, CPU samples and
-known regressions. Its synthetic accuracy gate requires both mean and pooled CER
-to improve over legacy. CPU cost is reported separately. The archived recordings
-and additional synthetic cases are development material, not independent radio
-validation; benchmark outcomes are measurements, not API accuracy guarantees.
-
-Current architectural limits include the roughly 40 ms frontend response,
-shared central-band noise estimation, close-carrier tracking ambiguity, bounded
-history/acquisition retention, and irreversible acoustic character decisions.
-A narrow beam or forced history commit can produce agreement after discarding
-the correct interpretation. Long-gap alternatives and acquisition replay can
-increase latency, while fixed channel arrays limit suitability for small-memory
-systems. The word graph remains downstream of these decisions rather than a
-joint acoustic/language search.
+Current limits include the frontend's temporal response, shared central-band
+noise estimate, close-carrier ambiguity, bounded acquisition/history retention
+and forced prefix decisions after bounded lattice/beam pruning. Jitter, impulses
+and handoffs can still cause errors. Acquisition replay, long-gap alternatives and worker
+scheduling affect latency. Word interpretation remains downstream of acoustic
+search, and fixed channel storage limits suitability for small-memory systems.

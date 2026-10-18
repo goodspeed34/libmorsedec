@@ -95,6 +95,18 @@ static morsedec_decoder_t *new_decoder(const struct morsedec_config *config,
 		errno = ENOMEM;
 		goto fail;
 	}
+	/* Count all per-channel payload, including the two handle-owned index
+	 * slots. Scratch storage is embedded in the channel, never on demand.
+	 */
+	size_t channel_bytes =
+	    sizeof(struct md_channel) + 2 * sizeof(struct md_channel *);
+	if (channel_bytes > MD_CHANNEL_MEMORY_LIMIT ||
+	    (size_t)d->model->count >
+		(MD_CHANNEL_MEMORY_LIMIT - channel_bytes) /
+		    sizeof(struct md_word_state)) {
+		errno = EOVERFLOW;
+		goto fail;
+	}
 	d->power = calloc((size_t)d->bins, sizeof(float));
 	d->smooth = calloc((size_t)d->bins, sizeof(float));
 	d->ratio = calloc((size_t)d->bins, sizeof(float));

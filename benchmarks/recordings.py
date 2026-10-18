@@ -88,6 +88,8 @@ def main():
     parser.add_argument("--references", type=Path,
                         default=Path("docs/benchmarks/corpus-after.json"))
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--baseline", type=Path,
+                        help="Fail if pooled CER exceeds this identical-input report")
     args = parser.parse_args()
     lib = C.CDLL(str(args.library.resolve()))
     signatures = {
@@ -117,7 +119,23 @@ def main():
         print(row["id"], row["errors"], "/", len(ref))
     report["total_errors"] = sum(c["errors"] for c in report["cases"])
     report["reference_characters"] = sum(c["reference_characters"] for c in report["cases"])
+    if hashlib.sha256(args.library.read_bytes()).hexdigest() != report["library_sha256"]:
+        raise RuntimeError("Measured library changed")
+    if args.baseline:
+        baseline = json.loads(args.baseline.read_text())
+        identity = lambda r: (r["id"], r["reference"], r["wav_sha256"],
+                              r["reference_characters"])
+        if ([identity(r) for r in baseline["cases"]] !=
+                [identity(r) for r in report["cases"]]):
+            raise RuntimeError("Baseline recording inputs/references differ")
+        report["baseline_report"] = str(args.baseline)
+        report["baseline_sha256"] = hashlib.sha256(args.baseline.read_bytes()).hexdigest()
+        report["baseline_errors"] = baseline["total_errors"]
+        report["gate_passed"] = bool(report["cases"]) and (
+            report["total_errors"] <= baseline["total_errors"])
     args.output.write_text(json.dumps(report, indent=2) + "\n")
+    if not report.get("gate_passed", True):
+        raise SystemExit("Recording CER gate failed; see report")
 
 
 if __name__ == "__main__":
