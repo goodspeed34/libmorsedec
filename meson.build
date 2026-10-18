@@ -7,7 +7,8 @@ if not fftw.found()
     compile_args: [], include_directories: include_directories('.'))
 endif
 math = cc.find_library('m', required: false)
-inc = include_directories('include', 'src')
+inc = [include_directories('include', 'src'),
+  include_directories('third_party/simde', is_system: true)]
 sources = files('src/decoder.c', 'src/frontend.c', 'src/band.c', 'src/signal.c',
   'src/parallel.c', 'src/decode_compat.c', 'src/wfst_decode.c', 'src/statistics.c', 'src/word.c', 'src/message.c')
 cargs = ['-DMORSEDEC_BUILD']
@@ -107,6 +108,8 @@ if formatter.found()
   run_target('format', command: [formatter, '-i', format_files])
   run_target('format-check', command: [formatter, '--dry-run', '--Werror', format_files])
 endif
+install_data('third_party/simde/COPYING', rename: 'SIMDe-MIT',
+  install_dir: get_option('datadir') / 'licenses' / 'libmorsedec')
 install_data('COPYING', install_dir: get_option('datadir') / 'licenses' / 'libmorsedec')
 
 # Link a private static copy so the existing internal regression checks can

@@ -19,7 +19,7 @@ python3 benchmarks/compare.py --vail build-vail \
   --decoder build-perf/compare-decode --output build-perf/comparison.json
 ```
 
-The adapter uses real FFTW, native mono sample rate, default configuration, one
+The adapter uses the real-audio FFT backend, native mono sample rate, default configuration, one
 hop per processing call, four seconds of silence, then `md_flush()`. It prints
 only the final current-channel snapshot, matching Vail's comparison policy.
 This differs from the chronological snapshot assembly of the archived real
@@ -58,10 +58,9 @@ characters by ordinal after every hop, including revisions and retired channels.
 The merged-character regression checks can be run with sanitizers:
 
 ```sh
-cc -O1 -g -fsanitize=address,undefined -Iinclude -Isrc \
-  benchmarks/check-patterns.c src/*.c -lfftw3f -lm \
-  -o build-perf/check-patterns
-build-perf/check-patterns
+meson setup build-perf-asan -Db_sanitize=address,undefined -Db_lundef=false
+meson compile -C build-perf-asan
+build-perf-asan/check-patterns
 ```
 
 They also cover generic-word spacing, a pinned single-dot transmission and
@@ -299,7 +298,7 @@ when the aggregate passes. These are development corpora, not untouched holdouts
 
 ## Float API and repeat measurements
 
-Version 0.3.0 uses public ABI 2 (`float`) and `fftw3f`; rebuild each C adapter
+Version 0.3.0 uses public ABI 2 (`float`); rebuild each C adapter
 against its matching public header and library. `recordings.py` defaults to ABI 2;
 use `--abi 1` for archived double-API libraries. Never load an ABI-1 library using
 the ABI-2 ctypes layouts.
@@ -318,3 +317,45 @@ A build with `-Dc_args=-DMD_FLOAT_LIBM` uses standard finite/absolute/min/max
 operations on the same float data and serves as a control for the IEEE bit helpers.
 The default helpers include NaN handling and signed zeros; they are not approximate
 transcendental functions. See [float refactor measurements](../docs/benchmarks/float-refactor.md).
+
+
+## SIMDe optimization measurements
+
+The [SIMDe report](../docs/benchmarks/simde.md) compares against the float
+implementation at `fa428c6`. Use `--baseline-prefix docs/benchmarks/float-refactor`
+with the archived CER runner for this comparison. The runner also records
+`changed_text_cases` and hashes vendored dependency headers.
+
+The normal build uses the vendored SIMDe headers without extra ISA flags.
+For fallback measurements, build separate directories:
+
+```sh
+meson setup build-simde --buildtype=release -Db_ndebug=true \
+  -Dparallel=enabled -Dtui=disabled -Dwerror=true
+meson setup build-simde-portable --buildtype=release -Db_ndebug=true \
+  -Dparallel=enabled -Dtui=disabled -Dwerror=true -Dc_args=-DSIMDE_NO_NATIVE
+meson setup build-simde-scalar --buildtype=release -Db_ndebug=true \
+  -Dparallel=enabled -Dtui=disabled -Dwerror=true \
+  '-Dc_args=-DSIMDE_NO_NATIVE -DSIMDE_NO_VECTOR'
+meson compile -C build-simde
+meson compile -C build-simde-portable
+meson compile -C build-simde-scalar
+cc -O3 -DMD_BENCH_SERIAL -Iinclude benchmarks/speed.c -Lbuild-simde \
+  -Wl,-rpath,'$ORIGIN' -lmorsedec -lsndfile -o build-simde/speed
+cc -O3 -Iinclude benchmarks/decode.c -Lbuild-simde \
+  -Wl,-rpath,'$ORIGIN' -lmorsedec -lsndfile -o build-simde/decode
+python3 benchmarks/archived-cer.py --decoder build-simde/decode \
+  --library build-simde/libmorsedec.so --source . \
+  --output build-simde/cer --jobs 8 \
+  --sets qso,grid,additional,snr-full,snr-refined \
+  --baseline-prefix docs/benchmarks/float-refactor
+```
+
+Compile adapters separately for each library and preserve immutable source
+snapshots during measurement, including `third_party/`. Pass repeatable
+`--decoder LABEL=EXE` and `--library LABEL=LIB` arguments to `wfst-speed.py`,
+the five WAVs recorded in `simde-speed.json`, `--rounds 5`, and a permitted
+`--cpu` affinity. Keep CER jobs and compilation separate from CPU timing.
+`SIMDE_NO_NATIVE` permits compiler vector extensions; `SIMDE_NO_VECTOR`
+disables those within SIMDe too. The compiler may still auto-vectorize C loops.
+Fallback builds on x86 do not measure performance on ARM or other hardware.

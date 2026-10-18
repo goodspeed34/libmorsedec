@@ -17,6 +17,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "internal.h"
+#include <simde/x86/sse.h>
 
 int md_frontend_init(struct morsedec_decoder *d)
 {
@@ -58,18 +59,56 @@ int md_frontend_init(struct morsedec_decoder *d)
 	return d->plan ? MORSEDEC_SUCCESS : md_fail(ENOMEM);
 }
 
+/* Split the sample ring into disjoint contiguous spans before windowing.
+ * Unaligned loads also cover arbitrary hop sizes; tails never read past n.
+ */
+static void md_window_audio(float *restrict out, const float *restrict audio,
+			    const float *restrict window, size_t n)
+{
+	size_t i = 0;
+	for (; i + 4 <= n; i += 4)
+		simde_mm_storeu_ps(
+		    out + i, simde_mm_mul_ps(simde_mm_loadu_ps(audio + i),
+					     simde_mm_loadu_ps(window + i)));
+	for (; i < n; i++)
+		out[i] = audio[i] * window[i];
+}
+
+static void md_window_iq(fftwf_complex *restrict out,
+			 const float *restrict in_i, const float *restrict in_q,
+			 const float *restrict window, size_t n)
+{
+	size_t i = 0;
+	for (; i + 4 <= n; i += 4) {
+		simde__m128 w = simde_mm_loadu_ps(window + i);
+		simde__m128 re =
+		    simde_mm_mul_ps(simde_mm_loadu_ps(in_i + i), w);
+		simde__m128 im =
+		    simde_mm_mul_ps(simde_mm_loadu_ps(in_q + i), w);
+		simde_mm_storeu_ps(out[i], simde_mm_unpacklo_ps(re, im));
+		simde_mm_storeu_ps(out[i + 2], simde_mm_unpackhi_ps(re, im));
+	}
+	for (; i < n; i++) {
+		out[i][0] = in_i[i] * window[i];
+		out[i][1] = in_q[i] * window[i];
+	}
+}
+
 void md_frontend_frame(struct morsedec_decoder *d)
 {
 	size_t n = d->geometry.fft_size;
 
-	for (size_t i = 0; i < n; i++) {
-		size_t pos = (d->sample_pos + i) % n;
-		if (d->iq) {
-			d->fft_iq[i][0] = d->audio[pos] * d->window[i];
-			d->fft_iq[i][1] = d->quadrature[pos] * d->window[i];
-		} else {
-			d->fft_input[i] = d->audio[pos] * d->window[i];
-		}
+	size_t split = n - d->sample_pos;
+	if (d->iq) {
+		md_window_iq(d->fft_iq, d->audio + d->sample_pos,
+			     d->quadrature + d->sample_pos, d->window, split);
+		md_window_iq(d->fft_iq + split, d->audio, d->quadrature,
+			     d->window + split, n - split);
+	} else {
+		md_window_audio(d->fft_input, d->audio + d->sample_pos,
+				d->window, split);
+		md_window_audio(d->fft_input + split, d->audio,
+				d->window + split, n - split);
 	}
 	fftwf_execute(d->plan);
 	for (int j = 0; j < d->bins; j++) {

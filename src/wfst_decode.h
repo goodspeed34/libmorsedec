@@ -81,6 +81,7 @@ struct md_wfst_candidate {
 struct md_wfst_decoder {
 	struct md_token tokens[2][MD_WFST_BEAM];
 	struct md_wfst_candidate candidates[MD_WFST_CANDIDATES];
+	float rank_values[MD_WFST_CANDIDATES];
 	struct md_wfst_history history[MD_WFST_HISTORY];
 	uint16_t buckets[MD_WFST_BUCKETS], trace[MD_WFST_HISTORY];
 	uint16_t keys[MD_WFST_KEYS], selected[MD_WFST_BEAM];
