@@ -1,26 +1,15 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-/* Regression checks for merged patterns, word boundaries and short input. */
+/* Regression checks for word boundaries and short streaming input. */
 #include "internal.h"
 #include <assert.h>
 #include <stdio.h>
 
 int main(void)
 {
-	char text[128], small[2] = {'x', 'y'};
+	char text[128];
 	const char *words = "MAUVE GOLD CYAN";
 	morsedec_decoder_t *d;
 	size_t required;
-
-	md_decode_pattern("-..-..", text, sizeof(text));
-	assert(!strcmp(text, "XI"));
-	md_decode_pattern("-.-...", text, sizeof(text));
-	assert(!strcmp(text, "KS"));
-	md_decode_pattern("...", text, sizeof(text));
-	assert(!strcmp(text, "S"));
-	md_decode_pattern("-..-..", small, 1);
-	assert(!small[0] && small[1] == 'y');
-	md_decode_pattern("...", small, 0);
-	assert(!small[0] && small[1] == 'y');
 
 	d = md_new(NULL);
 	assert(d && md_pin_frequency(d, 700));

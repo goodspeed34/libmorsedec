@@ -79,7 +79,7 @@ readable text.
 Show the decode in a full-screen terminal view instead of writing text
 snapshots to standard output. The left pane lists every tracked channel with
 its signed frequency offset, estimated SNR, speed and state; the right pane
-shows the decoded messages, wrapped and scrollable. See
+shows one scrollable row per frequency. See
 .B TERMINAL VIEW
 below. JSON Lines
 .RB ( -j )
@@ -131,9 +131,12 @@ a two pane view is drawn on the controlling terminal. The left pane lists every
 tracked channel as a signed frequency offset in Hz, estimated SNR in dB,
 estimated speed in WPM and decoder state; the channel the decoder currently
 follows is marked with a greater-than sign and kept in view. The right pane
-shows decoded messages prefixed with stream time, signed frequency and channel
-id, wrapped to the pane width. A message that keeps growing updates its own
-line until another channel decodes something.
+keeps one row per frequency, labelled in Hz.
+Updates replace that frequency's text in place, even when other channels decode
+between updates. Channels keep their rows as their frequency drifts; new
+channels at retained frequencies reuse the existing rows. Long messages show
+their newest characters on the same line, with < marking omitted text. Rows
+remain in first-seen order until cleared or evicted from the bounded history.
 .PP
 .B q
 or

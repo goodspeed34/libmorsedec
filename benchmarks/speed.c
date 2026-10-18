@@ -42,7 +42,11 @@ int main(int argc, char **argv)
 		morsedec_decoder_t *d;
 		md_config_init(&config);
 		config.sample_rate = 8000;
+#ifdef MD_BENCH_SERIAL
+		d = md_new_with_threads(&config, 1);
+#else
 		d = md_new(&config);
+#endif
 		if (!d)
 			return 1;
 #endif

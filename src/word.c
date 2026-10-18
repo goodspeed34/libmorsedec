@@ -26,8 +26,15 @@ static int node(struct md_model *m, int selector, int code)
 		m->failed = 1;
 		return 0;
 	}
+	if (selector && m->selector_count == MD_WORD_SELECTORS) {
+		m->failed = 1;
+		return 0;
+	}
 	m->count++;
-	m->nodes[i].selector = selector;
+	if (selector) {
+		m->selectors[m->selector_count++] = (uint16_t)i;
+		m->nodes[i].selector = m->selector_count;
+	}
 	m->nodes[i].code = code;
 	m->nodes[i].kind = m->kind;
 	m->nodes[i].outgoing = -1;
@@ -217,7 +224,8 @@ static double emission(int expected, int input)
 		return expected == '@'	 ? -3.258
 		       : expected == '*' ? -3.738
 					 : -10000;
-	return expected == '+' ? -2.303 : -10000;
+	/* Generic words may include attached punctuation, such as CPY?. */
+	return expected == '+' ? -2.303 : expected == '*' ? -5.303 : -10000;
 }
 
 static void install(const struct morsedec_decoder *d, struct md_word *w, int ch)
@@ -371,4 +379,269 @@ void md_word_emit(const struct morsedec_decoder *d, struct md_channel *c,
 		w->states[i].score -= best.score;
 	if (flush)
 		md_word_reset(d, w);
+}
+
+static void lattice_offer(struct md_lattice_hyp *bank, uint8_t *count,
+			  struct md_lattice_hyp candidate)
+{
+	if (!isfinite(candidate.score) || candidate.score <= MD_NEG / 2)
+		return;
+	for (int i = 0; i < *count; i++) {
+		if (bank[i].model_node != candidate.model_node ||
+		    bank[i].length != candidate.length)
+			continue;
+		if (bank[i].score >= candidate.score)
+			return;
+		for (int j = i; j + 1 < *count; j++)
+			bank[j] = bank[j + 1];
+		(*count)--;
+		break;
+	}
+	int pos = 0;
+	while (pos < *count && bank[pos].score >= candidate.score)
+		pos++;
+	if (pos == MD_LATTICE_WORD_BEAM)
+		return;
+	int end = *count < MD_LATTICE_WORD_BEAM ? *count : *count - 1;
+	for (int i = end; i > pos; i--)
+		bank[i] = bank[i - 1];
+	bank[pos] = candidate;
+	if (*count < MD_LATTICE_WORD_BEAM)
+		(*count)++;
+}
+
+static double lattice_boundary(double x, int close)
+{
+	if (x == 2)
+		return close ? 0 : -10000;
+	if (x == 0)
+		return close ? -10000 : 0;
+	double p = .5 * (tanh(md_clamp(6 * (x - .5), -5, 5)) + 1);
+	return log((close ? p : 1 - p) + 1e-5) - log(1 + 2e-5);
+}
+
+/* The selector graph is acyclic in creation order, with root closed last.
+ * Propagate only epsilon arcs; consuming arcs are handled one byte at a time.
+ */
+static void lattice_epsilon(const struct md_model *m, double *closure, int from,
+			    double score)
+{
+	int edge_id = m->nodes[from].outgoing;
+	for (int steps = 0; edge_id >= 0 && steps < MD_EDGES; steps++) {
+		const struct md_edge *e = &m->edges[edge_id];
+		int selector = m->nodes[e->to].selector;
+		if (selector && score + e->weight > closure[selector - 1])
+			closure[selector - 1] = score + e->weight;
+		edge_id = e->next;
+	}
+}
+
+static void lattice_byte(const struct morsedec_decoder *d,
+			 struct md_lattice_work *work,
+			 struct md_lattice_hyp base, unsigned char ch,
+			 double boundary, struct md_lattice_hyp *out,
+			 uint8_t *count)
+{
+	const struct md_model *m = d->model;
+	int edge_id = m->nodes[base.model_node].outgoing;
+	for (int steps = 0; edge_id >= 0 && steps < MD_EDGES; steps++) {
+		const struct md_edge *edge = &m->edges[edge_id];
+		const struct md_node *n = &m->nodes[edge->to];
+		edge_id = edge->next;
+		if (n->selector || base.length == MD_LATTICE_MAX_DEPTH)
+			continue;
+		double cost = emission(n->code, ch);
+		if (cost <= -10000)
+			continue;
+		struct md_lattice_hyp next = base;
+		next.score += edge->weight + cost;
+		next.model_node = (uint16_t)edge->to;
+		next.length++;
+		next.kind = (uint8_t)n->kind;
+		double continuation = lattice_boundary(boundary, 0);
+		next.score += continuation;
+		lattice_offer(out, count, next);
+		next.score -= continuation;
+		for (int i = 0; i < m->selector_count; i++)
+			work->closure[i] = MD_NEG;
+		lattice_epsilon(m, work->closure, edge->to, next.score);
+		for (int i = 1; i < m->selector_count; i++)
+			if (work->closure[i] > MD_NEG / 2)
+				lattice_epsilon(m, work->closure,
+						m->selectors[i],
+						work->closure[i]);
+		for (int i = 0; i < m->selector_count; i++) {
+			if (work->closure[i] <= MD_NEG / 2)
+				continue;
+			struct md_lattice_hyp closed = next;
+			closed.model_node = m->selectors[i];
+			closed.score = work->closure[i];
+			if (!i) {
+				closed.score += lattice_boundary(boundary, 1);
+				closed.length = 0;
+			}
+			lattice_offer(out, count, closed);
+		}
+	}
+}
+
+/* Beam pruning may remove every grammar continuation. Capacity handling must
+ * still make progress: use a bounded acoustic Viterbi pass as a last resort.
+ */
+static int lattice_acoustic(struct md_channel *c, int require_text)
+{
+	struct md_lattice_work *work = &c->lattice_work;
+	const struct md_lattice *lattice = &c->lattice;
+	for (int i = 0; i < lattice->node_count; i++)
+		work->hypotheses[i][0] =
+		    (struct md_lattice_hyp){.score = i ? MD_NEG : 0,
+					    .previous = MD_LATTICE_NONE,
+					    .edge = MD_LATTICE_NONE};
+	int best = -1;
+	double score = MD_NEG;
+	for (int i = 0; i < lattice->node_count; i++) {
+		const struct md_lattice_node *node = &lattice->nodes[i];
+		const struct md_lattice_hyp *base = &work->hypotheses[i][0];
+		if (base->score <= MD_NEG / 2)
+			continue;
+		if ((node->flags & MD_LATTICE_NODE_FINAL) &&
+		    (!require_text || i) &&
+		    base->score + node->final_score > score) {
+			score = base->score + node->final_score;
+			best = i * MD_LATTICE_WORD_BEAM;
+		}
+		uint16_t edge_id = node->first_edge;
+		for (int k = 0;
+		     edge_id != MD_LATTICE_NONE && k < MD_LATTICE_MAX_EDGES;
+		     k++) {
+			const struct md_lattice_edge *edge =
+			    &lattice->edges[edge_id];
+			struct md_lattice_hyp *to =
+			    &work->hypotheses[edge->to_node][0];
+			if (base->score + edge->acoustic_score > to->score) {
+				to->score = base->score + edge->acoustic_score;
+				to->previous =
+				    (uint16_t)(i * MD_LATTICE_WORD_BEAM);
+				to->edge = edge_id;
+			}
+			edge_id = edge->next_edge;
+		}
+	}
+	return best;
+}
+
+int md_word_rescore(const struct morsedec_decoder *d, struct md_channel *c,
+		    int require_text)
+{
+	const struct md_lattice *lattice = &c->lattice;
+	struct md_lattice_work *work = &c->lattice_work;
+	memset(work->counts, 0, sizeof(work->counts));
+	work->path_count = 0;
+	for (int i = 0; i < d->model->count; i++) {
+		const struct md_word_state *state = &c->word.states[i];
+		if (state->score <= -9999 ||
+		    (i && (state->length < 0 ||
+			   state->length > MD_LATTICE_MAX_DEPTH)))
+			continue;
+		struct md_lattice_hyp seed = {
+		    .score = state->score,
+		    .model_node = (uint16_t)i,
+		    .previous = MD_LATTICE_NONE,
+		    .edge = MD_LATTICE_NONE,
+		    .length = i ? (uint8_t)state->length : 0,
+		    .kind = (uint8_t)state->kind};
+		lattice_offer(work->hypotheses[0], &work->counts[0], seed);
+	}
+	int best = -1;
+	double best_score = MD_NEG;
+	for (int node_id = 0; node_id < lattice->node_count; node_id++) {
+		const struct md_lattice_node *node = &lattice->nodes[node_id];
+		for (int slot = 0; slot < work->counts[node_id]; slot++) {
+			struct md_lattice_hyp base =
+			    work->hypotheses[node_id][slot];
+			if ((node->flags & MD_LATTICE_NODE_FINAL) &&
+			    (!require_text || node_id) &&
+			    base.score + node->final_score > best_score) {
+				best_score = base.score + node->final_score;
+				best = node_id * MD_LATTICE_WORD_BEAM + slot;
+			}
+			uint16_t edge_id = node->first_edge;
+			for (int k = 0; edge_id != MD_LATTICE_NONE &&
+					k < MD_LATTICE_MAX_EDGES;
+			     k++) {
+				const struct md_lattice_edge *edge =
+				    &lattice->edges[edge_id];
+				const char *text =
+				    md_wfst_text(edge->character_label);
+				struct md_lattice_hyp input = base;
+				input.score += edge->acoustic_score;
+				input.previous =
+				    (uint16_t)(node_id * MD_LATTICE_WORD_BEAM +
+					       slot);
+				input.edge = edge_id;
+				if (text[1]) {
+					uint8_t count = 0;
+					lattice_byte(d, work, input,
+						     (unsigned char)text[0],
+						     .001, work->scratch,
+						     &count);
+					for (int j = 0; j < count; j++)
+						lattice_byte(
+						    d, work, work->scratch[j],
+						    (unsigned char)text[1],
+						    edge->word_space_probability,
+						    work->hypotheses
+							[edge->to_node],
+						    &work->counts
+							 [edge->to_node]);
+				} else {
+					lattice_byte(
+					    d, work, input,
+					    (unsigned char)text[0],
+					    edge->word_space_probability,
+					    work->hypotheses[edge->to_node],
+					    &work->counts[edge->to_node]);
+				}
+				edge_id = edge->next_edge;
+			}
+		}
+	}
+	if (best < 0)
+		best = lattice_acoustic(c, require_text);
+	for (int steps = 0; best >= 0 && steps < MD_LATTICE_MAX_DEPTH;
+	     steps++) {
+		const struct md_lattice_hyp *hyp =
+		    &work->hypotheses[best / MD_LATTICE_WORD_BEAM]
+				     [best % MD_LATTICE_WORD_BEAM];
+		if (hyp->edge == MD_LATTICE_NONE)
+			break;
+		work->path[work->path_count++] = hyp->edge;
+		best = hyp->previous == MD_LATTICE_NONE ? -1 : hyp->previous;
+	}
+	for (int i = 0; i < work->path_count / 2; i++) {
+		uint16_t tmp = work->path[i];
+		work->path[i] = work->path[work->path_count - i - 1];
+		work->path[work->path_count - i - 1] = tmp;
+	}
+	return work->path_count;
+}
+
+void md_word_lattice_commit(const struct morsedec_decoder *d,
+			    struct md_channel *c, int edges)
+{
+	for (int i = 0; i < edges && i < c->lattice_work.path_count; i++) {
+		const struct md_lattice_edge *edge =
+		    &c->lattice.edges[c->lattice_work.path[i]];
+		const char *text = md_wfst_text(edge->character_label);
+		for (int j = 0; j < 2 && text[j]; j++) {
+			struct morsedec_character ch = {0};
+			ch.character = (unsigned char)text[j];
+			ch.ordinal = (edge->end_frame - 1) * 256 + (uint64_t)j;
+			ch.low_snr = edge->low_snr;
+			ch.word_space_probability =
+			    text[j + 1] ? .001 : edge->word_space_probability;
+			md_word_feed(d, c, &ch);
+		}
+		md_word_emit(d, c, 0);
+	}
 }

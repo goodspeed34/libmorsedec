@@ -9,7 +9,7 @@ endif
 math = cc.find_library('m', required: false)
 inc = include_directories('include', 'src')
 sources = files('src/decoder.c', 'src/frontend.c', 'src/band.c', 'src/signal.c',
-  'src/parallel.c', 'src/segment.c', 'src/statistics.c', 'src/character.c', 'src/word.c', 'src/message.c')
+  'src/parallel.c', 'src/decode_compat.c', 'src/wfst_decode.c', 'src/statistics.c', 'src/word.c', 'src/message.c')
 cargs = ['-DMORSEDEC_BUILD']
 thread_deps = []
 have_parallel = false
@@ -99,11 +99,11 @@ endif
 example = executable('morsedec-example', 'examples/decode.c', dependencies: morsedec_dep)
 formatter = find_program('clang-format', required: false)
 if formatter.found()
-  format_files = sources + files('include/morsedec.h', 'src/internal.h', 'src/codes.h', 'src/templates.h',
+  format_files = sources + files('include/morsedec.h', 'src/internal.h', 'src/wfst_decode.h', 'src/wfst_graph.h', 'src/codes.h', 'src/templates.h',
     'tools/morsedec-audio.c', 'tools/morsedec-live.c', 'tools/morsedec-iqlive.c',
     'tools/live-common.c', 'tools/audio-common.c', 'tools/tui.c',
     'tools/audio-common.h', 'tools/tui.h', 'examples/decode.c',
-    'benchmarks/check-parallel.c', 'benchmarks/parallel-speed.c')
+    'benchmarks/check-parallel.c', 'benchmarks/check-patterns.c', 'benchmarks/check-wfst.c', 'benchmarks/parallel-speed.c', 'benchmarks/speed.c')
   run_target('format', command: [formatter, '-i', format_files])
   run_target('format-check', command: [formatter, '--dry-run', '--Werror', format_files])
 endif
@@ -133,3 +133,21 @@ test('parallel', parallel_check, timeout: 120)
 
 executable('parallel-speed', 'benchmarks/parallel-speed.c',
   dependencies: [morsedec_dep, math], build_by_default: false)
+
+allocation_args = []
+allocation_links = []
+if host_machine.system() == 'linux'
+  allocation_args = ['-DMD_WRAP_ALLOC']
+  allocation_links = ['-Wl,--wrap=malloc', '-Wl,--wrap=calloc',
+    '-Wl,--wrap=realloc', '-Wl,--wrap=free']
+endif
+wfst_check = executable('check-wfst', 'benchmarks/check-wfst.c',
+  include_directories: inc, link_with: check_lib,
+  dependencies: check_deps, c_args: check_args + allocation_args,
+  link_args: allocation_links)
+test('wfst', wfst_check)
+
+python = find_program('python3', required: false)
+if python.found()
+  test('wfst-graph', python, args: [files('scripts/gen-wfst.py'), '--check'])
+endif

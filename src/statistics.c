@@ -272,56 +272,49 @@ static void reestimate(struct md_statistics *s, double scale)
 void md_stats_commit(const struct morsedec_decoder *d, struct md_channel *c,
 		     struct md_element *elements, int count, int flush)
 {
-	struct md_statistics *s = &c->stats;
-	int first = s->learning;
-
-	for (int i = count - 1; i >= 0; i--) {
-		struct md_element e = elements[i];
-		/* Do not train on the leading acquisition silence. */
-		if (s->learning && !c->pending_count && !s->count &&
-		    e.duration < -md_frames(d, 60))
-			continue;
-		if (first && c->pending_count < MD_PENDING)
-			c->pending[c->pending_count++] = e;
-		if (!s->count ||
-		    (s->window[s->count - 1].duration > 0) != (e.duration > 0))
-			s->window[s->count++] = e;
-		if (s->count == 14) {
-			reestimate(s, d->tick_scale);
-			s->count = 0;
-			s->dirty = 1;
-			s->learning = 0;
-			s->trained = 1;
-		}
-	}
-	if (first && ((flush && c->quiet >= md_frames(d, 75)) ||
-		      c->pending_count == MD_PENDING)) {
-		int marks = 0;
-
-		for (int i = 0; i < c->pending_count; i++)
-			marks += c->pending[i].duration > 0;
-		/* A short keyed transmission can end before a full learning
-		 * window. Three marks provide evidence for automatic selection;
-		 * an isolated noise excursion does not. */
-		if (marks >= 3 || (marks && c->pinned)) {
-			s->learning = 0;
-			s->trained = marks >= 3;
-		}
-	}
-	if (first && !s->learning) {
-		for (int i = 0; i < c->pending_count; i++) {
-			md_classify(s, &c->pending[i], d->tick_scale);
-			md_character_feed(d, c, &c->pending[i], 0);
-		}
-		c->pending_count = 0;
-	} else if (!first) {
-		for (int i = count - 1; i >= 0; i--) {
-			md_classify(s, &elements[i], d->tick_scale);
-			md_character_feed(d, c, &elements[i], 0);
-		}
-	}
+	for (int i = count - 1; i >= 0; i--)
+		md_stats_observe(d, c, &elements[i]);
 	if (flush)
-		md_character_feed(d, c, NULL, 1);
+		md_stats_release(d, c);
+}
+
+void md_stats_release(const struct morsedec_decoder *d, struct md_channel *c)
+{
+	struct md_statistics *s = &c->stats;
+	if (s->learning &&
+	    (c->quiet >= md_frames(d, 75) ||
+	     s->acquisition_elements == MD_ACQUISITION_ELEMENTS) &&
+	    (s->acquisition_marks >= 3 ||
+	     (s->acquisition_marks && c->pinned))) {
+		s->learning = 0;
+		s->trained = s->acquisition_marks >= 3;
+	}
+}
+
+void md_stats_observe(const struct morsedec_decoder *d, struct md_channel *c,
+		      const struct md_element *element)
+{
+	struct md_statistics *s = &c->stats;
+	if (!element->duration || element->ordinal <= s->committed_end)
+		return;
+	s->committed_end = element->ordinal;
+	if (!s->acquisition_marks && !s->count && element->duration < 0)
+		return;
+	if (element->duration > 0 && s->acquisition_marks < 3)
+		s->acquisition_marks++;
+	if (s->learning && s->acquisition_elements < MD_ACQUISITION_ELEMENTS)
+		s->acquisition_elements++;
+	if (!s->count ||
+	    (s->window[s->count - 1].duration > 0) != (element->duration > 0))
+		s->window[s->count++] = *element;
+	if (s->count == 14) {
+		reestimate(s, d->tick_scale);
+		s->count = 0;
+		s->dirty = 1;
+		s->learning = 0;
+		s->trained = 1;
+	}
+	md_stats_release(d, c);
 }
 
 double md_speed(const struct md_statistics *s)

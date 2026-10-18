@@ -1,0 +1,1162 @@
+{
+  "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+  "cpu_affinity": [
+    2
+  ],
+  "compiler": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+  "decoders": {
+    "baseline": {
+      "executable": "/home/goodspeed/Project/libmorsedec/build-wfst-range/baseline-speed",
+      "library": "/home/goodspeed/Project/libmorsedec/build-wfst-range/baseline-build/libmorsedec.so.0.2.0"
+    },
+    "wfst": {
+      "executable": "/home/goodspeed/Project/libmorsedec/build-wfst-bench/after-speed",
+      "library": "/home/goodspeed/Project/libmorsedec/build-wfst-release/libmorsedec.so.0.2.0"
+    },
+    "legacy": {
+      "executable": "/home/goodspeed/Project/libmorsedec/build-wfst-bench/legacy-speed",
+      "library": "/home/goodspeed/Project/libmorsedec/build-wfst-bench/legacy-build/libmorsedec.so.0.2.0"
+    }
+  },
+  "sha256": {
+    "/home/goodspeed/Project/libmorsedec/build-wfst-range/baseline-speed": "26930a2b56de0ec27bfa5a1b4f2ea842172ae49c1ff9fd485f0db4654d9c9050",
+    "/home/goodspeed/Project/libmorsedec/build-wfst-bench/after-speed": "caf50092d730a721d6b6779d50916a8ce329e3c88005a6f9c8e4110a7984cf86",
+    "/home/goodspeed/Project/libmorsedec/build-wfst-bench/legacy-speed": "bcd280caef56133b9b6273ab6c0fae0ff9190cff0583a49c8ac362734926ff7e",
+    "/home/goodspeed/Project/libmorsedec/build-wfst-range/baseline-build/libmorsedec.so.0.2.0": "fe6beeb232aada1d576ad47cc94172cd04711cc13ca07d7772667593379224d0",
+    "/home/goodspeed/Project/libmorsedec/build-wfst-release/libmorsedec.so.0.2.0": "b6d040790ca128629272f04811e709955d88cbfeb013d67f9441a84f58653b08",
+    "/home/goodspeed/Project/libmorsedec/build-wfst-bench/legacy-build/libmorsedec.so.0.2.0": "e21d33bf7c589619c97deed5e4b619b4cf185ec24ff4734408e6a5ac58e6be48",
+    "build-wfst-bench/audio/w20_s3_t1_r0.wav": "f0bc3bbaf7b6e32c574dbc050b5bad457eb7c3cfb1b0d1cbf1cb1e06fdc26e68",
+    "build-wfst-bench/audio/w12_sinf_t0_r0.wav": "cfb69f378787afeb326a1834bc9f02cc59d4e10f3a1027c4e05aaadff08fc88a",
+    "build-wfst-bench/audio/w40_s-3_t0_r0.wav": "af624cf47532a4be3baa44e0b336f23fe201617b903cbd0320c69cf2a47fcd3a",
+    "build-wfst-bench/audio/qrm100_r0.wav": "3d51fe96946cbe42f186ac611a55640acd816fc7cdcf1e4b7098bbf015551df7"
+  },
+  "runs": [
+    {
+      "audio_seconds": 39.92875,
+      "cpu_seconds": [
+        0.021295,
+        0.022484,
+        0.020385,
+        0.022023,
+        0.02412,
+        0.0216,
+        0.022763,
+        0.021603,
+        0.021914
+      ],
+      "label": "baseline",
+      "round": 0,
+      "audio": "build-wfst-bench/audio/w20_s3_t1_r0.wav"
+    },
+    {
+      "audio_seconds": 39.92875,
+      "cpu_seconds": [
+        0.02132,
+        0.022301,
+        0.022149,
+        0.021245,
+        0.021696,
+        0.022726,
+        0.021311,
+        0.021229,
+        0.022363
+      ],
+      "label": "wfst",
+      "round": 0,
+      "audio": "build-wfst-bench/audio/w20_s3_t1_r0.wav"
+    },
+    {
+      "audio_seconds": 39.92875,
+      "cpu_seconds": [
+        0.020765,
+        0.02146,
+        0.020681,
+        0.020938,
+        0.020663,
+        0.0213,
+        0.022034,
+        0.020957,
+        0.021279
+      ],
+      "label": "legacy",
+      "round": 0,
+      "audio": "build-wfst-bench/audio/w20_s3_t1_r0.wav"
+    },
+    {
+      "audio_seconds": 40.205,
+      "cpu_seconds": [
+        0.029765,
+        0.030755,
+        0.031012,
+        0.032869,
+        0.031763,
+        0.031645,
+        0.033545,
+        0.031958,
+        0.028521
+      ],
+      "label": "baseline",
+      "round": 0,
+      "audio": "build-wfst-bench/audio/w12_sinf_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 40.205,
+      "cpu_seconds": [
+        0.029795,
+        0.029243,
+        0.028053,
+        0.028751,
+        0.02874,
+        0.029217,
+        0.032024,
+        0.032013,
+        0.032204
+      ],
+      "label": "wfst",
+      "round": 0,
+      "audio": "build-wfst-bench/audio/w12_sinf_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 40.205,
+      "cpu_seconds": [
+        0.027731,
+        0.027896,
+        0.027456,
+        0.027417,
+        0.027362,
+        0.02765,
+        0.027313,
+        0.027777,
+        0.027052
+      ],
+      "label": "legacy",
+      "round": 0,
+      "audio": "build-wfst-bench/audio/w12_sinf_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 17.669375,
+      "cpu_seconds": [
+        0.009817,
+        0.010112,
+        0.010052,
+        0.009496,
+        0.009484,
+        0.009503,
+        0.009222,
+        0.009332,
+        0.00963
+      ],
+      "label": "baseline",
+      "round": 0,
+      "audio": "build-wfst-bench/audio/w40_s-3_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 17.669375,
+      "cpu_seconds": [
+        0.01011,
+        0.009976,
+        0.009786,
+        0.009497,
+        0.009859,
+        0.009632,
+        0.009564,
+        0.009455,
+        0.009673
+      ],
+      "label": "wfst",
+      "round": 0,
+      "audio": "build-wfst-bench/audio/w40_s-3_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 17.669375,
+      "cpu_seconds": [
+        0.00914,
+        0.008724,
+        0.009041,
+        0.008724,
+        0.008532,
+        0.008776,
+        0.008816,
+        0.008825,
+        0.00862
+      ],
+      "label": "legacy",
+      "round": 0,
+      "audio": "build-wfst-bench/audio/w40_s-3_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 34.626875,
+      "cpu_seconds": [
+        0.020889,
+        0.021023,
+        0.020198,
+        0.020747,
+        0.020821,
+        0.020484,
+        0.020159,
+        0.020277,
+        0.020796
+      ],
+      "label": "baseline",
+      "round": 0,
+      "audio": "build-wfst-bench/audio/qrm100_r0.wav"
+    },
+    {
+      "audio_seconds": 34.626875,
+      "cpu_seconds": [
+        0.021113,
+        0.021101,
+        0.021067,
+        0.020589,
+        0.021255,
+        0.021254,
+        0.020682,
+        0.020881,
+        0.021513
+      ],
+      "label": "wfst",
+      "round": 0,
+      "audio": "build-wfst-bench/audio/qrm100_r0.wav"
+    },
+    {
+      "audio_seconds": 34.626875,
+      "cpu_seconds": [
+        0.019552,
+        0.01993,
+        0.019319,
+        0.019035,
+        0.019623,
+        0.019461,
+        0.019071,
+        0.019376,
+        0.019188
+      ],
+      "label": "legacy",
+      "round": 0,
+      "audio": "build-wfst-bench/audio/qrm100_r0.wav"
+    },
+    {
+      "audio_seconds": 39.92875,
+      "cpu_seconds": [
+        0.0209,
+        0.020358,
+        0.020169,
+        0.019873,
+        0.020344,
+        0.020353,
+        0.0201,
+        0.020263,
+        0.02036
+      ],
+      "label": "legacy",
+      "round": 1,
+      "audio": "build-wfst-bench/audio/w20_s3_t1_r0.wav"
+    },
+    {
+      "audio_seconds": 39.92875,
+      "cpu_seconds": [
+        0.021436,
+        0.021362,
+        0.020683,
+        0.020721,
+        0.020576,
+        0.021723,
+        0.021712,
+        0.021135,
+        0.02204
+      ],
+      "label": "wfst",
+      "round": 1,
+      "audio": "build-wfst-bench/audio/w20_s3_t1_r0.wav"
+    },
+    {
+      "audio_seconds": 39.92875,
+      "cpu_seconds": [
+        0.021903,
+        0.022145,
+        0.021473,
+        0.021758,
+        0.02132,
+        0.021317,
+        0.021477,
+        0.021314,
+        0.021281
+      ],
+      "label": "baseline",
+      "round": 1,
+      "audio": "build-wfst-bench/audio/w20_s3_t1_r0.wav"
+    },
+    {
+      "audio_seconds": 40.205,
+      "cpu_seconds": [
+        0.030205,
+        0.031126,
+        0.031147,
+        0.031533,
+        0.030859,
+        0.031665,
+        0.030379,
+        0.028546,
+        0.028743
+      ],
+      "label": "legacy",
+      "round": 1,
+      "audio": "build-wfst-bench/audio/w12_sinf_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 40.205,
+      "cpu_seconds": [
+        0.030469,
+        0.030456,
+        0.029303,
+        0.030127,
+        0.03022,
+        0.028971,
+        0.029722,
+        0.029756,
+        0.029533
+      ],
+      "label": "wfst",
+      "round": 1,
+      "audio": "build-wfst-bench/audio/w12_sinf_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 40.205,
+      "cpu_seconds": [
+        0.029895,
+        0.029734,
+        0.028609,
+        0.028488,
+        0.028495,
+        0.028665,
+        0.02915,
+        0.027856,
+        0.028895
+      ],
+      "label": "baseline",
+      "round": 1,
+      "audio": "build-wfst-bench/audio/w12_sinf_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 17.669375,
+      "cpu_seconds": [
+        0.009508,
+        0.008862,
+        0.009325,
+        0.008978,
+        0.008778,
+        0.009049,
+        0.008604,
+        0.009257,
+        0.008608
+      ],
+      "label": "legacy",
+      "round": 1,
+      "audio": "build-wfst-bench/audio/w40_s-3_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 17.669375,
+      "cpu_seconds": [
+        0.010519,
+        0.010427,
+        0.010165,
+        0.009461,
+        0.010242,
+        0.010305,
+        0.009708,
+        0.010094,
+        0.009382
+      ],
+      "label": "wfst",
+      "round": 1,
+      "audio": "build-wfst-bench/audio/w40_s-3_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 17.669375,
+      "cpu_seconds": [
+        0.009789,
+        0.010098,
+        0.009957,
+        0.009222,
+        0.009922,
+        0.009619,
+        0.009461,
+        0.009796,
+        0.009249
+      ],
+      "label": "baseline",
+      "round": 1,
+      "audio": "build-wfst-bench/audio/w40_s-3_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 34.626875,
+      "cpu_seconds": [
+        0.020102,
+        0.019887,
+        0.01998,
+        0.020031,
+        0.019828,
+        0.020184,
+        0.020375,
+        0.020692,
+        0.020037
+      ],
+      "label": "legacy",
+      "round": 1,
+      "audio": "build-wfst-bench/audio/qrm100_r0.wav"
+    },
+    {
+      "audio_seconds": 34.626875,
+      "cpu_seconds": [
+        0.021887,
+        0.022454,
+        0.021576,
+        0.021148,
+        0.022109,
+        0.022044,
+        0.02125,
+        0.021843,
+        0.021622
+      ],
+      "label": "wfst",
+      "round": 1,
+      "audio": "build-wfst-bench/audio/qrm100_r0.wav"
+    },
+    {
+      "audio_seconds": 34.626875,
+      "cpu_seconds": [
+        0.021671,
+        0.0211,
+        0.020831,
+        0.020482,
+        0.020879,
+        0.020726,
+        0.021477,
+        0.020127,
+        0.019892
+      ],
+      "label": "baseline",
+      "round": 1,
+      "audio": "build-wfst-bench/audio/qrm100_r0.wav"
+    },
+    {
+      "audio_seconds": 39.92875,
+      "cpu_seconds": [
+        0.021385,
+        0.021092,
+        0.020291,
+        0.020892,
+        0.020383,
+        0.020486,
+        0.020299,
+        0.020584,
+        0.020777
+      ],
+      "label": "baseline",
+      "round": 2,
+      "audio": "build-wfst-bench/audio/w20_s3_t1_r0.wav"
+    },
+    {
+      "audio_seconds": 39.92875,
+      "cpu_seconds": [
+        0.020889,
+        0.021472,
+        0.020745,
+        0.020527,
+        0.020871,
+        0.020866,
+        0.020587,
+        0.021,
+        0.020882
+      ],
+      "label": "wfst",
+      "round": 2,
+      "audio": "build-wfst-bench/audio/w20_s3_t1_r0.wav"
+    },
+    {
+      "audio_seconds": 39.92875,
+      "cpu_seconds": [
+        0.019968,
+        0.020383,
+        0.019941,
+        0.020102,
+        0.020129,
+        0.020061,
+        0.020061,
+        0.025146,
+        0.028751
+      ],
+      "label": "legacy",
+      "round": 2,
+      "audio": "build-wfst-bench/audio/w20_s3_t1_r0.wav"
+    },
+    {
+      "audio_seconds": 40.205,
+      "cpu_seconds": [
+        0.031407,
+        0.031489,
+        0.031897,
+        0.033792,
+        0.03167,
+        0.028532,
+        0.028272,
+        0.027203,
+        0.027703
+      ],
+      "label": "baseline",
+      "round": 2,
+      "audio": "build-wfst-bench/audio/w12_sinf_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 40.205,
+      "cpu_seconds": [
+        0.030026,
+        0.029605,
+        0.028784,
+        0.028967,
+        0.028688,
+        0.028489,
+        0.028414,
+        0.028495,
+        0.02855
+      ],
+      "label": "wfst",
+      "round": 2,
+      "audio": "build-wfst-bench/audio/w12_sinf_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 40.205,
+      "cpu_seconds": [
+        0.027796,
+        0.027803,
+        0.027267,
+        0.027509,
+        0.027208,
+        0.027599,
+        0.027409,
+        0.027412,
+        0.027387
+      ],
+      "label": "legacy",
+      "round": 2,
+      "audio": "build-wfst-bench/audio/w12_sinf_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 17.669375,
+      "cpu_seconds": [
+        0.009993,
+        0.00949,
+        0.009988,
+        0.009378,
+        0.009212,
+        0.009592,
+        0.009733,
+        0.009268,
+        0.00961
+      ],
+      "label": "baseline",
+      "round": 2,
+      "audio": "build-wfst-bench/audio/w40_s-3_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 17.669375,
+      "cpu_seconds": [
+        0.010054,
+        0.010015,
+        0.009771,
+        0.009505,
+        0.010088,
+        0.010291,
+        0.009359,
+        0.009743,
+        0.009663
+      ],
+      "label": "wfst",
+      "round": 2,
+      "audio": "build-wfst-bench/audio/w40_s-3_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 17.669375,
+      "cpu_seconds": [
+        0.008618,
+        0.009028,
+        0.008578,
+        0.009261,
+        0.008674,
+        0.008734,
+        0.008892,
+        0.008532,
+        0.008993
+      ],
+      "label": "legacy",
+      "round": 2,
+      "audio": "build-wfst-bench/audio/w40_s-3_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 34.626875,
+      "cpu_seconds": [
+        0.020496,
+        0.020354,
+        0.020514,
+        0.020259,
+        0.020431,
+        0.020113,
+        0.021284,
+        0.02106,
+        0.020037
+      ],
+      "label": "baseline",
+      "round": 2,
+      "audio": "build-wfst-bench/audio/qrm100_r0.wav"
+    },
+    {
+      "audio_seconds": 34.626875,
+      "cpu_seconds": [
+        0.021701,
+        0.02098,
+        0.020976,
+        0.020951,
+        0.020965,
+        0.021052,
+        0.021057,
+        0.021263,
+        0.021178
+      ],
+      "label": "wfst",
+      "round": 2,
+      "audio": "build-wfst-bench/audio/qrm100_r0.wav"
+    },
+    {
+      "audio_seconds": 34.626875,
+      "cpu_seconds": [
+        0.019857,
+        0.019449,
+        0.019365,
+        0.019128,
+        0.019413,
+        0.019436,
+        0.019307,
+        0.019101,
+        0.019795
+      ],
+      "label": "legacy",
+      "round": 2,
+      "audio": "build-wfst-bench/audio/qrm100_r0.wav"
+    },
+    {
+      "audio_seconds": 39.92875,
+      "cpu_seconds": [
+        0.020495,
+        0.020459,
+        0.020302,
+        0.020113,
+        0.020038,
+        0.020014,
+        0.020162,
+        0.020166,
+        0.020291
+      ],
+      "label": "legacy",
+      "round": 3,
+      "audio": "build-wfst-bench/audio/w20_s3_t1_r0.wav"
+    },
+    {
+      "audio_seconds": 39.92875,
+      "cpu_seconds": [
+        0.02094,
+        0.021101,
+        0.021036,
+        0.020406,
+        0.021544,
+        0.020492,
+        0.021028,
+        0.020699,
+        0.020645
+      ],
+      "label": "wfst",
+      "round": 3,
+      "audio": "build-wfst-bench/audio/w20_s3_t1_r0.wav"
+    },
+    {
+      "audio_seconds": 39.92875,
+      "cpu_seconds": [
+        0.021346,
+        0.021278,
+        0.020784,
+        0.020534,
+        0.02115,
+        0.021054,
+        0.0225,
+        0.022594,
+        0.022419
+      ],
+      "label": "baseline",
+      "round": 3,
+      "audio": "build-wfst-bench/audio/w20_s3_t1_r0.wav"
+    },
+    {
+      "audio_seconds": 40.205,
+      "cpu_seconds": [
+        0.033168,
+        0.03145,
+        0.03211,
+        0.031498,
+        0.028214,
+        0.027422,
+        0.027321,
+        0.027533,
+        0.027018
+      ],
+      "label": "legacy",
+      "round": 3,
+      "audio": "build-wfst-bench/audio/w12_sinf_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 40.205,
+      "cpu_seconds": [
+        0.029258,
+        0.029487,
+        0.028748,
+        0.028756,
+        0.028127,
+        0.02859,
+        0.028357,
+        0.028301,
+        0.029181
+      ],
+      "label": "wfst",
+      "round": 3,
+      "audio": "build-wfst-bench/audio/w12_sinf_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 40.205,
+      "cpu_seconds": [
+        0.028911,
+        0.02857,
+        0.027832,
+        0.027772,
+        0.027752,
+        0.02851,
+        0.027983,
+        0.027631,
+        0.027987
+      ],
+      "label": "baseline",
+      "round": 3,
+      "audio": "build-wfst-bench/audio/w12_sinf_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 17.669375,
+      "cpu_seconds": [
+        0.008673,
+        0.009471,
+        0.008847,
+        0.008636,
+        0.008965,
+        0.008552,
+        0.008929,
+        0.008624,
+        0.009215
+      ],
+      "label": "legacy",
+      "round": 3,
+      "audio": "build-wfst-bench/audio/w40_s-3_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 17.669375,
+      "cpu_seconds": [
+        0.010149,
+        0.009631,
+        0.009911,
+        0.009725,
+        0.009545,
+        0.010046,
+        0.009485,
+        0.009555,
+        0.009914
+      ],
+      "label": "wfst",
+      "round": 3,
+      "audio": "build-wfst-bench/audio/w40_s-3_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 17.669375,
+      "cpu_seconds": [
+        0.009706,
+        0.009528,
+        0.009708,
+        0.009205,
+        0.009502,
+        0.00966,
+        0.009272,
+        0.009311,
+        0.009522
+      ],
+      "label": "baseline",
+      "round": 3,
+      "audio": "build-wfst-bench/audio/w40_s-3_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 34.626875,
+      "cpu_seconds": [
+        0.019793,
+        0.019634,
+        0.019765,
+        0.019857,
+        0.019289,
+        0.019779,
+        0.019431,
+        0.019747,
+        0.01984
+      ],
+      "label": "legacy",
+      "round": 3,
+      "audio": "build-wfst-bench/audio/qrm100_r0.wav"
+    },
+    {
+      "audio_seconds": 34.626875,
+      "cpu_seconds": [
+        0.021311,
+        0.021227,
+        0.021289,
+        0.021112,
+        0.021043,
+        0.021286,
+        0.020703,
+        0.021615,
+        0.020887
+      ],
+      "label": "wfst",
+      "round": 3,
+      "audio": "build-wfst-bench/audio/qrm100_r0.wav"
+    },
+    {
+      "audio_seconds": 34.626875,
+      "cpu_seconds": [
+        0.020667,
+        0.021663,
+        0.020196,
+        0.020025,
+        0.020447,
+        0.020201,
+        0.020089,
+        0.020093,
+        0.02021
+      ],
+      "label": "baseline",
+      "round": 3,
+      "audio": "build-wfst-bench/audio/qrm100_r0.wav"
+    },
+    {
+      "audio_seconds": 39.92875,
+      "cpu_seconds": [
+        0.021098,
+        0.020931,
+        0.021069,
+        0.020754,
+        0.020484,
+        0.021233,
+        0.020793,
+        0.020631,
+        0.0204
+      ],
+      "label": "baseline",
+      "round": 4,
+      "audio": "build-wfst-bench/audio/w20_s3_t1_r0.wav"
+    },
+    {
+      "audio_seconds": 39.92875,
+      "cpu_seconds": [
+        0.021286,
+        0.02153,
+        0.021168,
+        0.020448,
+        0.020914,
+        0.020471,
+        0.020918,
+        0.020919,
+        0.020664
+      ],
+      "label": "wfst",
+      "round": 4,
+      "audio": "build-wfst-bench/audio/w20_s3_t1_r0.wav"
+    },
+    {
+      "audio_seconds": 39.92875,
+      "cpu_seconds": [
+        0.02028,
+        0.020419,
+        0.020156,
+        0.020129,
+        0.020844,
+        0.021831,
+        0.02232,
+        0.022327,
+        0.022567
+      ],
+      "label": "legacy",
+      "round": 4,
+      "audio": "build-wfst-bench/audio/w20_s3_t1_r0.wav"
+    },
+    {
+      "audio_seconds": 40.205,
+      "cpu_seconds": [
+        0.032304,
+        0.037046,
+        0.033556,
+        0.02883,
+        0.02812,
+        0.027809,
+        0.027876,
+        0.027427,
+        0.02783
+      ],
+      "label": "baseline",
+      "round": 4,
+      "audio": "build-wfst-bench/audio/w12_sinf_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 40.205,
+      "cpu_seconds": [
+        0.029437,
+        0.029682,
+        0.028394,
+        0.028675,
+        0.02854,
+        0.029007,
+        0.028707,
+        0.02839,
+        0.028792
+      ],
+      "label": "wfst",
+      "round": 4,
+      "audio": "build-wfst-bench/audio/w12_sinf_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 40.205,
+      "cpu_seconds": [
+        0.02841,
+        0.027385,
+        0.02761,
+        0.027885,
+        0.027,
+        0.027705,
+        0.027614,
+        0.027191,
+        0.027552
+      ],
+      "label": "legacy",
+      "round": 4,
+      "audio": "build-wfst-bench/audio/w12_sinf_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 17.669375,
+      "cpu_seconds": [
+        0.010009,
+        0.009413,
+        0.009392,
+        0.009833,
+        0.009179,
+        0.009411,
+        0.009627,
+        0.009251,
+        0.00927
+      ],
+      "label": "baseline",
+      "round": 4,
+      "audio": "build-wfst-bench/audio/w40_s-3_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 17.669375,
+      "cpu_seconds": [
+        0.010356,
+        0.009666,
+        0.009485,
+        0.009645,
+        0.009547,
+        0.009877,
+        0.009739,
+        0.009464,
+        0.009793
+      ],
+      "label": "wfst",
+      "round": 4,
+      "audio": "build-wfst-bench/audio/w40_s-3_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 17.669375,
+      "cpu_seconds": [
+        0.009126,
+        0.008674,
+        0.008918,
+        0.008623,
+        0.008629,
+        0.008764,
+        0.009003,
+        0.00868,
+        0.00899
+      ],
+      "label": "legacy",
+      "round": 4,
+      "audio": "build-wfst-bench/audio/w40_s-3_t0_r0.wav"
+    },
+    {
+      "audio_seconds": 34.626875,
+      "cpu_seconds": [
+        0.020898,
+        0.02064,
+        0.02035,
+        0.020433,
+        0.02061,
+        0.019956,
+        0.020273,
+        0.020642,
+        0.020282
+      ],
+      "label": "baseline",
+      "round": 4,
+      "audio": "build-wfst-bench/audio/qrm100_r0.wav"
+    },
+    {
+      "audio_seconds": 34.626875,
+      "cpu_seconds": [
+        0.021014,
+        0.022733,
+        0.02094,
+        0.020872,
+        0.021748,
+        0.021198,
+        0.020715,
+        0.021476,
+        0.021751
+      ],
+      "label": "wfst",
+      "round": 4,
+      "audio": "build-wfst-bench/audio/qrm100_r0.wav"
+    },
+    {
+      "audio_seconds": 34.626875,
+      "cpu_seconds": [
+        0.01992,
+        0.01994,
+        0.019881,
+        0.019641,
+        0.019735,
+        0.019305,
+        0.02092,
+        0.020975,
+        0.019574
+      ],
+      "label": "legacy",
+      "round": 4,
+      "audio": "build-wfst-bench/audio/qrm100_r0.wav"
+    }
+  ],
+  "complete": true,
+  "summary": {
+    "build-wfst-bench/audio/w20_s3_t1_r0.wav": {
+      "baseline": {
+        "samples": 45,
+        "median_cpu_seconds": 0.021278,
+        "min_cpu_seconds": 0.020291,
+        "max_cpu_seconds": 0.02412,
+        "audio_seconds": 39.92875,
+        "realtime_factor": 1876.5273991916536
+      },
+      "wfst": {
+        "samples": 45,
+        "median_cpu_seconds": 0.021028,
+        "min_cpu_seconds": 0.020406,
+        "max_cpu_seconds": 0.022726,
+        "audio_seconds": 39.92875,
+        "realtime_factor": 1898.8372645995814
+      },
+      "legacy": {
+        "samples": 45,
+        "median_cpu_seconds": 0.020358,
+        "min_cpu_seconds": 0.019873,
+        "max_cpu_seconds": 0.028751,
+        "audio_seconds": 39.92875,
+        "realtime_factor": 1961.3296983986638
+      }
+    },
+    "build-wfst-bench/audio/w12_sinf_t0_r0.wav": {
+      "baseline": {
+        "samples": 45,
+        "median_cpu_seconds": 0.028665,
+        "min_cpu_seconds": 0.027203,
+        "max_cpu_seconds": 0.037046,
+        "audio_seconds": 40.205,
+        "realtime_factor": 1402.5815454386882
+      },
+      "wfst": {
+        "samples": 45,
+        "median_cpu_seconds": 0.028971,
+        "min_cpu_seconds": 0.028053,
+        "max_cpu_seconds": 0.032204,
+        "audio_seconds": 40.205,
+        "realtime_factor": 1387.7670774222497
+      },
+      "legacy": {
+        "samples": 45,
+        "median_cpu_seconds": 0.02765,
+        "min_cpu_seconds": 0.027,
+        "max_cpu_seconds": 0.033168,
+        "audio_seconds": 40.205,
+        "realtime_factor": 1454.0687160940324
+      }
+    },
+    "build-wfst-bench/audio/w40_s-3_t0_r0.wav": {
+      "baseline": {
+        "samples": 45,
+        "median_cpu_seconds": 0.009522,
+        "min_cpu_seconds": 0.009179,
+        "max_cpu_seconds": 0.010112,
+        "audio_seconds": 17.669375,
+        "realtime_factor": 1855.6369460197438
+      },
+      "wfst": {
+        "samples": 45,
+        "median_cpu_seconds": 0.009743,
+        "min_cpu_seconds": 0.009359,
+        "max_cpu_seconds": 0.010519,
+        "audio_seconds": 17.669375,
+        "realtime_factor": 1813.5456224982038
+      },
+      "legacy": {
+        "samples": 45,
+        "median_cpu_seconds": 0.008816,
+        "min_cpu_seconds": 0.008532,
+        "max_cpu_seconds": 0.009508,
+        "audio_seconds": 17.669375,
+        "realtime_factor": 2004.2394509981852
+      }
+    },
+    "build-wfst-bench/audio/qrm100_r0.wav": {
+      "baseline": {
+        "samples": 45,
+        "median_cpu_seconds": 0.020482,
+        "min_cpu_seconds": 0.019892,
+        "max_cpu_seconds": 0.021671,
+        "audio_seconds": 34.626875,
+        "realtime_factor": 1690.600283175471
+      },
+      "wfst": {
+        "samples": 45,
+        "median_cpu_seconds": 0.021198,
+        "min_cpu_seconds": 0.020589,
+        "max_cpu_seconds": 0.022733,
+        "audio_seconds": 34.626875,
+        "realtime_factor": 1633.4972638928198
+      },
+      "legacy": {
+        "samples": 45,
+        "median_cpu_seconds": 0.019747,
+        "min_cpu_seconds": 0.019035,
+        "max_cpu_seconds": 0.020975,
+        "audio_seconds": 34.626875,
+        "realtime_factor": 1753.5258520281561
+      }
+    }
+  }
+}

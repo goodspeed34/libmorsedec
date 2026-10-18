@@ -1,0 +1,4071 @@
+{
+  "vail_revision": "ffb61d5bd7f010cedeb291e440c1781052c24c48",
+  "generator_sha256": "fafd9dc5af129915088a588ce580d216f9c19cc08f93c243b8de0ab956a4ef69",
+  "held_out": true,
+  "decoders": {
+    "wfst": {
+      "executable": "/home/goodspeed/Project/libmorsedec/build-wfst-bench/after-decode",
+      "executable_sha256": "15129e939d6845acafc3cbbdef89b31a1b10204a95c4a74187be9b4656672db1",
+      "library": "/home/goodspeed/Project/libmorsedec/build-wfst-release/libmorsedec.so.0.2.0",
+      "library_sha256": "933854c9f0aa0d472ae8cb11519e2826a2dc371d5f2eacf5faaff64cf5c174a2",
+      "source_root": "/home/goodspeed/Project/libmorsedec",
+      "source_sha256": {
+        "src/band.c": "974baadafaa59ef89cfc04e6397db5a492b3985c4654534e4bcbccbf9aa6c2f0",
+        "src/codes.h": "c85096c37306d08644f74f13804c24541a356bfca39ce73a04d14fff6e87e6c8",
+        "src/decode_compat.c": "c882019c134abd5764a5db8a8f82248a0e98eb5d79521cbfcede79d2c5e7cf26",
+        "src/decoder.c": "e513083243735eb4552250c236a3ebd387a1469725d67c768ce0e215f298c4d9",
+        "src/frontend.c": "9b5d7ec9d3fc3578961c477bc1b0a71730197096aba98812e9dda1c93c4fd97c",
+        "src/internal.h": "e92f3af929a9a5d154f8a41ae2373859a7003c521d9b9f7f8865a8755a8d241a",
+        "src/message.c": "05b90560ebba0b07a31e4e7b2b6335d7ecaced26ff5c6168c178b89fdb4fd78f",
+        "src/parallel.c": "c945d586e28f5bce84644eb26dabeea90de6eb58cb240108cf5a3a761148ebdd",
+        "src/signal.c": "155b71c0505ae8f027417f995b0daeb4fbf73efd13cd4e7d49a24e415a584780",
+        "src/statistics.c": "a8d0f6b8ac25c2c21d3de36373da413b9606debaede8e58f3355700af0c5f6f3",
+        "src/templates.h": "f1caff12a954e856b767f71546e0d634a507c6cfaf01f8f10b5a2b16bb29c6c4",
+        "src/wfst_decode.c": "7905ad2bf56b6781aed7504a5a1a2cc11e8b029078dc87d6379b16fb30752d64",
+        "src/wfst_decode.h": "fbe575e265d4d176c4556eabd697311aebcdbcece32e870ea25ce3f23f39154d",
+        "src/wfst_graph.h": "8f0cb2e42cf524089104fc262a85950dc0c4c0261b2ab53932450180caeb9f47",
+        "src/word.c": "ae058492a49786db4fca630b7d449e6fc6c47836941f7814d12ad07177d993a3",
+        "include/morsedec.h": "e148f65924792acc2adb3037b42cfd4786dff63a3258b6a67b17ab2db94ca202"
+      },
+      "build_options": {
+        "buildtype": "release",
+        "optimization": "3",
+        "b_ndebug": "true",
+        "b_sanitize": [],
+        "c_args": [],
+        "parallel": "enabled"
+      }
+    },
+    "legacy": {
+      "executable": "/home/goodspeed/Project/libmorsedec/build-wfst-bench/legacy-decode",
+      "executable_sha256": "99d5e11ab3d6ce3a6a21ea63c22401f3d05d5e46ea5bdf72c2a91f5be929b783",
+      "library": "/home/goodspeed/Project/libmorsedec/build-wfst-bench/legacy-build/libmorsedec.so.0.2.0",
+      "library_sha256": "e21d33bf7c589619c97deed5e4b619b4cf185ec24ff4734408e6a5ac58e6be48",
+      "source_root": "/home/goodspeed/Project/libmorsedec/build-wfst-bench/legacy-src",
+      "source_sha256": {
+        "src/band.c": "974baadafaa59ef89cfc04e6397db5a492b3985c4654534e4bcbccbf9aa6c2f0",
+        "src/character.c": "8862e4462225c67c34768fd8e02c6a3255d0faab7410db2f53738c2bde53e4df",
+        "src/codes.h": "c85096c37306d08644f74f13804c24541a356bfca39ce73a04d14fff6e87e6c8",
+        "src/decoder.c": "f05140d27ee97775d6df8f8cc7a7bea8b99364464efb66f8ca98508f34663775",
+        "src/frontend.c": "9b5d7ec9d3fc3578961c477bc1b0a71730197096aba98812e9dda1c93c4fd97c",
+        "src/internal.h": "bd9d8586ae9425614349ebde9377ae40d0547f94ff41a193b137a28df0dbbea7",
+        "src/message.c": "05b90560ebba0b07a31e4e7b2b6335d7ecaced26ff5c6168c178b89fdb4fd78f",
+        "src/parallel.c": "c945d586e28f5bce84644eb26dabeea90de6eb58cb240108cf5a3a761148ebdd",
+        "src/segment.c": "de893adccd9dc102a71595d297ea3503205cdca30628c1f1eeaf6fe9fd0199f6",
+        "src/signal.c": "155b71c0505ae8f027417f995b0daeb4fbf73efd13cd4e7d49a24e415a584780",
+        "src/statistics.c": "44a85ffe9ad576c4b956a19e5a78a57d864bdaf7ba14aaff6635c3eecca68f98",
+        "src/templates.h": "f1caff12a954e856b767f71546e0d634a507c6cfaf01f8f10b5a2b16bb29c6c4",
+        "src/word.c": "ae058492a49786db4fca630b7d449e6fc6c47836941f7814d12ad07177d993a3",
+        "include/morsedec.h": "e148f65924792acc2adb3037b42cfd4786dff63a3258b6a67b17ab2db94ca202"
+      },
+      "build_options": {
+        "buildtype": "release",
+        "optimization": "3",
+        "b_sanitize": [],
+        "b_ndebug": "true",
+        "c_args": [],
+        "parallel": "enabled"
+      }
+    },
+    "vail": {
+      "executable": "/home/goodspeed/Project/libmorsedec/build-vail/build-wfst-bench/vail_decode",
+      "executable_sha256": "fe97ccfa2ef4c00f7b8dd412cd239ab9f2eb58d5fcda69f31e07d836e65e956c"
+    }
+  },
+  "cases": [
+    {
+      "case": {
+        "name": "hold_w14_sNone_t0_r0",
+        "wpm": 14,
+        "snr": null,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "4c61bcbf635cf0b90104a6465a266dad04c7f97f1a64160e3f56c57ce1cf1dec",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.11992188899603207
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.15788679900288116
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.06362317999446532
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w14_sNone_t0_r1",
+        "wpm": 14,
+        "snr": null,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "ce485383df9d12941d6007537f4714fc970a4fc739f59e23e2a5c5be631dcbdb",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.1470811399995
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.1340511059970595
+      },
+      "vail": {
+        "text": "CQ DE WG IQRS W7QRS PSE K",
+        "errors": 3,
+        "cer": 0.13043478260869565,
+        "errors_ns": 2,
+        "process_wall_seconds": 0.06759645699639805
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w14_sNone_t1_r0",
+        "wpm": 14,
+        "snr": null,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "7f4bc88cc346ccbe348d89abe59b0c5b48aa7e7d9d5a12e224bf1338abef7c73",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.2131677959987428
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.29285201400489314
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.11574064599699341
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w14_sNone_t1_r1",
+        "wpm": 14,
+        "snr": null,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "8b618b8ec79ed9b0cd13e2b2646c0e0ebdde42c8440ecfc679b91cb827240a0e",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.2127735149988439
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.21704164700349793
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.10323170999618014
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w14_sNone_t2_r0",
+        "wpm": 14,
+        "snr": null,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "d19566dcbd775e39b80928544c9dab8cf3078fff0a3c256abaaddcf5dc86d331",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 975 3",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.28914809100388084
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 975 3",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.30093647099420195
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOM IEN LIQUOR JUGS 806 214 975 3",
+        "errors": 6,
+        "cer": 0.12,
+        "errors_ns": 2,
+        "process_wall_seconds": 0.1479756160042598
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w14_sNone_t2_r1",
+        "wpm": 14,
+        "snr": null,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "5e6c5494615e1251764a099e7203c23f08e8c2e7f5404f07046e2b33c71a6242",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 497 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.3034939029967063
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 497 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.31099530800565844
+      },
+      "vail": {
+        "text": "ASACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 62 149 753",
+        "errors": 5,
+        "cer": 0.1,
+        "errors_ns": 2,
+        "process_wall_seconds": 0.16011481400346383
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w14_s8_t0_r0",
+        "wpm": 14,
+        "snr": 8,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "142c6fa3874c0d2eec9b6284a0f076e4069fe93d53ce19711a55fe0c4c647720",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03878964499745052
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03905031000613235
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03353952200268395
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w14_s8_t0_r1",
+        "wpm": 14,
+        "snr": 8,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "8c720e92e2b9a3399ce1bf6ea5b62324748aa5d3390c6c5b9e1e19e75bc10a1c",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.036345785003504716
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03378660300222691
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.02529654899990419
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w14_s8_t1_r0",
+        "wpm": 14,
+        "snr": 8,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "c01ecbeb19e3cfd436a6a77c1f09e8824b02be983825c30fe8a7f429ee153ccd",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.055470962994149886
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04690306500560837
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSL O TEMP 8C 73",
+        "errors": 1,
+        "cer": 0.024390243902439025,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.036208250996423885
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w14_s8_t1_r1",
+        "wpm": 14,
+        "snr": 8,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "c2aee22db53e201267a146dcbb847707b33f2e8ea2f920108b5c97b62d4de387",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.0508465629973216
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04441594399395399
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.034471885999664664
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w14_s8_t2_r0",
+        "wpm": 14,
+        "snr": 8,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "7323ee440e4917b87ddf115f1a72ee19125241eb72c2e587128ee69165798cc5",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 975 3",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.06695493600273039
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 975 3",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.05942801300261635
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 975 3",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04773701499652816
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w14_s8_t2_r1",
+        "wpm": 14,
+        "snr": 8,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "7f4c569784409ad504312b323592cba7f03ea0a23a59c03833663b772c8a4a17",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 2149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.06677001100615598
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 2149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.059682295002858154
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062 149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04606647499895189
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w14_s2_t0_r0",
+        "wpm": 14,
+        "snr": 2,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "aea00a6a778ba943b94206bf7cd36dc51cbe9361f24ffb13b3b41d21d0ca32fc",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.0352636289971997
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03185090499755461
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.0238486419984838
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w14_s2_t0_r1",
+        "wpm": 14,
+        "snr": 2,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "f2eb7334d89f3f79c072ba34db1ea6442c79dccac8269d3ac9ae6df09d15fd0e",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03514867900230456
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.030017486002179794
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.023823262999940198
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w14_s2_t1_r0",
+        "wpm": 14,
+        "snr": 2,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "ce00bbf64fc0dd887f353a41a5bb32574cb158ec9cf25896a778dd8c1edfb37f",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04872229500324465
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04182648799906019
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.0329144150018692
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w14_s2_t1_r1",
+        "wpm": 14,
+        "snr": 2,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "59afa15bf61d97e657fe5c7967763d1b425fe73001f6a7f57d5add2fe030021a",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.048726805005571805
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04408150199742522
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.033588150996365584
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w14_s2_t2_r0",
+        "wpm": 14,
+        "snr": 2,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "6bad2bb69c1b2a23bc0483fbd589140759783fe2ef3a22ba4abd5dd145742d14",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 2149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.06650170100328978
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 2149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.05814440199901583
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 2149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.048199930002738256
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w14_s2_t2_r1",
+        "wpm": 14,
+        "snr": 2,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "a524989b0a8d9ed0272c2b695a322856d328ac3ee0fbb935b9329dd06fb20650",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 2149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.06129118300304981
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 2149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.0541165809991071
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 2149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04299403399636503
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w14_s-2_t0_r0",
+        "wpm": 14,
+        "snr": -2,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "f2f0963c58faad123b6665697d93bc93fb7839501c94a024490e64a60be63aad",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03347756499715615
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.029481179000867996
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.023661498998990282
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w14_s-2_t0_r1",
+        "wpm": 14,
+        "snr": -2,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "6e9ac30bcb7eef7233960eba1c96c145a8b1ab25435d9c7bacd9854ca192f629",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03406437100056792
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03450379499554401
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.025779258001421113
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w14_s-2_t1_r0",
+        "wpm": 14,
+        "snr": -2,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "c234e9f57cfdd012e4be2bacb40fb8924e0c0fd7183c35c1c299e2dbec3c49fb",
+      "wfst": {
+        "text": "UR RST 579 NAM ALICE QTIE OSLO TEMP 8C 73",
+        "errors": 3,
+        "cer": 0.07317073170731707,
+        "errors_ns": 3,
+        "process_wall_seconds": 0.04891301000316162
+      },
+      "legacy": {
+        "text": "UR RST 579 NAM E ALICE QTIE OSLO TEMP 8C 73",
+        "errors": 3,
+        "cer": 0.07317073170731707,
+        "errors_ns": 2,
+        "process_wall_seconds": 0.044953039003303275
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03727055699710036
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w14_s-2_t1_r1",
+        "wpm": 14,
+        "snr": -2,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "7b243b7b4407496e3bedd4ed2ddcdc50ed396a90033e56c9c12aac36b8292f87",
+      "wfst": {
+        "text": "UR RST H79 NAME ALI6E QTH OSLO TEMP 8C 73",
+        "errors": 2,
+        "cer": 0.04878048780487805,
+        "errors_ns": 2,
+        "process_wall_seconds": 0.04817801099852659
+      },
+      "legacy": {
+        "text": "UR RST H79 NAM E ALI6E QTH OSLO TEMP 8C 73",
+        "errors": 3,
+        "cer": 0.07317073170731707,
+        "errors_ns": 2,
+        "process_wall_seconds": 0.05008263100171462
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.037893123997491784
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w14_s-2_t2_r0",
+        "wpm": 14,
+        "snr": -2,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "697085375e3cc3c650226219d3ff7de5529edd9ecb0cb5a2166f3bda8a120bd9",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 97 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.05947282400302356
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 497 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.0614308880030876
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 497 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.050481853999372106
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w14_s-2_t2_r1",
+        "wpm": 14,
+        "snr": -2,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "65acbe39d8ff0dd050fd5f732f0718bcc2e91cc9262d89ff15ebe724ed1446b7",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062 149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.05835646299965447
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062 149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.056156871003622655
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062 149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04498389799846336
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_sNone_t0_r0",
+        "wpm": 19,
+        "snr": null,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "363f992b6879c8bcf7397c1e84973f8b60d6d8e2060caa884b1c94f883e4f6c1",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.09687308899447089
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.08111714100232348
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.0403784270019969
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_sNone_t0_r1",
+        "wpm": 19,
+        "snr": null,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "cdaf0c8985b29271d1cae22e2ac34ceab8defe7d2da184009436e7d56b3df8a6",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.08825606000027619
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.08732789000350749
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.042605003000062425
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_sNone_t1_r0",
+        "wpm": 19,
+        "snr": null,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "f98004b2d38c95e6bbb4384caf7613bbc4c6812ffcb01f6ec61b02646127f829",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.16240974700485822
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.15459708500566194
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.07164712800295092
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_sNone_t1_r1",
+        "wpm": 19,
+        "snr": null,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "8d1e95ccf6f2297018170135099c3cc0fc07e800776fed334f85b02f07b43460",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.19661025600362336
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.15005878399824724
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEN P8C 73",
+        "errors": 3,
+        "cer": 0.07317073170731707,
+        "errors_ns": 1,
+        "process_wall_seconds": 0.06783841099968413
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_sNone_t2_r0",
+        "wpm": 19,
+        "snr": null,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "756bf84a08634c562aa030c8866f7129abef007704c908dd0876b0f9ebde40ee",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 497 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.2408554819994606
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 497 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.19259270899783587
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 97 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.09747003500524443
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_sNone_t2_r1",
+        "wpm": 19,
+        "snr": null,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "114f7d467e2784354c30194de3ff9260296f4cb5e901f5d6dc3570320db003fe",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 975 3",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.23210576899873558
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 975 3",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.20948701400629943
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 49 753",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.10067907899792772
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_s8_t0_r0",
+        "wpm": 19,
+        "snr": 8,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "c2d9c1931663424440e55715fde41a036f427dc62658ba09b46197ac88ddb2f5",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03318444499745965
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03283600600116188
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.02569384999515023
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_s8_t0_r1",
+        "wpm": 19,
+        "snr": 8,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "28ea5b4f70c52ae3a80c3412161a44f68574245c747f3db8f7d73a0274af987f",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03233314999670256
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.030597003998991568
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.02138524200563552
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_s8_t1_r0",
+        "wpm": 19,
+        "snr": 8,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "c2d99c3e0f7f465c3cea9f12be2afbe9717702f2e92a0f0e6ffb3a54ebcfe575",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04161147299600998
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03839290399628226
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.02924478200293379
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_s8_t1_r1",
+        "wpm": 19,
+        "snr": 8,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "32d39d09ab07acebfb1bc6986385c4263666620b98fb38366c57bcc1b4eb86e3",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04196517100353958
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04260607500327751
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.029815471003530547
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_s8_t2_r0",
+        "wpm": 19,
+        "snr": 8,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "ab2d463d683f777747a66495e32d5c09be6f50da2e03fc5cf5693fafcbd7e47e",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 21 497 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.052485610998701304
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 21 497 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.05168213700380875
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 21 497 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.041895879003277514
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_s8_t2_r1",
+        "wpm": 19,
+        "snr": 8,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "eae733ded5ee584955bb283db19bab61048f70e75532926f36afbe3e930d5e3c",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 9753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.05196645300020464
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 9753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.05606144599732943
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 9 753",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04008671899646288
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_s2_t0_r0",
+        "wpm": 19,
+        "snr": 2,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "58506c672c0af629245313c451cad57b382edb9e1cb1131c5bef21a50fc15450",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.029408228998363484
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.02994071400462417
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.02234768299967982
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_s2_t0_r1",
+        "wpm": 19,
+        "snr": 2,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "a9969956196b16f4f0b0e8cee169e103c3530a6637778d5eeb017c690aaa9220",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.02784799900109647
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.02982999599771574
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.021558566004387103
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_s2_t1_r0",
+        "wpm": 19,
+        "snr": 2,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "327d4cf3c8499983d85a3f369a4701c2088b7772431ce77e3d8b9fa1c0b7c8e7",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.040380635000474285
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.040352284006075934
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03158399600215489
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_s2_t1_r1",
+        "wpm": 19,
+        "snr": 2,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "b59f1dae5e54dacd82b91593bd525a9f3abf2710efbfe86caa586d00c4881cd5",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.038399974000640213
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04043502700369572
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03314088899787748
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_s2_t2_r0",
+        "wpm": 19,
+        "snr": 2,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "f70d05afdca6bd2b6aa8284eb2642bd1917bf3eef0f653774fd07c004fe7704d",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 21 497 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.047683628006780054
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 2149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.05288810199999716
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 21 49 753",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04327915100293467
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_s2_t2_r1",
+        "wpm": 19,
+        "snr": 2,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "be4dccf5abde69b41effb9802b3e992c7cefd51c1b949fef4e06971f4f6c2d05",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 497 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.05155405800178414
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 497 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.06470862900459906
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 49 753",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04343025800335454
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_s-2_t0_r0",
+        "wpm": 19,
+        "snr": -2,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "7ca9ae50d8f16a734c6d665470d0ccab0a315d9fb07772d45d5de3778cc8a08c",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.028441882001061458
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.034576382000523154
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.031947235998813994
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_s-2_t0_r1",
+        "wpm": 19,
+        "snr": -2,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "f3c03be6f25190b928c12cf4a516f7c5e4567eb6015fc4f405f045958c32229f",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.027977295001619495
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.033915924999746494
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.023682601997279562
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_s-2_t1_r0",
+        "wpm": 19,
+        "snr": -2,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "8545b967433bedf4ac6d90031643cb1af46aebf436e20e0de07747ab7cf4a0f6",
+      "wfst": {
+        "text": "UR NST 579 NAME ALIC QTH OSLO TEMP 8C 73",
+        "errors": 2,
+        "cer": 0.04878048780487805,
+        "errors_ns": 2,
+        "process_wall_seconds": 0.04197690699947998
+      },
+      "legacy": {
+        "text": "UR NST 579 NAME ALIC QTH OSLO TEMP 8C 73",
+        "errors": 2,
+        "cer": 0.04878048780487805,
+        "errors_ns": 2,
+        "process_wall_seconds": 0.050134140998125076
+      },
+      "vail": {
+        "text": "UR NST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 1,
+        "cer": 0.024390243902439025,
+        "errors_ns": 1,
+        "process_wall_seconds": 0.035736164994887076
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_s-2_t1_r1",
+        "wpm": 19,
+        "snr": -2,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "1d6b6f06f38c9ba0da051075caf431c7dc8ed969e3016f5b9e11cfa53aff91a6",
+      "wfst": {
+        "text": "UN NST 579 NAME ALIC QTH OSLO TEMP 8 C 73",
+        "errors": 4,
+        "cer": 0.0975609756097561,
+        "errors_ns": 3,
+        "process_wall_seconds": 0.040070071001537144
+      },
+      "legacy": {
+        "text": "UN NST 579 NAME ALIC QTH OSLO TEMP 8C 73",
+        "errors": 3,
+        "cer": 0.07317073170731707,
+        "errors_ns": 3,
+        "process_wall_seconds": 0.04468310799711617
+      },
+      "vail": {
+        "text": "UN RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 1,
+        "cer": 0.024390243902439025,
+        "errors_ns": 1,
+        "process_wall_seconds": 0.03286898099759128
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_s-2_t2_r0",
+        "wpm": 19,
+        "snr": -2,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "c9d049ee275a50f67367746eaa34668229d53e8227791a9f76d4549135fe1e30",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062 149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.048498238997126464
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 975 3",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.06494818000646774
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 975 3",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.046211958993808366
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w19_s-2_t2_r1",
+        "wpm": 19,
+        "snr": -2,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "b1cce35158bbd9fc8ae1fcffe2250507376725f7eddf46972f39180950c9eba7",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 497 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.0474313649974647
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 497 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.05568573199707316
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 2149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04470271500031231
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_sNone_t0_r0",
+        "wpm": 27,
+        "snr": null,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "11e709b4c6af8ab4de1bf562b45c1dbaab1ab6bbf5511753813bccb865dede1a",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.06214942400401924
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.08669959999679122
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03200997100066161
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_sNone_t0_r1",
+        "wpm": 27,
+        "snr": null,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "5619291e63e24c8861f9d728b6d8a5db1404c54861ab8c926e94b5496b9e32be",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.06877802500093821
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.08034973000030732
+      },
+      "vail": {
+        "text": "H* FSE K",
+        "errors": 18,
+        "cer": 0.782608695652174,
+        "errors_ns": 15,
+        "process_wall_seconds": 0.031187646003672853
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_sNone_t1_r0",
+        "wpm": 27,
+        "snr": null,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "36ee3611b34553771d4a8af1ec7a5e42ecc230d0be782f7927467b6f2d5a8203",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.09752826199837727
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.14103246699960437
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04975253400334623
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_sNone_t1_r1",
+        "wpm": 27,
+        "snr": null,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "02bc9c808194a7e8bc8577cf8818ed15ed368ea1cc118f44845a21bb4a85aa08",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.10190674600016791
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.14059537299908698
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.048689011004171334
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_sNone_t2_r0",
+        "wpm": 27,
+        "snr": null,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "c157d131115ff1f308dd0526e172c00c292e1bd4de72d0bb20b7b3ce0965f933",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 21 497 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.14093278699874645
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 497 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.21399333300360013
+      },
+      "vail": {
+        "text": "EONT ITITH FIVE DOZEN LIQUOR JUGS 806 21 49 753",
+        "errors": 15,
+        "cer": 0.3,
+        "errors_ns": 10,
+        "process_wall_seconds": 0.0667726930041681
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_sNone_t2_r1",
+        "wpm": 27,
+        "snr": null,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "863156b9c63cbbb740a3c6f0ec9fdeaaf8bd4c537139165dbfd009ba9880c4b9",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 9753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.14897942100651562
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 2149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.18217662800452672
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 9753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.08004610700299963
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_s8_t0_r0",
+        "wpm": 27,
+        "snr": 8,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "86e300221606502d29ef7d4d327c76e649e5caa0dceefa09fbdc75f866e9a132",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.028975464003451634
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.027819821996672545
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.018623112002387643
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_s8_t0_r1",
+        "wpm": 27,
+        "snr": 8,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "94a978882c88e32756a8d3f4928219c6d820bbdbb7be0c0906f877580a4c2294",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.02878974399936851
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.02682530099991709
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.01868771400040714
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_s8_t1_r0",
+        "wpm": 27,
+        "snr": 8,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "bd6606ef2019351e3b56c48b7df4c9291acf1b1c333031fe6b51a89d58478e6f",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03292923699336825
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03854481000598753
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.026164720999076962
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_s8_t1_r1",
+        "wpm": 27,
+        "snr": 8,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "196effd3727443e2e8524d14310c2edfa348a9e7137b944e8e5438f8efc564e6",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03319342299801065
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03781344999879366
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.027616763996775262
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_s8_t2_r0",
+        "wpm": 27,
+        "snr": 8,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "d93914363eedae91a0f950fe66fa7fc834ea9532353b88618dfa25e0392009cd",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 2149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.047605186999135185
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 2149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04475924599682912
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 9 753",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.033210548004717566
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_s8_t2_r1",
+        "wpm": 27,
+        "snr": 8,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "6a534f68a6a5026cab3d5c828fe06bc9770087799331f6370735d5a558169aa1",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 21 497 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.05504405299870996
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 21 497 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.043126216005475726
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 97 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03378646000055596
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_s2_t0_r0",
+        "wpm": 27,
+        "snr": 2,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "c3c57ccc39b3ad88501dd923054b2e84665f56cccad784e957c70bd295307e3d",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.02559319099964341
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.024963907999335788
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.020017597002151888
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_s2_t0_r1",
+        "wpm": 27,
+        "snr": 2,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "74ecd8ce96cf537ffccdd85fc4cb0dea9436fe30eda322ebf7cbbffb1337e997",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.02609359799680533
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.025230974002624862
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.019883304994436912
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_s2_t1_r0",
+        "wpm": 27,
+        "snr": 2,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "d1ada1670327425d236100c84141f5275e5a064174b1ff51a830dc8999ca3ee5",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.032373736998124514
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03249854699970456
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.02667145200393861
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_s2_t1_r1",
+        "wpm": 27,
+        "snr": 2,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "7b68d0e424f98255c98743be33eaa19a7f1b34a27fe92f1e39a7524d00e3577f",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03738844399777008
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03236295199894812
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.024265056003059726
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_s2_t2_r0",
+        "wpm": 27,
+        "snr": 2,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "14ac03e9b4cdab5a4323cb9d955d18cc8eb0cfbd5e0eb8e0a7a8120110ae6cd9",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062 149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.0509381379961269
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062 149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04612671799986856
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 9753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03443173299456248
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_s2_t2_r1",
+        "wpm": 27,
+        "snr": 2,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "5d95cd9735781733b71e4574e28aa2d4bfe2ce80f6f4d1effd4be8705b5dcf2b",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 975 3",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.049507402000017464
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 2149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.040063888001895975
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 9753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03097410899499664
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_s-2_t0_r0",
+        "wpm": 27,
+        "snr": -2,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "9cdb8dc97edf114c536d51ca41fda19d15ce1cc1c3f86cf26a069676023117e1",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.024904814003093634
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.024192952005250845
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.019262478999735322
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_s-2_t0_r1",
+        "wpm": 27,
+        "snr": -2,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "4c341a2d617548f560d694c9e9d311fdc4c63ad84944fcbaf21d158a03a68a99",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.026554700001724996
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.031148321999353357
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.024141540001437534
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_s-2_t1_r0",
+        "wpm": 27,
+        "snr": -2,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "024e4e8a69ae01613cb9b89b97f31e4b4749e56dcaff859b7a0640048a1c50bf",
+      "wfst": {
+        "text": "AR AST 579 EAME ALIK E QTH OSAEO TEMP 8C 73",
+        "errors": 7,
+        "cer": 0.17073170731707318,
+        "errors_ns": 6,
+        "process_wall_seconds": 0.03873309800110292
+      },
+      "legacy": {
+        "text": "AR AST 579 EAME ALIK E QTH OSAEO TEMP OETT 73",
+        "errors": 11,
+        "cer": 0.2682926829268293,
+        "errors_ns": 10,
+        "process_wall_seconds": 0.04094951799925184
+      },
+      "vail": {
+        "text": "UR A ST 579 NAME ALIK E QTH OSAEO TEMP 8TN 73",
+        "errors": 8,
+        "cer": 0.1951219512195122,
+        "errors_ns": 6,
+        "process_wall_seconds": 0.03203847399709048
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_s-2_t1_r1",
+        "wpm": 27,
+        "snr": -2,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "7d044df1553bb6209086e5a29489f27cead87b8e53dd3d752301c2be3ed7327b",
+      "wfst": {
+        "text": "UR RIT 579 NAME ALICE QTH OSLO TEMP 8TN 73",
+        "errors": 3,
+        "cer": 0.07317073170731707,
+        "errors_ns": 3,
+        "process_wall_seconds": 0.04415416999836452
+      },
+      "legacy": {
+        "text": "UR A IT 579 NAME ALICE QTH OSLO TEMP 8TN 73",
+        "errors": 5,
+        "cer": 0.12195121951219512,
+        "errors_ns": 4,
+        "process_wall_seconds": 0.03832572499959497
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8TN 73",
+        "errors": 2,
+        "cer": 0.04878048780487805,
+        "errors_ns": 2,
+        "process_wall_seconds": 0.029172841997933574
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_s-2_t2_r0",
+        "wpm": 27,
+        "snr": -2,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "4c0cc545dd71e25b59cee1f88d77177aab416e4f681853b0996c1d99b83af9bc",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 2149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.05395257900090655
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 9753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.05266886600293219
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 9753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.046980864004581235
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w27_s-2_t2_r1",
+        "wpm": 27,
+        "snr": -2,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "77be891812cf8dbe8d0e019d2da4dfbaa220dd545751bdb65607ff77ad2bfeb6",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062 149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.05353357700369088
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 2149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.0559497230060515
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062 149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.048139509999600705
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_sNone_t0_r0",
+        "wpm": 34,
+        "snr": null,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "6a5802a39982942f3ed5f4cfa0b973bcbc173433cb55346e795014d2771843a3",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.038221842994971666
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.043622781995509285
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.022655478001979645
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_sNone_t0_r1",
+        "wpm": 34,
+        "snr": null,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "c18e5601ca1fa9f02a68d3aafd4ce15244e748b1762dee01bb7e548b2b4981f9",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04161710199696245
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.06005141499917954
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.02746509799908381
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_sNone_t1_r0",
+        "wpm": 34,
+        "snr": null,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "b187e20d96960c076f7d3d7d31c61b6ccec9c1648472327c97a6045926982718",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.07051861700165318
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.08470198600116419
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.030477218999294564
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_sNone_t1_r1",
+        "wpm": 34,
+        "snr": null,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "c81df98762481dfa228ee21087a8fb8226c2d44cc7b24c45abadad8d98332601",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.07745957100269152
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.0867588849941967
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03782528800365981
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_sNone_t2_r0",
+        "wpm": 34,
+        "snr": null,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "5f42307d2bc94d016e6d2eef9af5b251a94b7e1de5c81d7539e0e13c4fdca576",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 497 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.08075805899716215
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 497 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.08542681399558205
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 497 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.045108569000149146
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_sNone_t2_r1",
+        "wpm": 34,
+        "snr": null,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "7d7da455ca147bcc280f300e67b24344d6c226b2cd8e35d1494ed31b0acdef69",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 9753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.08037517599586863
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 9753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.11359750600240659
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 9753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.046210528002120554
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_s8_t0_r0",
+        "wpm": 34,
+        "snr": 8,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "911cf13e6d8d1973df3fa131e8e155b544762f2dc1677f07851d2932f975dc2e",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.02243952600110788
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.02895369899488287
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.021667551998689305
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_s8_t0_r1",
+        "wpm": 34,
+        "snr": 8,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "a5115de2de44a3afe5be4ea21deeabf1d8bf8ae795c3254f67fcd29e05f4375f",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.025031645003764424
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.029082578999805264
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.01927243099635234
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_s8_t1_r0",
+        "wpm": 34,
+        "snr": 8,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "c1ed35d40202ee5f121f1de92929c6fa94cf2949b1a47c5ff9679fb86ce7626a",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.034248536998347845
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.030052786001760978
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.024143088005075697
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_s8_t1_r1",
+        "wpm": 34,
+        "snr": 8,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "009ed3f4dab169fdef3af84908127281e9bc26302eb24a47527870c79ab7637c",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03520619600021746
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.033440400002291426
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.028140120004536584
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_s8_t2_r0",
+        "wpm": 34,
+        "snr": 8,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "d6950ff75c133f7e77c3b118f9ca59d46a882ecdde035afdaaa617c98cc12a2e",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062 149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04324872399593005
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062 149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04147237700090045
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062 149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03350705299817491
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_s8_t2_r1",
+        "wpm": 34,
+        "snr": 8,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "cd491ece228f66999231fb1236476edeff60a3e8fc71c47d39b97f4caea4793a",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 9753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04241556500346633
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 9753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04251507500157459
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 9753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03551579100167146
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_s2_t0_r0",
+        "wpm": 34,
+        "snr": 2,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "130c419bf3e9513c4c7da775a4b6cb6292cd2a6707fa66dbe59cdeb171790374",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.02438091899966821
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.027035446000809316
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.017130972002632916
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_s2_t0_r1",
+        "wpm": 34,
+        "snr": 2,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "faf243a54e4941770e546a7cc2d6716b358b96a88acf56b8afbd125242c4d8a0",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.023463018995244056
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.030072825000388548
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.022030193998944014
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_s2_t1_r0",
+        "wpm": 34,
+        "snr": 2,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "161ce0dd377f14d727ba150ffee9904812d10e5406d1a97296634be411c50a84",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.030369594001967926
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.035500014993886
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.02835962099925382
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_s2_t1_r1",
+        "wpm": 34,
+        "snr": 2,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "355bf2528e1d83c8203cce6a60aa2cbeeaefec737af1cdb2c1603ed3ba81546f",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03248295399680501
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03749937500106171
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.030807996001385618
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_s2_t2_r0",
+        "wpm": 34,
+        "snr": 2,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "f83d0382b6186e7f65537b84e1681b0cb120cc52171c5479e2beee2f02c44068",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 2149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.047665095000411384
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 2149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04066004399646772
+      },
+      "vail": {
+        "text": "EEE",
+        "errors": 48,
+        "cer": 0.96,
+        "errors_ns": 40,
+        "process_wall_seconds": 0.027748562999477144
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_s2_t2_r1",
+        "wpm": 34,
+        "snr": 2,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "fb45bd03deddeda738a048e440f311b2766b09b18c7bad9806686b50dac8a9a4",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 49 753",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.040785630997561384
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 62 149 753",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04527657699509291
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 62 149 753",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03568953299691202
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_s-2_t0_r0",
+        "wpm": 34,
+        "snr": -2,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "950d2ca269a8cf4df829ca59b02bf9d8b3b8a289c7cfc7447a74488fecb3457f",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.02778984700125875
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.029231880995212123
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.017755146000126842
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_s-2_t0_r1",
+        "wpm": 34,
+        "snr": -2,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "20267e2fcd0a73d3e0c3d9eb49b466cf67f5408310b95a73384c32d47bc21bd2",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.027966112000285648
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.027786543003458064
+      },
+      "vail": {
+        "text": "TNQ DE W7QRS W7QRS PSE K",
+        "errors": 2,
+        "cer": 0.08695652173913043,
+        "errors_ns": 2,
+        "process_wall_seconds": 0.023154048998549115
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_s-2_t1_r0",
+        "wpm": 34,
+        "snr": -2,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "d13be0cbe8dfef494fd007fb403b11b8057db7a52330b1a09220438e645c204e",
+      "wfst": {
+        "text": "AR E 579 NAM ALICE QTH MESLO TEMP EESC 73",
+        "errors": 10,
+        "cer": 0.24390243902439024,
+        "errors_ns": 10,
+        "process_wall_seconds": 0.037407076997624245
+      },
+      "legacy": {
+        "text": "TR E 579 NAM ADICE QTH MEI LO TEMP EESC 73",
+        "errors": 13,
+        "cer": 0.3170731707317073,
+        "errors_ns": 12,
+        "process_wall_seconds": 0.034624168001755606
+      },
+      "vail": {
+        "text": "ETR TIT 579 NAME ALICE QTH MESLO TEMP NEEC 73",
+        "errors": 9,
+        "cer": 0.21951219512195122,
+        "errors_ns": 9,
+        "process_wall_seconds": 0.021319223000318743
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_s-2_t1_r1",
+        "wpm": 34,
+        "snr": -2,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "934c13a097c0ea917a8bac01f1e9a1de5c79c5b16f05cf108ce93b8441c61575",
+      "wfst": {
+        "text": "AR ES 579 NAM TLICE QTH OSLO TEMP ? C 73",
+        "errors": 7,
+        "cer": 0.17073170731707318,
+        "errors_ns": 6,
+        "process_wall_seconds": 0.03153441799804568
+      },
+      "legacy": {
+        "text": "TA S79NAM TLICE QTH OSLO TEMP ? C 73",
+        "errors": 11,
+        "cer": 0.2682926829268293,
+        "errors_ns": 8,
+        "process_wall_seconds": 0.027149293004185893
+      },
+      "vail": {
+        "text": "UA T T S79NAM ALICE QTH OSLO TEMP ? C 73",
+        "errors": 8,
+        "cer": 0.1951219512195122,
+        "errors_ns": 6,
+        "process_wall_seconds": 0.024114718995406292
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_s-2_t2_r0",
+        "wpm": 34,
+        "snr": -2,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "585aed9de6337fae5c76afa6a2a0e1041f20a3f1497c65d735477b75c078c6e8",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 97 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03861947399855126
+      },
+      "legacy": {
+        "text": "PAK K MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 9753",
+        "errors": 4,
+        "cer": 0.08,
+        "errors_ns": 1,
+        "process_wall_seconds": 0.039045258999976795
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 97 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03514330399775645
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w34_s-2_t2_r1",
+        "wpm": 34,
+        "snr": -2,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "fb0100f931d38f68cce6112bd5498a34de3b67a03c21c7c0e6dd5ff5b7814cd1",
+      "wfst": {
+        "text": "PACK MY BOX WITH RIVE DOZEN LIQUOR JUGS 8062 149 753",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 1,
+        "process_wall_seconds": 0.039527903994894587
+      },
+      "legacy": {
+        "text": "PTCK MY BOX WITH RIVE DOZEN LIQUOR JUGS 8062 149 753",
+        "errors": 4,
+        "cer": 0.08,
+        "errors_ns": 2,
+        "process_wall_seconds": 0.04148436200193828
+      },
+      "vail": {
+        "text": "PTCK MY BOX WITH RIVE DOZEN LIQUOR JUGS 8062 149 753",
+        "errors": 4,
+        "cer": 0.08,
+        "errors_ns": 2,
+        "process_wall_seconds": 0.03283881200331962
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_sNone_t0_r0",
+        "wpm": 39,
+        "snr": null,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "2101943ae914f8b063e67abf4813a91611f8a7a695471176d9a4cba652a2c5a6",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.033974601996305864
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03873762299917871
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.027386984998884145
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_sNone_t0_r1",
+        "wpm": 39,
+        "snr": null,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "3f0f8fb3a2985d70577134cc6f14929d8ca270b3998e1679ce4211b75bdd885c",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04509275899908971
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS GSE K",
+        "errors": 1,
+        "cer": 0.043478260869565216,
+        "errors_ns": 1,
+        "process_wall_seconds": 0.03855871700216085
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS GSE K",
+        "errors": 1,
+        "cer": 0.043478260869565216,
+        "errors_ns": 1,
+        "process_wall_seconds": 0.017989755993767176
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_sNone_t1_r0",
+        "wpm": 39,
+        "snr": null,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "b25adef04d1014bda47fd14b9474d0ab205ed914f1d51540f432451c3878fcc7",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.0740591720023076
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.0633791350046522
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.02924466200056486
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_sNone_t1_r1",
+        "wpm": 39,
+        "snr": null,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "9e1248eb31bb18e0291e5579aa793405fd3f21ad2ec7cf441159fdd9c4defe80",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04817437800375046
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.048857323003176134
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.028332220994343515
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_sNone_t2_r0",
+        "wpm": 39,
+        "snr": null,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "32a03b61a611c9b92a5510204c52e493d02564fd450cb5f191c83a57d0032aeb",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUO R JUGS 8 062 149 753",
+        "errors": 4,
+        "cer": 0.08,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.05595821599854389
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUO R JUGS 8 062 149 753",
+        "errors": 4,
+        "cer": 0.08,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.06793601599929389
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUO N JUGS 8 062 149 753",
+        "errors": 5,
+        "cer": 0.1,
+        "errors_ns": 1,
+        "process_wall_seconds": 0.03615727199940011
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_sNone_t2_r1",
+        "wpm": 39,
+        "snr": null,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "7a46e24c20ccbe8a30325695fa70ca10e27d0b03b1882379a75e3b867b913f45",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062 149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.05645916000503348
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062 149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.062387805999605916
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062 149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03699083699757466
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_s8_t0_r0",
+        "wpm": 39,
+        "snr": 8,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "454c34cef127164da5bf0a0f29fa59924d94278bb1936587a75866779f2bf3af",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.024474404002830852
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.025782849996176083
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.019800918002147228
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_s8_t0_r1",
+        "wpm": 39,
+        "snr": 8,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "6be5a432479215655053d85ea7ca9e79f454d5479899d58600b4d3c71dc0baa5",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.025097334997553844
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.025649347000580747
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.0167583439979353
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_s8_t1_r0",
+        "wpm": 39,
+        "snr": 8,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "4b565c80afb1cb9bf45bfeb3ca1f66c2ef799dfbca8512e33d63361f56c046af",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03156114699959289
+      },
+      "legacy": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.030620744997577276
+      },
+      "vail": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.026601849996950477
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_s8_t1_r1",
+        "wpm": 39,
+        "snr": 8,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "e424d4408b4e634e8fd8a0bafa7dda8a82a4eadd54afaf54ae37b60a6ecae6ff",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.032826303999172524
+      },
+      "legacy": {
+        "text": "UT RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 1,
+        "cer": 0.024390243902439025,
+        "errors_ns": 1,
+        "process_wall_seconds": 0.033248372994421516
+      },
+      "vail": {
+        "text": "UN RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 1,
+        "cer": 0.024390243902439025,
+        "errors_ns": 1,
+        "process_wall_seconds": 0.02958291500544874
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_s8_t2_r0",
+        "wpm": 39,
+        "snr": 8,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "493ae6546c73673b654e658d502145659de0e1e9e2df8550198662d7acac6bc8",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 497 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.04083603899925947
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS ? 062 149 753",
+        "errors": 4,
+        "cer": 0.08,
+        "errors_ns": 1,
+        "process_wall_seconds": 0.03250345199921867
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS ? 062 149 753",
+        "errors": 4,
+        "cer": 0.08,
+        "errors_ns": 1,
+        "process_wall_seconds": 0.025201589000062086
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_s8_t2_r1",
+        "wpm": 39,
+        "snr": 8,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "88844b0b07cc41bd417fe073ef86ce05a5a23de2a4f08d1e4c2c4ef899458edc",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 49 753",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.038978290001978166
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 49 753",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.037769225004012696
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 975 3",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03325396799482405
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_s2_t0_r0",
+        "wpm": 39,
+        "snr": 2,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "1ed2d31ba130f1e27deea1f498fe9f87239175d4bb2b9171292da6614571b198",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.022842373000457883
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.025581222005712334
+      },
+      "vail": {
+        "text": "E CQ DE W7QRS W7QRS PSE K",
+        "errors": 2,
+        "cer": 0.08695652173913043,
+        "errors_ns": 1,
+        "process_wall_seconds": 0.017753243999322876
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_s2_t0_r1",
+        "wpm": 39,
+        "snr": 2,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "4f94c934447a437f65c66aec97e51799c2bf2acb9102e85110cf2f8d22300654",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.021561205998295918
+      },
+      "legacy": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.02339781699993182
+      },
+      "vail": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.019073251001827884
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_s2_t1_r0",
+        "wpm": 39,
+        "snr": 2,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "ecf04de5f59862e071a5385cfd647b8ac4c5adc700b6335213a54238b0010d84",
+      "wfst": {
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.02877722000266658
+      },
+      "legacy": {
+        "text": "UR TAT 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 2,
+        "cer": 0.04878048780487805,
+        "errors_ns": 2,
+        "process_wall_seconds": 0.031280785995477345
+      },
+      "vail": {
+        "text": "UR TAT 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 2,
+        "cer": 0.04878048780487805,
+        "errors_ns": 2,
+        "process_wall_seconds": 0.0238910929983831
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_s2_t1_r1",
+        "wpm": 39,
+        "snr": 2,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "77c7ce3091e4691b40067a885d5271040ece23667f3b720d70592bd28f7dc828",
+      "wfst": {
+        "text": "SR NST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "errors": 2,
+        "cer": 0.04878048780487805,
+        "errors_ns": 2,
+        "process_wall_seconds": 0.03063231400301447
+      },
+      "legacy": {
+        "text": "IR EST 579 NAME ALICE QTH OSLO TEMP 8TN 73",
+        "errors": 4,
+        "cer": 0.0975609756097561,
+        "errors_ns": 4,
+        "process_wall_seconds": 0.02685784499772126
+      },
+      "vail": {
+        "text": "UR TST 579 NAME ALICE QTH OSLO TEMP 8TN 73",
+        "errors": 3,
+        "cer": 0.07317073170731707,
+        "errors_ns": 3,
+        "process_wall_seconds": 0.019039717997657135
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_s2_t2_r0",
+        "wpm": 39,
+        "snr": 2,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "ff696b42e332d494557ce7425b0854e7aaa61b2560c853d6ee92111c15bf6b98",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 49 753",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.042498946997511666
+      },
+      "legacy": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 49 753",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.034963534999405965
+      },
+      "vail": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 49 753",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03115874899958726
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_s2_t2_r1",
+        "wpm": 39,
+        "snr": 2,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "09e0989c5b25b84b1be6e6fc954c943583c3e37a4d18d3eeb2731506d2d7c19e",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 80 621 497 53",
+        "errors": 3,
+        "cer": 0.06,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03935449800337665
+      },
+      "legacy": {
+        "text": "PAK K MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 2149 753",
+        "errors": 4,
+        "cer": 0.08,
+        "errors_ns": 1,
+        "process_wall_seconds": 0.03887765299441526
+      },
+      "vail": {
+        "text": "PAK K MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062 149 753",
+        "errors": 4,
+        "cer": 0.08,
+        "errors_ns": 1,
+        "process_wall_seconds": 0.02494598799967207
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_s-2_t0_r0",
+        "wpm": 39,
+        "snr": -2,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "45e7d4237e7a3d2b96a81ba1043812c0018608cbca54573780df0dee721ce789",
+      "wfst": {
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "errors": 0,
+        "cer": 0.0,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.02790079000260448
+      },
+      "legacy": {
+        "text": "CMT NE W7QRS W7QRS PSE K",
+        "errors": 3,
+        "cer": 0.13043478260869565,
+        "errors_ns": 3,
+        "process_wall_seconds": 0.025793125001655426
+      },
+      "vail": {
+        "text": "CMT NE W7QRS W7QRS PSE K",
+        "errors": 3,
+        "cer": 0.13043478260869565,
+        "errors_ns": 3,
+        "process_wall_seconds": 0.01785664400085807
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_s-2_t0_r1",
+        "wpm": 39,
+        "snr": -2,
+        "text": "CQ DE W7QRS W7QRS PSE K",
+        "pitch": 543,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "1eb7617461b8a0606e739411de75b86f6ad986c955b5637235e9d3b21358e1c7",
+      "wfst": {
+        "text": "CMT D W7QRS W7QRI PSE K",
+        "errors": 4,
+        "cer": 0.17391304347826086,
+        "errors_ns": 4,
+        "process_wall_seconds": 0.026668472004530486
+      },
+      "legacy": {
+        "text": "KMT D W7MTRS W7QRI PSE TT",
+        "errors": 9,
+        "cer": 0.391304347826087,
+        "errors_ns": 9,
+        "process_wall_seconds": 0.02451362300053006
+      },
+      "vail": {
+        "text": "KMT D W7QRS W7QRI PSE TT",
+        "errors": 7,
+        "cer": 0.30434782608695654,
+        "errors_ns": 7,
+        "process_wall_seconds": 0.018539911005063914
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_s-2_t1_r0",
+        "wpm": 39,
+        "snr": -2,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "9058b82a611a7b1c8e7529a6b4aed3d87d51e8e43507d711a7342b48e8203448",
+      "wfst": {
+        "text": "EE IEE 55 TAM ILICE QTH OSAEO TEMP 8C 73",
+        "errors": 12,
+        "cer": 0.2926829268292683,
+        "errors_ns": 12,
+        "process_wall_seconds": 0.03398165099497419
+      },
+      "legacy": {
+        "text": "EE IEE 5 ? TAI ILECE QTH OSAEO TEMP 8K GE*",
+        "errors": 18,
+        "cer": 0.43902439024390244,
+        "errors_ns": 18,
+        "process_wall_seconds": 0.02631524900061777
+      },
+      "vail": {
+        "text": "IHE I 2 TAME ALICE QTH OSAEO TEMP 8C 73",
+        "errors": 12,
+        "cer": 0.2926829268292683,
+        "errors_ns": 11,
+        "process_wall_seconds": 0.02639991199976066
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_s-2_t1_r1",
+        "wpm": 39,
+        "snr": -2,
+        "text": "UR RST 579 NAME ALICE QTH OSLO TEMP 8C 73",
+        "pitch": 680,
+        "jitter": 0.06,
+        "fade": 0.4
+      },
+      "sha256": "da0fb910f0a20b92047192d5512b14ef2b737773efd6efc2b5bed63ff71222bc",
+      "wfst": {
+        "text": "AA E I7J NAME AT ICE QTH OSLO TEMP 8C MI3",
+        "errors": 11,
+        "cer": 0.2682926829268293,
+        "errors_ns": 10,
+        "process_wall_seconds": 0.034423896999214776
+      },
+      "legacy": {
+        "text": "II I5J NAME TT ITNE QTH OSLO TEMP 8TN MI3",
+        "errors": 17,
+        "cer": 0.4146341463414634,
+        "errors_ns": 15,
+        "process_wall_seconds": 0.03091179599869065
+      },
+      "vail": {
+        "text": "UA A T 579 NAME T TEITNE QTH OEELO TEMP 8TN MI3",
+        "errors": 15,
+        "cer": 0.36585365853658536,
+        "errors_ns": 14,
+        "process_wall_seconds": 0.02170713300438365
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_s-2_t2_r0",
+        "wpm": 39,
+        "snr": -2,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "71388c03b5d33965e497d13eb0cfb50a92aa21ecabaf49da41422e2a6c2f69c0",
+      "wfst": {
+        "text": "PAGU MY BOX WITH FIVE DOZEN LIQUOR JUGS 806 214 975IM",
+        "errors": 6,
+        "cer": 0.12,
+        "errors_ns": 4,
+        "process_wall_seconds": 0.03336738499638159
+      },
+      "legacy": {
+        "text": "SEMEE IHEESW AITH FIVE DOZEN LIQUOR OUGS 806 21I T975IM",
+        "errors": 19,
+        "cer": 0.38,
+        "errors_ns": 16,
+        "process_wall_seconds": 0.03528557300160173
+      },
+      "vail": {
+        "text": "SENEEIH EESS IEEI EEENEE SSS SEH IDS JUGS 806 21 ST975IM",
+        "errors": 37,
+        "cer": 0.74,
+        "errors_ns": 31,
+        "process_wall_seconds": 0.02740076599729946
+      }
+    },
+    {
+      "case": {
+        "name": "hold_w39_s-2_t2_r1",
+        "wpm": 39,
+        "snr": -2,
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062149753",
+        "pitch": 817,
+        "jitter": 0.06,
+        "fade": 0.0
+      },
+      "sha256": "ec35181f114ca5206836ebcd518929d84b7cf19a831fa9bf59cadcbbf280d538",
+      "wfst": {
+        "text": "PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS 8062 149 753",
+        "errors": 2,
+        "cer": 0.04,
+        "errors_ns": 0,
+        "process_wall_seconds": 0.03473440499510616
+      },
+      "legacy": {
+        "text": "WACK MY BOX WITH FIVE DOZEN LIQ AOR OUGS 806 2149 753",
+        "errors": 6,
+        "cer": 0.12,
+        "errors_ns": 3,
+        "process_wall_seconds": 0.034163607997470535
+      },
+      "vail": {
+        "text": "WACK MY BOX WITH FIVE DOZEN LIQUOR OUGS 8062 149 753",
+        "errors": 4,
+        "cer": 0.08,
+        "errors_ns": 2,
+        "process_wall_seconds": 0.024507295005605556
+      }
+    }
+  ],
+  "complete": true,
+  "summary": {
+    "wfst": {
+      "cases": 120,
+      "errors": 174,
+      "reference_characters": 4560,
+      "mean_cer": 0.03208748674443266,
+      "pooled_cer": 0.038157894736842106,
+      "errors_ns": 68
+    },
+    "legacy": {
+      "cases": 120,
+      "errors": 233,
+      "reference_characters": 4560,
+      "mean_cer": 0.04477925061859314,
+      "pooled_cer": 0.051096491228070175,
+      "errors_ns": 120
+    },
+    "vail": {
+      "cases": 120,
+      "errors": 310,
+      "reference_characters": 4560,
+      "mean_cer": 0.06112477907387769,
+      "pooled_cer": 0.06798245614035088,
+      "errors_ns": 180
+    }
+  },
+  "gates": [
+    {
+      "candidate": "wfst",
+      "baseline": "legacy",
+      "passed": true
+    }
+  ]
+}
