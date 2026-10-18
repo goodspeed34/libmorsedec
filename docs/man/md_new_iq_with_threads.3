@@ -1,5 +1,5 @@
 .\" SPDX-License-Identifier: GPL-3.0-or-later
-.TH MD_NEW_IQ_WITH_THREADS 3 "2026-10-17" "libmorsedec 0.2.0" "Library Functions Manual"
+.TH MD_NEW_IQ_WITH_THREADS 3 "2026-10-17" "libmorsedec 0.3.0" "Library Functions Manual"
 .SH NAME
 md_new_iq_with_threads \- create a decoder with a channel processing thread
 budget
@@ -57,7 +57,8 @@ elapsed time for small workloads.
 Serialize construction with every FFTW planner and plan-destruction operation.
 Serialize all calls accessing the resulting handle, including queries.
 .SH VERSION
-Available in the libmorsedec 0.2.0 development API, shared-library ABI 1.
+Available in the libmorsedec 0.2.0 development API. Version 0.3.0 uses
+shared-library ABI 2.
 .SH SEE ALSO
 .BR md_new_iq (3),
 .BR md_get_thread_count (3),

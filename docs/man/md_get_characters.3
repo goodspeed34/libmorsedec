@@ -1,5 +1,5 @@
 .\" SPDX-License-Identifier: GPL-3.0-or-later
-.TH MD_GET_CHARACTERS 3 "2026-10-16" "libmorsedec 0.2.0" "Library Functions Manual"
+.TH MD_GET_CHARACTERS 3 "2026-10-16" "libmorsedec 0.3.0" "Library Functions Manual"
 .SH NAME
 md_get_characters \- borrow a channel message snapshot with character metadata
 .SH SYNOPSIS
@@ -60,8 +60,8 @@ Serialize all calls that access the same handle, including getters. Different
 handles may process concurrently after construction. These functions are not
 specified as async-signal-safe.
 .SH VERSION
-This md_ entry point is available since libmorsedec 0.2.0 (shared-library ABI
-1).
+This md_ entry point is available since libmorsedec 0.2.0.
+Version 0.3.0 uses the float API and shared-library ABI 2.
 .SH SEE ALSO
 .BR libmorsedec (3),
 .BR md_get_text (3),

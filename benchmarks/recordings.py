@@ -12,23 +12,28 @@ import wave
 
 class Config(C.Structure):
     _fields_ = [("sample_rate", C.c_uint32), ("fft_size", C.c_size_t),
-                ("hop_size", C.c_size_t), ("min_frequency", C.c_double),
-                ("max_frequency", C.c_double), ("max_channels", C.c_size_t),
-                ("initial_wpm", C.c_double)]
+                ("hop_size", C.c_size_t), ("min_frequency", C.c_float),
+                ("max_frequency", C.c_float), ("max_channels", C.c_size_t),
+                ("initial_wpm", C.c_float)]
 
 
 class Geometry(C.Structure):
     _fields_ = [("sample_rate", C.c_uint32), ("fft_size", C.c_size_t),
                 ("hop_size", C.c_size_t), ("spectrum_size", C.c_size_t),
-                ("first_frequency", C.c_double), ("bin_spacing", C.c_double),
-                ("frame_seconds", C.c_double)]
+                ("first_frequency", C.c_float), ("bin_spacing", C.c_float),
+                ("frame_seconds", C.c_float)]
 
 
 class Character(C.Structure):
     _fields_ = [("character", C.c_ubyte), ("word_type", C.c_int),
                 ("ordinal", C.c_uint64), ("low_snr", C.c_int),
-                ("word_space_probability", C.c_double), ("word_end", C.c_int)]
+                ("word_space_probability", C.c_float), ("word_end", C.c_int)]
 
+
+# Keep historical ABI-1 replay available for archived double-precision builds.
+ConfigV1 = type("ConfigV1", (C.Structure,), {"_fields_": [(n, C.c_double if t is C.c_float else t) for n,t in Config._fields_]})
+GeometryV1 = type("GeometryV1", (C.Structure,), {"_fields_": [(n, C.c_double if t is C.c_float else t) for n,t in Geometry._fields_]})
+CharacterV1 = type("CharacterV1", (C.Structure,), {"_fields_": [(n, C.c_double if t is C.c_float else t) for n,t in Character._fields_]})
 
 def distance(a, b):
     row = list(range(len(b) + 1))
@@ -82,6 +87,7 @@ def decode(lib, path):
 
 
 def main():
+    global Config, Geometry, Character
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--library", type=Path, required=True)
     parser.add_argument("--audio", type=Path, required=True)
@@ -90,7 +96,10 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--baseline", type=Path,
                         help="Fail if pooled CER exceeds this identical-input report")
+    parser.add_argument("--abi", choices=(1,2), type=int, default=2, help="Library ABI: 2=float (default), 1=historical double")
     args = parser.parse_args()
+    if args.abi == 1:
+        Config, Geometry, Character = ConfigV1, GeometryV1, CharacterV1
     lib = C.CDLL(str(args.library.resolve()))
     signatures = {
         "config_init": ([C.POINTER(Config)], None),
@@ -105,7 +114,7 @@ def main():
     for name, (types, result) in signatures.items():
         fn = getattr(lib, "md_" + name)
         fn.argtypes, fn.restype = types, result
-    report = {"library_sha256": hashlib.sha256(args.library.read_bytes()).hexdigest(),
+    report = {"abi": args.abi, "library_sha256": hashlib.sha256(args.library.read_bytes()).hexdigest(),
               "method": "current-channel snapshots by ordinal; uppercase; remove whitespace",
               "cases": []}
     for case in json.loads(args.references.read_text())["cases"]:

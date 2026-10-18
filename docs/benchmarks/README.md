@@ -1,5 +1,8 @@
 # Archived recording corpus evaluation
 
+For the current float API, CER tradeoff, CPU and memory results, see the
+[float refactor measurements](float-refactor.md).
+
 For the lattice decoder accuracy gate, see [lattice CER results](lattice-gate.md).
 Its [CPU measurements](lattice-speed.md) compare the earlier decoder and Vail.
 For the preceding synthetic head-to-head evaluation and recording regression

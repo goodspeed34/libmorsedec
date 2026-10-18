@@ -1,5 +1,5 @@
 .\" SPDX-License-Identifier: GPL-3.0-or-later
-.TH MD_NEW 3 "2026-10-16" "libmorsedec 0.2.0" "Library Functions Manual"
+.TH MD_NEW 3 "2026-10-16" "libmorsedec 0.3.0" "Library Functions Manual"
 .SH NAME
 md_new \- create a streaming mono audio decoder
 .SH SYNOPSIS
@@ -42,8 +42,8 @@ Serialize this call with all FFTW planner and plan-destruction operations in
 the application, including operations for other decoder handles. No such lock
 is needed between independent handles during processing.
 .SH VERSION
-This md_ entry point is available since libmorsedec 0.2.0 (shared-library ABI
-1).
+This md_ entry point is available since libmorsedec 0.2.0.
+Version 0.3.0 uses the float API and shared-library ABI 2.
 .SH SEE ALSO
 .BR md_new_with_threads (3),
 .BR md_get_thread_count (3),

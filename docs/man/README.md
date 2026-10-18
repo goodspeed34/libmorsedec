@@ -23,7 +23,7 @@ safety, and a complete I/Q consumer example.
 Each public function has a separate section 3 page, following the organization
 of the [SDL2 function reference](https://wiki.libsdl.org/SDL2/SDL_Init): synopsis,
 function parameters, return value, applicable errors, remarks, thread safety,
-version, and related functions. The content describes libmorsedec 0.2.0 and is
+version, and related functions. The content describes libmorsedec 0.3.0 and is
 checked against `include/morsedec.h` and the implementation.
 
 Read from the source tree:

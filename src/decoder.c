@@ -29,13 +29,13 @@ static int configure(struct morsedec_decoder *d,
 		     const struct morsedec_config *c)
 {
 	double n, hop, first, limit, dt;
-	if (!c->sample_rate || !isfinite(c->min_frequency) ||
-	    !isfinite(c->max_frequency) ||
+	if (!c->sample_rate || !md_finite(c->min_frequency) ||
+	    !md_finite(c->max_frequency) ||
 	    c->min_frequency < (d->iq ? -(double)c->sample_rate / 2 : 0) ||
 	    c->max_frequency <= c->min_frequency ||
 	    c->max_frequency > c->sample_rate / 2.0 || !c->max_channels ||
 	    c->max_channels > SIZE_MAX / sizeof(struct md_channel) ||
-	    !isfinite(c->initial_wpm) || c->initial_wpm < 0 ||
+	    !md_finite(c->initial_wpm) || c->initial_wpm < 0 ||
 	    (c->initial_wpm > 0 && (c->initial_wpm < 5 || c->initial_wpm > 80)))
 		return md_fail(EINVAL);
 	n = c->fft_size ? (double)c->fft_size
@@ -173,10 +173,10 @@ void md_delete(morsedec_decoder_t *d)
 		return;
 	md_parallel_delete(d);
 	if (d->plan)
-		fftw_destroy_plan(d->plan);
-	fftw_free(d->fft_input);
-	fftw_free(d->fft_iq);
-	fftw_free(d->fft_output);
+		fftwf_destroy_plan(d->plan);
+	fftwf_free(d->fft_input);
+	fftwf_free(d->fft_iq);
+	fftwf_free(d->fft_output);
 	free(d->audio);
 	free(d->quadrature);
 	free(d->window);
@@ -199,7 +199,7 @@ int md_reset(morsedec_decoder_t *d)
 {
 	if (!d)
 		return md_fail(EINVAL);
-	memset(d->audio, 0, d->geometry.fft_size * sizeof(double));
+	memset(d->audio, 0, d->geometry.fft_size * sizeof(*d->audio));
 	if (d->iq)
 		memset(d->quadrature, 0,
 		       d->geometry.fft_size * sizeof(*d->quadrature));
@@ -227,12 +227,12 @@ int md_get_geometry(const morsedec_decoder_t *d, struct morsedec_geometry *g)
 	return MORSEDEC_SUCCESS;
 }
 
-static void sample(struct morsedec_decoder *d, double x, double q)
+static void sample(struct morsedec_decoder *d, float x, float q)
 {
-	d->audio[d->sample_pos] = isfinite(x) ? md_clamp(x, -1, 1) : 0;
+	d->audio[d->sample_pos] = md_finite(x) ? md_clamp(x, -1, 1) : 0;
 	if (d->iq)
 		d->quadrature[d->sample_pos] =
-		    isfinite(q) ? md_clamp(q, -1, 1) : 0;
+		    md_finite(q) ? md_clamp(q, -1, 1) : 0;
 	d->sample_pos = (d->sample_pos + 1) % d->geometry.fft_size;
 	if (++d->hop_fill == d->geometry.hop_size) {
 		d->hop_fill = 0;
@@ -256,7 +256,7 @@ int md_process_s16(morsedec_decoder_t *d, const int16_t *samples, size_t count)
 		return md_fail(EINVAL);
 	d->mode = 1;
 	for (size_t i = 0; i < count; i++)
-		sample(d, samples[i] / 32768.0, 0);
+		sample(d, samples[i] / 32768.0f, 0);
 	return MORSEDEC_SUCCESS;
 }
 
@@ -279,8 +279,8 @@ int md_process_iq_s16(morsedec_decoder_t *d, const int16_t *interleaved,
 		return md_fail(EINVAL);
 	d->mode = 1;
 	for (size_t i = 0; i < count; i++)
-		sample(d, interleaved[2 * i] / 32768.0,
-		       interleaved[2 * i + 1] / 32768.0);
+		sample(d, interleaved[2 * i] / 32768.0f,
+		       interleaved[2 * i + 1] / 32768.0f);
 	return MORSEDEC_SUCCESS;
 }
 
@@ -291,7 +291,8 @@ int md_process_spectrum(morsedec_decoder_t *d, const float *power, size_t count)
 		return md_fail(EINVAL);
 	d->mode = 2;
 	for (int i = 0; i < d->bins; i++)
-		d->power[i] = isfinite(power[i]) && power[i] > 0 ? power[i] : 0;
+		d->power[i] =
+		    md_finite(power[i]) && power[i] > 0 ? power[i] : 0;
 	md_band_frame(d, d->power);
 	return MORSEDEC_SUCCESS;
 }
@@ -358,7 +359,7 @@ int md_get_channel(const morsedec_decoder_t *d, size_t index,
 	    c->id,
 	    state(d, c),
 	    d->geometry.first_frequency + c->bin * d->geometry.bin_spacing,
-	    10 * log10(fmax(1, c->square)) - 10,
+	    10 * log10f(md_max(1, c->square)) - 10,
 	    md_speed(&c->stats),
 	    c->probability,
 	    c->strength,
@@ -366,7 +367,7 @@ int md_get_channel(const morsedec_decoder_t *d, size_t index,
 	return MORSEDEC_SUCCESS;
 }
 
-int md_set_frequency(morsedec_decoder_t *d, double hz)
+int md_set_frequency(morsedec_decoder_t *d, float hz)
 {
 	return hz == 0 ? md_unpin_frequency(d) : md_pin_frequency(d, hz);
 }
@@ -380,15 +381,15 @@ int md_unpin_frequency(morsedec_decoder_t *d)
 	return MORSEDEC_SUCCESS;
 }
 
-int md_pin_frequency(morsedec_decoder_t *d, double hz)
+int md_pin_frequency(morsedec_decoder_t *d, float hz)
 {
 	int bin;
 	struct md_channel *selected = NULL;
-	if (!d || !isfinite(hz) || (!d->iq && hz < 0) || d->flushed)
+	if (!d || !md_finite(hz) || (!d->iq && hz < 0) || d->flushed)
 		return md_fail(EINVAL);
-	bin = (int)md_clamp(nearbyint((hz - d->geometry.first_frequency) /
-				      d->geometry.bin_spacing),
-			    10, d->bins - 11);
+	bin = (int)md_clamp64(nearbyint((hz - d->geometry.first_frequency) /
+					d->geometry.bin_spacing),
+			      10, d->bins - 11);
 	for (size_t i = 0; i < d->count; i++) {
 		struct md_channel *c = d->order[i];
 		if (abs(c->bin - bin) <= 2 &&
@@ -406,20 +407,20 @@ int md_pin_frequency(morsedec_decoder_t *d, double hz)
 	return MORSEDEC_SUCCESS;
 }
 
-double md_get_frequency(const morsedec_decoder_t *d)
+float md_get_frequency(const morsedec_decoder_t *d)
 {
 	return d && d->current ? d->geometry.first_frequency +
 				     d->current->bin * d->geometry.bin_spacing
 			       : -1;
 }
 
-double md_get_snr(const morsedec_decoder_t *d)
+float md_get_snr(const morsedec_decoder_t *d)
 {
-	return d && d->current ? 10 * log10(fmax(1, d->current->square)) - 10
+	return d && d->current ? 10 * log10f(md_max(1, d->current->square)) - 10
 			       : -1;
 }
 
-double md_get_wpm(const morsedec_decoder_t *d)
+float md_get_wpm(const morsedec_decoder_t *d)
 {
 	return d && d->current ? md_speed(&d->current->stats) : -1;
 }

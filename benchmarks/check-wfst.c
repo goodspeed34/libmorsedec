@@ -603,8 +603,69 @@ static void md_public_lifecycle_check(void)
 	md_delete(d);
 }
 
+static void md_float_filter_check(void)
+{
+	struct md_filter f;
+	md_filter_init(&f, 64);
+	for (int i = 0; i < 4096; i++) {
+		float got = md_average(&f, i % 3 ? 200.0f : 0.0001f);
+		double sum = 0;
+		for (int j = 0; j < f.n; j++)
+			sum += f.ring[j];
+		double expected = sum / f.n;
+		assert(fabs(got - expected) <=
+		       8 * FLT_EPSILON * fmax(1, expected));
+	}
+}
+
+static void md_float_check(void)
+{
+	static const uint32_t values[] = {
+	    0,		 0x80000000u, 1,	   0x80000001u, 0x007fffffu,
+	    0x00800000u, 0x3f800000u, 0xbf800000u, 0x7f7fffffu, 0xff7fffffu,
+	    0x7f800000u, 0xff800000u, 0x7fc00001u, 0xffc00001u};
+	uint32_t state = 1;
+	for (unsigned i = 0; i < 8192; i++) {
+		uint32_t a =
+		    i < sizeof(values) / sizeof(values[0]) ? values[i] : state;
+		state = state * UINT32_C(1664525) + UINT32_C(1013904223);
+		uint32_t b =
+		    i < sizeof(values) / sizeof(values[0])
+			? values[sizeof(values) / sizeof(values[0]) - i - 1]
+			: state;
+		float x, y;
+		memcpy(&x, &a, sizeof(x));
+		memcpy(&y, &b, sizeof(y));
+		assert(md_finite(x) == !!isfinite(x));
+		float abs_x = md_abs(x);
+		assert(isnan(x) ? isnan(abs_x) : abs_x == fabsf(x));
+		float lo = md_min(x, y), hi = md_max(x, y);
+		float expected_lo = fminf(x, y), expected_hi = fmaxf(x, y);
+		assert(isnan(expected_lo) ? isnan(lo) : lo == expected_lo);
+		assert(isnan(expected_hi) ? isnan(hi) : hi == expected_hi);
+	}
+	assert(!signbit(md_abs(-0.0f)));
+	assert(signbit(md_min(-0.0f, 0.0f)));
+	assert(!signbit(md_max(-0.0f, 0.0f)));
+	assert(md_clamp(1.0f, 1e-10f, 0x1.fffffep-1f) < 1.0f);
+	_Static_assert(_Generic(((struct morsedec_config *)0)->min_frequency,
+			   float: 1,
+			   default: 0),
+		       "Public config uses float");
+	_Static_assert(_Generic(&md_pin_frequency,
+			   int (*)(morsedec_decoder_t *, float): 1,
+			   default: 0),
+		       "Public input uses float");
+	_Static_assert(_Generic(&md_get_snr,
+			   float (*)(const morsedec_decoder_t *): 1,
+			   default: 0),
+		       "Public output uses float");
+}
+
 int main(void)
 {
+	md_float_check();
+	md_float_filter_check();
 	assert(md_wfst_graph_valid());
 	assert(sizeof(md_wfst_edges) / sizeof(md_wfst_edges[0]) ==
 	       MD_WFST_GRAPH_EDGES);

@@ -1,5 +1,5 @@
 .\" SPDX-License-Identifier: GPL-3.0-or-later
-.TH MD_NEW_IQ 3 "2026-10-16" "libmorsedec 0.2.0" "Library Functions Manual"
+.TH MD_NEW_IQ 3 "2026-10-16" "libmorsedec 0.3.0" "Library Functions Manual"
 .SH NAME
 md_new_iq \- create a streaming complex I/Q decoder
 .SH SYNOPSIS
@@ -50,8 +50,8 @@ for an explicit budget, including 1 to create no workers.
 Serialize this call with all FFTW planner and plan-destruction operations in
 the application, including operations for other handles.
 .SH VERSION
-This md_ entry point is available since libmorsedec 0.2.0 (shared-library ABI
-1).
+This md_ entry point is available since libmorsedec 0.2.0.
+Version 0.3.0 uses the float API and shared-library ABI 2.
 .SH SEE ALSO
 .BR md_new_iq_with_threads (3),
 .BR md_get_thread_count (3),

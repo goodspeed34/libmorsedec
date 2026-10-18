@@ -70,8 +70,8 @@ void md_band_frame(struct morsedec_decoder *d, const float *s)
 {
 	int n = d->bins;
 	size_t jobs = 0;
-	double decay = pow(0.97, d->tick_scale);
-	double peak_decay = pow(0.8, d->tick_scale);
+	float decay = powf(0.97f, d->tick_scale);
+	float peak_decay = powf(0.8f, d->tick_scale);
 
 	d->frames++;
 	if (d->frames % (uint64_t)d->merge_period == 0)
@@ -80,21 +80,21 @@ void md_band_frame(struct morsedec_decoder *d, const float *s)
 	       s, (size_t)n * sizeof(float));
 	for (int i = 0; i < n; i++)
 		d->smooth[i] =
-		    s[i] >= 1e-12
+		    s[i] >= 1e-12f
 			? (float)(decay * d->smooth[i] + (1 - decay) * s[i])
 			: 0;
 	for (int i = 10; i < n - 10; i++) {
-		double den = fmax(d->smooth[i - 5], d->smooth[i + 5]);
+		float den = md_max(d->smooth[i - 5], d->smooth[i + 5]);
 		d->ratio[i] =
-		    den > 0 ? (float)fmin(1e20, peak_decay * d->ratio[i] +
-						    (1 - peak_decay) * 2 *
-							d->smooth[i] / den)
+		    den > 0 ? (float)md_min(1e20f, peak_decay * d->ratio[i] +
+						       (1 - peak_decay) * 2 *
+							   d->smooth[i] / den)
 			    : 0;
 	}
 	memset(d->peaks, 0, (size_t)n);
 	if (d->frames > (uint64_t)d->warmup) {
 		for (int i = 10; i < n - 10; i++) {
-			if (d->ratio[i] > 3.5 &&
+			if (d->ratio[i] > 3.5f &&
 			    d->ratio[i] >= d->ratio[i - 1] &&
 			    d->ratio[i] >= d->ratio[i + 1]) {
 				d->peaks[i - 1] = 0;
@@ -149,7 +149,7 @@ void md_band_frame(struct morsedec_decoder *d, const float *s)
 			 * the whole zero-padded FFT aperture. */
 			uint64_t valid =
 			    (d->geometry.fft_size / 2 +
-			     (size_t)(d->geometry.sample_rate * .020) +
+			     (size_t)(d->geometry.sample_rate * .020f) +
 			     d->geometry.hop_size - 1) /
 			    d->geometry.hop_size;
 			if (c->next_frame < valid)
