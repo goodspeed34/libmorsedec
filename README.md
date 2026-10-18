@@ -266,19 +266,19 @@ in [docs/design.md](docs/design.md).
 
 ## Evaluation and current scope
 
-[WFST benchmark results](docs/benchmarks/wfst-comparison.md) compare the new decoder
+[WFST benchmark results](docs/benchmarks/wfst-tuning.md) compare the new decoder
 with legacy libmorsedec and Vail on identical seeded audio. On the 464-case grid,
-mean CER is **2.054% for WFST, 3.606% for legacy and 3.721% for Vail**. On 120
-additional synthetic cases it is **3.209%, 4.478% and 6.112%**, respectively.
+mean CER is **1.949% for WFST, 3.606% for legacy and 3.721% for Vail**. On 120
+additional synthetic cases it is **3.088%, 4.478% and 6.112%**, respectively.
 Both synthetic accuracy gates require lower mean and pooled CER than legacy.
 Some individual conditions still favor legacy or Vail.
 
 The three archived tuning recordings improved from **19/170 legacy errors to
-17/170 WFST errors**, ignoring whitespace while retaining punctuation and O/0.
+15/170 WFST errors**, ignoring whitespace while retaining punctuation and O/0.
 One recording regressed from seven to eight errors. These recordings and the
 additional synthetic cases are development material, not independent validation.
 Full outputs, checksums, CPU measurements and reproduction commands accompany the
-[report](docs/benchmarks/wfst-comparison.md). Historical measurements remain in
+[report](docs/benchmarks/wfst-tuning.md). Historical measurements remain in
 [the earlier Vail comparison](docs/benchmarks/vail-comparison.md).
 
 This remains an initial decoder implementation. Fast CW, difficult fading/QRM,

@@ -123,8 +123,9 @@ separate build with `-Db_sanitize=thread -Db_lundef=false`.
 
 ## WFST versus legacy accuracy gate
 
-[`wfst-comparison.md`](../docs/benchmarks/wfst-comparison.md) records the new
-comparison. Keep the legacy checkout and builds separate from the working tree:
+[`wfst-tuning.md`](../docs/benchmarks/wfst-tuning.md) records the current fine
+tuning and its evidence. [`wfst-comparison.md`](../docs/benchmarks/wfst-comparison.md)
+preserves the previous comparison. Keep the legacy checkout and builds separate from the working tree:
 
 ```sh
 mkdir -p build-wfst-bench/legacy-src

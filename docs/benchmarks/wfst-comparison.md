@@ -1,5 +1,9 @@
 # Streaming WFST versus legacy libmorsedec and Vail
 
+This report preserves the baseline before the subsequent [WFST fine
+tuning](wfst-tuning.md). The newer report resolves the impulse and clean 30 WPM
+regressions described below and includes updated evidence.
+
 Measured on 2026-10-18. The accuracy gate passes: the optimized WFST has strictly
 lower mean and pooled character error rate (CER) than legacy on both synthetic
 sets, and fewer total errors on the three archived tuning recordings. CPU cost

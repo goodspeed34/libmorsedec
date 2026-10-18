@@ -376,6 +376,15 @@ Scores are normalized after every frame, so this common offset has no effect on
 path ranking. Non-finite probabilities become 0.5; finite inputs are clamped
 away from zero and one.
 
+After acquisition, a dash self-loop before its predicted median end
+(`frame_age * tick_scale < exp(mean[dash])`) floors the mark log odds at −4.
+This caps the damage from a brief negative observation during an unfinished
+dash while keeping onset, dot, gap and late-dash evidence unchanged. Acquisition
+uses the original likelihood so this tolerance cannot alter initial speed
+calibration; replay uses the calibrated model and enables the floor. This is a
+robust search score, rather than an exact acoustic likelihood. Broad probability
+clipping also admitted false marks and damaged fast/noisy decoding during tuning.
+
 ### Token passing and pruning
 
 Each channel has two token banks of capacity 100 and scratch space for 400
@@ -472,11 +481,13 @@ normal streaming output evaluates the stored following-gap duration against
 STA's character-gap and word-gap scores at commit time:
 
 ```text
-boundary = word_gap_score / (character_gap_score + word_gap_score + 1e-12)
+boundary = 0.5 * word_gap_score / (character_gap_score + 0.5 * word_gap_score + 1e-12)
 ```
 
-Gaps longer than 150 nominal ticks use the forced-boundary sentinel 2.0. Once a
-single idle token remains after at least 150 ticks of physical silence, WFST also
+The word-gap multiplier calibrates ambiguous boundary odds before the word
+graph amplifies them. It removes a spurious space in clean 30 WPM digit groups;
+it does not depend on the decoded characters. Gaps longer than 150 nominal ticks
+use the forced-boundary sentinel 2.0. Once a single idle token remains after at least 150 ticks of physical silence, WFST also
 flushes pending word output. Natural convergence can be delayed by surviving gap
 alternatives and by initial acquisition; there is no fixed emission-latency
 contract.

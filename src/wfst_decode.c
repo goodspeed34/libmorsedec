@@ -336,7 +336,9 @@ static double md_wfst_word_probability(const struct morsedec_decoder *d,
 	if (duration > 150)
 		return 2;
 	double a = md_score(&c->stats, 3, duration);
-	double b = md_score(&c->stats, 4, duration);
+	/* Calibrate ambiguous boundaries before the word graph amplifies
+	 * their odds. Long silences still force a boundary above. */
+	double b = .5 * md_score(&c->stats, 4, duration);
 	return b / (a + b + 1e-12);
 }
 
@@ -436,6 +438,12 @@ static void md_wfst_step(const struct morsedec_decoder *d, struct md_channel *c,
 	}
 	/* The common gap log likelihood cancels during normalization. */
 	double observation[2] = {log(p_key / (1 - p_key)), 0};
+	/* Before the expected end of a calibrated dash, allow a frame of
+	 * interference without letting its negative evidence alone prune
+	 * the continuing mark. Onsets and dots retain the full likelihood.
+	 */
+	double dash_frames =
+	    exp(c->stats.mean[MD_WFST_DASH_DURATION]) / d->tick_scale;
 	for (int i = 0; i < w->candidate_count; i++)
 		w->keys[w->candidate_keys[i]] = 0;
 	w->candidate_count = 0;
@@ -459,9 +467,14 @@ static void md_wfst_step(const struct morsedec_decoder *d, struct md_channel *c,
 						    [t->frame_age]
 				   : w->termination[n->duration_class]
 						   [t->frame_age];
-			double score =
-			    t->accumulated_score + duration + e->log_weight +
+			double acoustic =
 			    observation[e->input_label == MD_WFST_GAP];
+			if (!w->acquisition_active && stay &&
+			    n->duration_class == MD_WFST_DASH_DURATION &&
+			    t->frame_age < dash_frames)
+				acoustic = fmax(acoustic, -4.0);
+			double score = t->accumulated_score + duration +
+				       e->log_weight + acoustic;
 			if (!isfinite(score) || score < best - MD_WFST_BEAM_LOG)
 				continue;
 			if (score > best)
