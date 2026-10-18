@@ -1,0 +1,472 @@
+{
+  "baseline_commit": "fa428c6",
+  "simde": {
+    "version": "0.8.2",
+    "commit": "71fd833d9666141edcd1d3c109a80e228303d8d7"
+  },
+  "native_distinct_synthetic_wavs": 15728,
+  "native_report_rows": 17168,
+  "native": {
+    "qso": {
+      "summary": {
+        "baseline": {
+          "cases": 936,
+          "errors": 657,
+          "reference_characters": 42120,
+          "mean_cer": 0.01571448868384983,
+          "pooled_cer": 0.015598290598290598,
+          "errors_ns": 534
+        },
+        "candidate": {
+          "cases": 936,
+          "errors": 657,
+          "reference_characters": 42120,
+          "mean_cer": 0.01571448868384983,
+          "pooled_cer": 0.015598290598290598,
+          "errors_ns": 534
+        }
+      },
+      "complete": true,
+      "gate_passed": true,
+      "changed_cases": 0,
+      "changed_text_cases": 0,
+      "expected_cases": 936
+    },
+    "grid": {
+      "summary": {
+        "baseline": {
+          "cases": 464,
+          "errors": 235,
+          "reference_characters": 18940,
+          "mean_cer": 0.009661590228245165,
+          "pooled_cer": 0.012407602956705385,
+          "errors_ns": 52
+        },
+        "candidate": {
+          "cases": 464,
+          "errors": 235,
+          "reference_characters": 18940,
+          "mean_cer": 0.009661590228245165,
+          "pooled_cer": 0.012407602956705385,
+          "errors_ns": 52
+        }
+      },
+      "complete": true,
+      "gate_passed": true,
+      "changed_cases": 0,
+      "changed_text_cases": 0,
+      "expected_cases": 464
+    },
+    "additional": {
+      "summary": {
+        "baseline": {
+          "cases": 120,
+          "errors": 157,
+          "reference_characters": 4560,
+          "mean_cer": 0.028264757864969955,
+          "pooled_cer": 0.03442982456140351,
+          "errors_ns": 57
+        },
+        "candidate": {
+          "cases": 120,
+          "errors": 157,
+          "reference_characters": 4560,
+          "mean_cer": 0.028264757864969955,
+          "pooled_cer": 0.03442982456140351,
+          "errors_ns": 57
+        }
+      },
+      "complete": true,
+      "gate_passed": true,
+      "changed_cases": 0,
+      "changed_text_cases": 0,
+      "expected_cases": 120
+    },
+    "snr-full": {
+      "summary": {
+        "baseline": {
+          "cases": 8736,
+          "errors": 145309,
+          "reference_characters": 393120,
+          "mean_cer": 0.37243513928487854,
+          "pooled_cer": 0.36963013838013836,
+          "errors_ns": 117458
+        },
+        "candidate": {
+          "cases": 8736,
+          "errors": 145309,
+          "reference_characters": 393120,
+          "mean_cer": 0.37243513928487854,
+          "pooled_cer": 0.36963013838013836,
+          "errors_ns": 117458
+        }
+      },
+      "complete": true,
+      "gate_passed": true,
+      "changed_cases": 0,
+      "changed_text_cases": 0,
+      "expected_cases": 8736
+    },
+    "snr-refined": {
+      "summary": {
+        "baseline": {
+          "cases": 6912,
+          "errors": 43692,
+          "reference_characters": 311040,
+          "mean_cer": 0.1419758845791685,
+          "pooled_cer": 0.14047067901234567,
+          "errors_ns": 36688
+        },
+        "candidate": {
+          "cases": 6912,
+          "errors": 43692,
+          "reference_characters": 311040,
+          "mean_cer": 0.1419758845791685,
+          "pooled_cer": 0.14047067901234567,
+          "errors_ns": 36688
+        }
+      },
+      "complete": true,
+      "gate_passed": true,
+      "changed_cases": 0,
+      "changed_text_cases": 0,
+      "expected_cases": 6912
+    }
+  },
+  "fallback": {
+    "portable": {
+      "qso": {
+        "summary": {
+          "baseline": {
+            "cases": 936,
+            "errors": 657,
+            "reference_characters": 42120,
+            "mean_cer": 0.01571448868384983,
+            "pooled_cer": 0.015598290598290598,
+            "errors_ns": 534
+          },
+          "candidate": {
+            "cases": 936,
+            "errors": 657,
+            "reference_characters": 42120,
+            "mean_cer": 0.01571448868384983,
+            "pooled_cer": 0.015598290598290598,
+            "errors_ns": 534
+          }
+        },
+        "complete": true,
+        "gate_passed": true,
+        "changed_cases": 0,
+        "changed_text_cases": 0
+      },
+      "grid": {
+        "summary": {
+          "baseline": {
+            "cases": 464,
+            "errors": 235,
+            "reference_characters": 18940,
+            "mean_cer": 0.009661590228245165,
+            "pooled_cer": 0.012407602956705385,
+            "errors_ns": 52
+          },
+          "candidate": {
+            "cases": 464,
+            "errors": 235,
+            "reference_characters": 18940,
+            "mean_cer": 0.009661590228245165,
+            "pooled_cer": 0.012407602956705385,
+            "errors_ns": 52
+          }
+        },
+        "complete": true,
+        "gate_passed": true,
+        "changed_cases": 0,
+        "changed_text_cases": 0
+      },
+      "additional": {
+        "summary": {
+          "baseline": {
+            "cases": 120,
+            "errors": 157,
+            "reference_characters": 4560,
+            "mean_cer": 0.028264757864969955,
+            "pooled_cer": 0.03442982456140351,
+            "errors_ns": 57
+          },
+          "candidate": {
+            "cases": 120,
+            "errors": 157,
+            "reference_characters": 4560,
+            "mean_cer": 0.028264757864969955,
+            "pooled_cer": 0.03442982456140351,
+            "errors_ns": 57
+          }
+        },
+        "complete": true,
+        "gate_passed": true,
+        "changed_cases": 0,
+        "changed_text_cases": 0
+      }
+    },
+    "scalar": {
+      "qso": {
+        "summary": {
+          "baseline": {
+            "cases": 936,
+            "errors": 657,
+            "reference_characters": 42120,
+            "mean_cer": 0.01571448868384983,
+            "pooled_cer": 0.015598290598290598,
+            "errors_ns": 534
+          },
+          "candidate": {
+            "cases": 936,
+            "errors": 657,
+            "reference_characters": 42120,
+            "mean_cer": 0.01571448868384983,
+            "pooled_cer": 0.015598290598290598,
+            "errors_ns": 534
+          }
+        },
+        "complete": true,
+        "gate_passed": true,
+        "changed_cases": 0,
+        "changed_text_cases": 0
+      },
+      "grid": {
+        "summary": {
+          "baseline": {
+            "cases": 464,
+            "errors": 235,
+            "reference_characters": 18940,
+            "mean_cer": 0.009661590228245165,
+            "pooled_cer": 0.012407602956705385,
+            "errors_ns": 52
+          },
+          "candidate": {
+            "cases": 464,
+            "errors": 235,
+            "reference_characters": 18940,
+            "mean_cer": 0.009661590228245165,
+            "pooled_cer": 0.012407602956705385,
+            "errors_ns": 52
+          }
+        },
+        "complete": true,
+        "gate_passed": true,
+        "changed_cases": 0,
+        "changed_text_cases": 0
+      },
+      "additional": {
+        "summary": {
+          "baseline": {
+            "cases": 120,
+            "errors": 157,
+            "reference_characters": 4560,
+            "mean_cer": 0.028264757864969955,
+            "pooled_cer": 0.03442982456140351,
+            "errors_ns": 57
+          },
+          "candidate": {
+            "cases": 120,
+            "errors": 157,
+            "reference_characters": 4560,
+            "mean_cer": 0.028264757864969955,
+            "pooled_cer": 0.03442982456140351,
+            "errors_ns": 57
+          }
+        },
+        "complete": true,
+        "gate_passed": true,
+        "changed_cases": 0,
+        "changed_text_cases": 0
+      }
+    }
+  },
+  "recordings": {
+    "native": {
+      "abi": 2,
+      "library_sha256": "fb1ae52ce46cb9b0622d7172f11e224eede202b55d62e5ceab3d144bd7ad1856",
+      "method": "current-channel snapshots by ordinal; uppercase; remove whitespace",
+      "cases": [
+        {
+          "id": "UBlxpe5gvv0",
+          "reference": "AI5DD AI5DD 56N CO BK BK GA UR 55N 55N OK OK 73 AE0Q DE AI5DD 44 EE R 44 EE EE",
+          "decoded": "AI5DD  A5DD 56N CO BK BK GA UR 55N 55N OK OK 73 AE0QDE AI5DD 44EE R44EE EE U  ",
+          "wav_sha256": "36ec130ff406702fbdfb37bf02c026e9e40813dc6a13507e33783347d64b4202",
+          "errors": 2,
+          "reference_characters": 57
+        },
+        {
+          "id": "9AhkEDs2Sko",
+          "reference": "D DE JO2QOT JO2QOT 5NN CA 5NN 100 TU JO2QOT TU K6XX",
+          "decoded": "DE JO2QOT  JO2QOT 5NN CA  5NN 100 T JO2QOT TU K6XX  ",
+          "wav_sha256": "b391a4ec4bb1170c23171b2072b041da8815f807599e0c8575ecdca23f374009",
+          "errors": 2,
+          "reference_characters": 40
+        },
+        {
+          "id": "9jgZ94TzRys",
+          "reference": "? WD4DAN WD4DAN GE ES FB UR 57N 57N CO BK BK TU GE UR 56N 56N GA GA 73 BK BK TU GA 73 DE W0ABE TU EE /",
+          "decoded": "WD4DAN  WD4DAN GE ESFB UR 57N 57N CO bkTUGE FN56N 56N GA GA73bk  bkTUGA 73 DE W0ABE TUEE /10ON  ",
+          "wav_sha256": "c14db00c4f23fc0ed8abe4e81e178798aa44781199104c9fc77b5b31c77967f3",
+          "errors": 9,
+          "reference_characters": 73
+        }
+      ],
+      "total_errors": 13,
+      "reference_characters": 170,
+      "baseline_report": "docs/benchmarks/float-refactor-recordings.json",
+      "baseline_sha256": "0bbc43892d10af4031965ed2602b9e4b28f01d2a096db540134c5065bd298355",
+      "baseline_errors": 13,
+      "gate_passed": true,
+      "changed_text_cases": 0
+    },
+    "portable": {
+      "abi": 2,
+      "library_sha256": "a7fe2d59fce25ec9fd2a18cac3f13f4ed4ec227d871b3706e90c0ea801adc3f2",
+      "method": "current-channel snapshots by ordinal; uppercase; remove whitespace",
+      "cases": [
+        {
+          "id": "UBlxpe5gvv0",
+          "reference": "AI5DD AI5DD 56N CO BK BK GA UR 55N 55N OK OK 73 AE0Q DE AI5DD 44 EE R 44 EE EE",
+          "decoded": "AI5DD  A5DD 56N CO BK BK GA UR 55N 55N OK OK 73 AE0QDE AI5DD 44EE R44EE EE U  ",
+          "wav_sha256": "36ec130ff406702fbdfb37bf02c026e9e40813dc6a13507e33783347d64b4202",
+          "errors": 2,
+          "reference_characters": 57
+        },
+        {
+          "id": "9AhkEDs2Sko",
+          "reference": "D DE JO2QOT JO2QOT 5NN CA 5NN 100 TU JO2QOT TU K6XX",
+          "decoded": "DE JO2QOT  JO2QOT 5NN CA  5NN 100 T JO2QOT TU K6XX  ",
+          "wav_sha256": "b391a4ec4bb1170c23171b2072b041da8815f807599e0c8575ecdca23f374009",
+          "errors": 2,
+          "reference_characters": 40
+        },
+        {
+          "id": "9jgZ94TzRys",
+          "reference": "? WD4DAN WD4DAN GE ES FB UR 57N 57N CO BK BK TU GE UR 56N 56N GA GA 73 BK BK TU GA 73 DE W0ABE TU EE /",
+          "decoded": "WD4DAN  WD4DAN GE ESFB UR 57N 57N CO bkTUGE FN56N 56N GA GA73bk  bkTUGA 73 DE W0ABE TUEE /10ON  ",
+          "wav_sha256": "c14db00c4f23fc0ed8abe4e81e178798aa44781199104c9fc77b5b31c77967f3",
+          "errors": 9,
+          "reference_characters": 73
+        }
+      ],
+      "total_errors": 13,
+      "reference_characters": 170,
+      "baseline_report": "docs/benchmarks/float-refactor-recordings.json",
+      "baseline_sha256": "0bbc43892d10af4031965ed2602b9e4b28f01d2a096db540134c5065bd298355",
+      "baseline_errors": 13,
+      "gate_passed": true,
+      "changed_text_cases": 0
+    },
+    "scalar": {
+      "abi": 2,
+      "library_sha256": "2b4e794c06a00b55613475acee0164d1c31b6ca016c1469481faa2a63c6e5096",
+      "method": "current-channel snapshots by ordinal; uppercase; remove whitespace",
+      "cases": [
+        {
+          "id": "UBlxpe5gvv0",
+          "reference": "AI5DD AI5DD 56N CO BK BK GA UR 55N 55N OK OK 73 AE0Q DE AI5DD 44 EE R 44 EE EE",
+          "decoded": "AI5DD  A5DD 56N CO BK BK GA UR 55N 55N OK OK 73 AE0QDE AI5DD 44EE R44EE EE U  ",
+          "wav_sha256": "36ec130ff406702fbdfb37bf02c026e9e40813dc6a13507e33783347d64b4202",
+          "errors": 2,
+          "reference_characters": 57
+        },
+        {
+          "id": "9AhkEDs2Sko",
+          "reference": "D DE JO2QOT JO2QOT 5NN CA 5NN 100 TU JO2QOT TU K6XX",
+          "decoded": "DE JO2QOT  JO2QOT 5NN CA  5NN 100 T JO2QOT TU K6XX  ",
+          "wav_sha256": "b391a4ec4bb1170c23171b2072b041da8815f807599e0c8575ecdca23f374009",
+          "errors": 2,
+          "reference_characters": 40
+        },
+        {
+          "id": "9jgZ94TzRys",
+          "reference": "? WD4DAN WD4DAN GE ES FB UR 57N 57N CO BK BK TU GE UR 56N 56N GA GA 73 BK BK TU GA 73 DE W0ABE TU EE /",
+          "decoded": "WD4DAN  WD4DAN GE ESFB UR 57N 57N CO bkTUGE FN56N 56N GA GA73bk  bkTUGA 73 DE W0ABE TUEE /10ON  ",
+          "wav_sha256": "c14db00c4f23fc0ed8abe4e81e178798aa44781199104c9fc77b5b31c77967f3",
+          "errors": 9,
+          "reference_characters": 73
+        }
+      ],
+      "total_errors": 13,
+      "reference_characters": 170,
+      "baseline_report": "docs/benchmarks/float-refactor-recordings.json",
+      "baseline_sha256": "0bbc43892d10af4031965ed2602b9e4b28f01d2a096db540134c5065bd298355",
+      "baseline_errors": 13,
+      "gate_passed": true,
+      "changed_text_cases": 0
+    }
+  },
+  "checks": {
+    "gcc_shared_werror": "pass",
+    "clang_static_serial_werror": "pass",
+    "gcc_portable_werror": "pass",
+    "gcc_scalar_werror": "pass",
+    "format": "pass",
+    "sanitizer_iq": {
+      "8000": {
+        "carriers": 4,
+        "active_channels": 4,
+        "mode": "iq",
+        "sample_rate": 8000,
+        "resolved_threads": 1
+      },
+      "48000": {
+        "carriers": 4,
+        "active_channels": 4,
+        "mode": "iq",
+        "sample_rate": 48000,
+        "resolved_threads": 1
+      }
+    },
+    "sanitizer_audio": {
+      "input": "build-wfst-bench/audio/w20_s3_t1_r0.wav",
+      "chunks": [
+        {
+          "chunk": 1,
+          "same_text": true,
+          "stderr": ""
+        },
+        {
+          "chunk": 86,
+          "same_text": true,
+          "stderr": ""
+        },
+        {
+          "chunk": 777,
+          "same_text": true,
+          "stderr": ""
+        }
+      ]
+    },
+    "vendored_headers_match_upstream": true
+  },
+  "memory": {
+    "inline_channel_bytes": 407552,
+    "word_states": 618,
+    "word_state_bytes": 12,
+    "channel_index_bytes": 16,
+    "total_bytes": 414984,
+    "limit_bytes": 524288
+  },
+  "artifacts": {
+    "simde-additional.json.gz": "10d5de3d8a44c9a014d9007e2b0e49c32aa29682dd22f2a7c14391df19f37c60",
+    "simde-grid.json.gz": "ebe6916be01e6872e4bbcaceee774b279d53a8cbd899309ef55d95b52daad611",
+    "simde-native-recordings.json": "82bf1cc16071b97136b1f4bdaacbca994b2f6db17b29a5a7aaacf9460a5206a8",
+    "simde-portable-additional.json.gz": "d954cdd3c552782b05664293624d81df70eabf9add07fd99e0aac5668769c9b9",
+    "simde-portable-grid.json.gz": "5ae9dfa52930bbad586e8ed6028b83633ca5065541b5e856fdef67818d18745e",
+    "simde-portable-qso.json.gz": "90a2a99955d303694d8b3511f9d52b706c8d0cd6f68716159e95b12912690fa0",
+    "simde-portable-recordings.json": "3e8c6ee22cd304dfaeab71caa71760a45eddaae679157bca6a922e0d9cc086c2",
+    "simde-qso.json.gz": "a2200fd8a2fea042facb29306d2e7f2d701d404dce75066489f02ac1eea8d3ff",
+    "simde-scalar-additional.json.gz": "838d4e3bb2472a17625a62fa89d2bb882fd9c45f1f16a588d1de4c01381536ec",
+    "simde-scalar-grid.json.gz": "5881602e4347827f1110b0d32ff4f4b6439c7137edaa3914b3525d31a2e475ad",
+    "simde-scalar-qso.json.gz": "986fa7fc881bd868f3493d09ceb2e124a34f76da9cf4f8dec1eddb31a2458ae0",
+    "simde-scalar-recordings.json": "11dd83171be9f96f8ba0c7ecaa5ec59665f3d1e80159d4e6cdcb1a0337f7974b",
+    "simde-snr-full.json.gz": "25839c67bda4ca9c1bc64be95861865ff10f876fa6565f5f34485379fd5e28e9",
+    "simde-snr-refined.json.gz": "f150827179040bb436eeca3cc88776d6f8ba401985489250c87e01704da26f24",
+    "simde-speed.json": "9938a3b1bdcd9d921b8df9ec87ddff9d21cad372ea1ebd8364bda2c2d671033c",
+    "simde.md": "9cbc037c36f5d0845c8ca5c25d7eadd32bfbcd92f1f767d5bc47e48a96fe0fb0"
+  }
+}

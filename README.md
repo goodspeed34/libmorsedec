@@ -19,6 +19,8 @@ for module responsibilities, signal processing, timing, and implementation trade
 ## Build
 
 Dependencies: a C11 compiler, Meson >= 0.63, Ninja, FFTW3 (single precision, `fftw3f`).
+A pinned MIT-licensed [SIMDe](third_party/simde/README.md) header subset is
+vendored for portable SIMD; no extra package or download is required.
 The file-audio CLI uses libsndfile; the audio and I/Q stdin tools need no audio
 I/O library but link ncurses for the optional `-T` terminal view.
 
@@ -166,7 +168,7 @@ serialization, including queries, and processing completes all work before retur
 
 Version 0.3.0 changes all public floating-point fields, parameters, and return
 values to `float` and uses shared-library ABI 2. Rebuild consumers and change
-FFI bindings from binary64 to binary32. The FFT frontend now links `fftw3f`.
+FFI bindings from binary64 to binary32. The FFT frontend links `fftw3f`.
 
 Version 0.2.0 renames every public function from `morsedec_*` to `md_*`.
 Update call sites and dynamic symbol lookups, then rebuild consumers against
@@ -270,8 +272,13 @@ in [docs/design.md](docs/design.md).
 
 ## Evaluation and current scope
 
-The [float refactor benchmark](docs/benchmarks/float-refactor.md) records the
-current float API and decoder. Mean CER is **1.571%** on the QSO sweep,
+The current [SIMDe benchmark](docs/benchmarks/simde.md) preserves decoded text
+across 15,728 synthetic WAVs and the three recorded QSOs. It reduces streaming
+CPU by **9.6–13.8%** on the five measured inputs compared with the float build.
+Per-channel payload is **414,984 bytes**, within the 512 KiB limit.
+
+The preceding [float refactor benchmark](docs/benchmarks/float-refactor.md)
+records the float API before the SIMD changes. Mean CER is **1.571%** on the QSO sweep,
 **0.966%** on the primary grid, and **2.826%** on the additional grid;
 recorded-QSO errors remain **13/170**. Small CER changes versus the merged
 double decoder are disclosed. On five CPU inputs, the float version uses

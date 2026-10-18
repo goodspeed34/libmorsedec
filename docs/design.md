@@ -45,7 +45,7 @@ flowchart TD
 | Source | Responsibility |
 | --- | --- |
 | `src/decoder.c` | Construction, configuration, input APIs, reset/flush and queries |
-| `src/frontend.c` | Sample rings, window, FFTW plans and calibrated power |
+| `src/frontend.c` | Sample rings, SIMD windowing, FFTW plans and calibrated power |
 | `src/band.c` | Spectral history, discovery, channel slots, merging and selection |
 | `src/signal.c` | Pitch tracking, normalization, carrier state and soft keying |
 | `src/decode_compat.c` | Bridge extraction hooks and source-frame timestamps to WFST |
@@ -164,6 +164,12 @@ exponential and a real sinusoid of equal peak amplitude. Retained powers use
 single-precision `fftwf` frontend, sample/window buffers, extraction filters,
 WFST scores, lattice scores and word-grammar scores use `float`.
 
+Windowing splits the circular sample ring into two contiguous spans. SIMDe
+processes four real samples or four I/Q pairs per iteration, with unaligned
+loads and scalar tails for arbitrary ring positions and FFT lengths. Each
+sample still undergoes exactly one multiplication by the same window value.
+The FFT itself remains FFTW's responsibility.
+
 ### Precision and IEEE-754 operations
 
 Version 0.3.0 uses `float` for every public floating-point field, parameter and
@@ -182,8 +188,8 @@ min/max. The keys distinguish signed zeros. NaN min/max operands use libm to
 preserve signaling behavior; non-IEEE builds use standard math fallbacks.
 `MD_FLOAT_LIBM` selects the standard-math implementation for controlled benchmarks.
 History hashes canonicalize signed zero because the event equality comparison
-treats both zeros as equal. No approximate logarithm, exponential or reciprocal
-square root is used.
+treats both zeros as equal. No fast or reduced-accuracy transcendental variants
+are enabled.
 
 Sliding means use compensated float summation and re-sum on each bounded ring
 wrap. Integer frame ages saturate with integer comparisons, avoiding loss of
@@ -442,10 +448,23 @@ SNR. A 6-unit mark beam regressed the archived CER gate; the measured design
 retains 8 units for marks. The idle shortcut uses the widest beam, preserving
 its pruning guarantee.
 
-Rank selection keeps at most 100 candidates. After each selection, nearby
-variants of its exact label history pay a 2.0 selection-score penalty. Variants
-must share the WFST node and differ by at most two nominal ticks in age, character start
-and last mark. A hash rejects different histories quickly; full label comparison
+Rank selection keeps at most 100 candidates. Beam eligibility is computed once
+into a channel-owned 400-float score bank. A SIMDe four-lane maximum reduction
+and a first-match pass select each survivor. Equal scores keep the earliest
+candidate, preserving scalar tie behavior. The score bank follows selections
+and diversity penalties; acoustic scores are unchanged. All scans remain
+bounded by 400 candidates and 100 selections.
+
+SIMDe is a private, vendored header dependency, pinned to v0.8.2. The normal
+build adds no architecture flags or runtime dispatch: SIMDe uses the compiler's
+target instructions or its portable fallback. `SIMDE_NO_NATIVE` disables native
+intrinsics; adding `SIMDE_NO_VECTOR` also disables SIMDe's compiler-vector path.
+No streaming allocations are added.
+
+After each selection, nearby variants of its exact label history pay a 2.0
+selection-score penalty. Variants must share the WFST node and differ by at
+most two nominal ticks in age, character start and last mark. A hash rejects
+different histories quickly; full label comparison
 resolves collisions. Before rank pruning, tokens with identical label histories
 and physical boundaries within one nominal tick merge. Acquisition retains the
 original physical-state merging and skips the diversity penalty. The penalty
@@ -678,8 +697,10 @@ and traceback scratch are embedded in the channel. No streaming allocation is
 needed. Inactive slots retain their initialization-time allocations. Shared
 topology, frontend storage, worker resources and allocator overhead are outside
 the per-channel state-payload budget. On the current 64-bit build, a channel
-uses 413,384 bytes including its 618 word states and index slots, leaving
-110,904 bytes below the cap. The preceding double implementation used 523,152 bytes.
+uses 414,984 bytes including its 618 word states and index slots, leaving
+109,304 bytes below the cap. The SIMD score bank accounts for 1,600 bytes
+over the preceding float implementation (413,384 bytes). The preceding double
+implementation used 523,152 bytes.
 
 For `B` retained bins and `R` history frames, spectral history uses `4*B*R`
 bytes. Power, smoothing, ratio and peak arrays add approximately `13*B` bytes.

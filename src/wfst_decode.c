@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "internal.h"
+#include <simde/x86/sse.h>
 #include <assert.h>
 #include "wfst_graph.h"
 
@@ -810,6 +811,43 @@ static int md_wfst_near(uint64_t a, uint64_t b, uint64_t tolerance)
 	return (a >= b ? a - b : b - a) <= tolerance;
 }
 
+/* All candidate scores are finite. Reduce the maximum, then find its first
+ * occurrence so ties keep the scalar search's original candidate order.
+ */
+static int md_rank_best(const float *values, int n)
+{
+	simde__m128 maximum = simde_mm_set1_ps(MD_NEG);
+	float best = MD_NEG, lanes[4];
+	int i = 0;
+
+	for (; i + 4 <= n; i += 4)
+		maximum =
+		    simde_mm_max_ps(maximum, simde_mm_loadu_ps(values + i));
+	simde_mm_storeu_ps(lanes, maximum);
+	for (int lane = 0; lane < 4; lane++)
+		if (lanes[lane] > best)
+			best = lanes[lane];
+	for (; i < n; i++)
+		if (values[i] > best)
+			best = values[i];
+	if (!(best > MD_NEG))
+		return -1;
+
+	simde__m128 target = simde_mm_set1_ps(best);
+	for (i = 0; i + 4 <= n; i += 4) {
+		unsigned int mask = (unsigned int)simde_mm_movemask_ps(
+		    simde_mm_cmpeq_ps(simde_mm_loadu_ps(values + i), target));
+		if (mask)
+			for (int lane = 0; lane < 4; lane++)
+				if (mask & (1u << lane))
+					return i + lane;
+	}
+	for (; i < n; i++)
+		if (values[i] == best)
+			return i;
+	return -1;
+}
+
 /* Greedy rank pruning preserves the raw acoustic score. Only selection scores
  * pay a diversity cost for nearby duration variants of the same label history.
  */
@@ -818,25 +856,26 @@ static int md_wfst_rank(const struct morsedec_decoder *d, struct md_channel *c,
 {
 	struct md_wfst_decoder *w = &c->wfst;
 	uint64_t tolerance = (uint64_t)md_frames(d, 2);
+	/* Beam eligibility is invariant during selection. Keep a contiguous
+	 * score bank and update it alongside every diversity penalty.
+	 */
+	for (int i = 0; i < w->candidate_count; i++) {
+		const struct md_wfst_candidate *t = &w->candidates[i];
+		w->rank_values[i] =
+		    t->accumulated_score <
+			    best - md_wfst_beam(c, t->current_node_id, low)
+			? MD_NEG
+			: t->rank_score;
+	}
 	int count = 0;
 	for (; count < MD_WFST_BEAM; count++) {
-		int chosen = -1;
-		float rank = MD_NEG;
-		for (int i = 0; i < w->candidate_count; i++) {
-			const struct md_wfst_candidate *t = &w->candidates[i];
-			if (t->accumulated_score <
-			    best - md_wfst_beam(c, t->current_node_id, low))
-				continue;
-			if (t->rank_score > rank) {
-				rank = t->rank_score;
-				chosen = i;
-			}
-		}
+		int chosen = md_rank_best(w->rank_values, w->candidate_count);
 		if (chosen < 0)
 			break;
 		w->selected[count] = (uint16_t)chosen;
 		struct md_wfst_candidate *picked = &w->candidates[chosen];
 		picked->rank_score = MD_NEG;
+		w->rank_values[chosen] = MD_NEG;
 		if (w->acquisition_active)
 			continue;
 		const struct md_token *source =
@@ -854,8 +893,11 @@ static int md_wfst_rank(const struct morsedec_decoder *d, struct md_channel *c,
 			    !md_wfst_near(t->mark_tick, source->mark_tick,
 					  tolerance))
 				continue;
-			if (md_wfst_same_text(w, picked, other))
+			if (md_wfst_same_text(w, picked, other)) {
 				other->rank_score -= MD_WFST_DIVERSITY_COST;
+				if (w->rank_values[i] > MD_NEG / 2)
+					w->rank_values[i] = other->rank_score;
+			}
 		}
 	}
 	return count;

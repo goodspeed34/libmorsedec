@@ -66,6 +66,7 @@ def main():
             str(x.relative_to(a.source)): sha(x)
             for x in sorted(a.source.glob("src/*.[ch]"))
             + [a.source / "include/morsedec.h"]
+            + sorted(a.source.glob("third_party/**/*.[ch]"))
         },
     )
     runner_hash = sha(__file__)
@@ -256,6 +257,9 @@ def main():
         )
         d["changed_cases"] = sum(
             r["baseline"]["errors"] != r["candidate"]["errors"] for r in d["cases"]
+        )
+        d["changed_text_cases"] = sum(
+            r["baseline"]["text"] != r["candidate"]["text"] for r in d["cases"]
         )
         (a.output / (name + ".json")).write_text(json.dumps(d, indent=2) + "\n")
         print(
