@@ -121,6 +121,17 @@ struct md_lattice {
 	uint16_t edge_count;
 	uint16_t max_depth;
 };
+/* The history fields the node dedup and the time sort compare, mirrored on
+ * the lattice work area so both scan a 64-entry array instead of chasing a
+ * live history id, a random access into 160 KB, per comparison. Kept in step
+ * with node_history, including through the sort's permutation.
+ */
+struct md_lattice_key {
+	uint64_t boundary; /* md_wfst_boundary of the source history entry. */
+	int32_t duration;
+	uint16_t depth;
+	uint8_t state;
+};
 struct md_word_state {
 	float score;
 	int length, kind;
@@ -143,8 +154,18 @@ struct md_lattice_work {
 	struct md_lattice_hyp scratch[MD_LATTICE_WORD_BEAM];
 	float closure[MD_WORD_SELECTORS];
 	uint16_t history_nodes[MD_WFST_HISTORY];
+	/* Indices of history_nodes written by the current lattice build, so the
+	 * per-build reset and remap touch only live entries instead of all
+	 * MD_WFST_HISTORY slots. Every write is guarded by a NONE sentinel and
+	 * nothing else writes history_nodes during a build, so each index
+	 * appears at most once and the list cannot exceed the array itself.
+	 */
+	uint16_t history_touched[MD_WFST_HISTORY];
+	uint16_t history_touched_count;
 	uint16_t node_history[MD_LATTICE_MAX_NODES];
+	struct md_lattice_key node_key[MD_LATTICE_MAX_NODES];
 	struct md_lattice_node sorted_nodes[MD_LATTICE_MAX_NODES];
+	struct md_lattice_key sorted_keys[MD_LATTICE_MAX_NODES];
 	uint16_t node_order[MD_LATTICE_MAX_NODES];
 	uint16_t path[MD_LATTICE_MAX_DEPTH];
 	uint8_t counts[MD_LATTICE_MAX_NODES];
@@ -196,6 +217,10 @@ struct morsedec_decoder {
 	fftwf_plan plan;
 	float *power, *smooth, *ratio, *history;
 	unsigned char *peaks;
+	/* log() of the integral durations the streaming path feeds md_score(),
+	 * which the >150 guard keeps short. Filled once in decoder.c. */
+	double *log_frames;
+	size_t log_frames_count;
 	struct md_channel *channels;
 	struct md_channel **order, **jobs, *current;
 	struct md_parallel *parallel;
@@ -277,6 +302,17 @@ static inline int md_frames(const struct morsedec_decoder *d, int nominal)
 	int frames = (int)(nominal / d->tick_scale + 0.5);
 	return frames > 0 ? frames : 1;
 }
+/* log() of the duration md_score() derives from an integral frame count. The
+ * table is built in decoder.c; the fallback keeps the helper total for the
+ * counts that overflow it and reproduces the call site's expression exactly.
+ */
+static inline double md_log_frame(const struct morsedec_decoder *d,
+				  uint64_t frames)
+{
+	if (frames < d->log_frames_count)
+		return d->log_frames[frames];
+	return log(fmax((double)((float)frames * d->tick_scale), 1e-9));
+}
 static inline int md_fail(int error)
 {
 	errno = error;
@@ -317,6 +353,9 @@ void md_stats_observe(const struct morsedec_decoder *d, struct md_channel *c,
 void md_stats_release(const struct morsedec_decoder *d, struct md_channel *c);
 void md_stats_init(const struct morsedec_decoder *d, struct md_statistics *s);
 double md_score(const struct md_statistics *s, int kind, double duration);
+/* Same score with the logarithm of the duration supplied by the caller. */
+double md_score_x(const struct md_statistics *s, int kind, double x,
+		  double duration);
 void md_classify(const struct md_statistics *s, struct md_element *e,
 		 double scale);
 /* Compatibility notification from signal.c; flush releases acquisition only. */

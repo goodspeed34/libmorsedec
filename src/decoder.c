@@ -107,6 +107,17 @@ static morsedec_decoder_t *new_decoder(const struct morsedec_config *config,
 		errno = EOVERFLOW;
 		goto fail;
 	}
+	/* md_score() is called from the streaming path with durations that are
+	 * whole frame counts, and the caller's >150 guard bounds them. */
+	d->log_frames_count = (size_t)(150 / d->tick_scale) + 2;
+	d->log_frames = calloc(d->log_frames_count, sizeof(*d->log_frames));
+	if (!d->log_frames) {
+		errno = ENOMEM;
+		goto fail;
+	}
+	for (size_t i = 0; i < d->log_frames_count; i++)
+		d->log_frames[i] =
+		    log(fmax((double)((float)i * d->tick_scale), 1e-9));
 	d->power = calloc((size_t)d->bins, sizeof(float));
 	d->smooth = calloc((size_t)d->bins, sizeof(float));
 	d->ratio = calloc((size_t)d->bins, sizeof(float));
@@ -185,6 +196,7 @@ void md_delete(morsedec_decoder_t *d)
 	free(d->ratio);
 	free(d->peaks);
 	free(d->history);
+	free(d->log_frames);
 	if (d->channels)
 		for (size_t i = 0; i < d->config.max_channels; i++)
 			free(d->channels[i].word.states);

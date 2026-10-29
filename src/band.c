@@ -17,6 +17,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "internal.h"
+#include <simde/x86/sse.h>
 
 struct md_channel *md_channel_new(struct morsedec_decoder *d, int bin)
 {
@@ -70,6 +71,10 @@ void md_band_frame(struct morsedec_decoder *d, const float *s)
 {
 	int n = d->bins;
 	size_t jobs = 0;
+	/* Bins come from the geometry and are always positive; stating it keeps
+	 * the clearing size provable for the compiler. */
+	if (n <= 0)
+		return;
 	float decay = powf(0.97f, d->tick_scale);
 	float peak_decay = powf(0.8f, d->tick_scale);
 
@@ -78,22 +83,102 @@ void md_band_frame(struct morsedec_decoder *d, const float *s)
 		merge_channels(d);
 	memcpy(d->history + (d->frames % (uint64_t)d->history_size) * (size_t)n,
 	       s, (size_t)n * sizeof(float));
-	for (int i = 0; i < n; i++)
-		d->smooth[i] =
-		    s[i] >= 1e-12f
-			? (float)(decay * d->smooth[i] + (1 - decay) * s[i])
-			: 0;
-	for (int i = 10; i < n - 10; i++) {
-		float den = md_max(d->smooth[i - 5], d->smooth[i + 5]);
-		d->ratio[i] =
-		    den > 0 ? (float)md_min(1e20f, peak_decay * d->ratio[i] +
-						       (1 - peak_decay) * 2 *
-							   d->smooth[i] / den)
-			    : 0;
+	/* Both recursions run across frames, not across bins, so every bin is
+	 * independent and vectorizes without changing the arithmetic. The
+	 * baseline has no FMA, so lane results stay bit-identical. */
+	{
+		simde__m128 vdecay = simde_mm_set1_ps(decay);
+		simde__m128 vrest = simde_mm_set1_ps(1 - decay);
+		simde__m128 vfloor = simde_mm_set1_ps(1e-12f);
+		simde__m128 vpeak = simde_mm_set1_ps(peak_decay);
+		simde__m128 vtwice = simde_mm_set1_ps((1 - peak_decay) * 2);
+		simde__m128 vcap = simde_mm_set1_ps(1e20f);
+		simde__m128 vzero = simde_mm_setzero_ps();
+		int i = 0;
+
+		for (; i + 4 <= n; i += 4) {
+			simde__m128 raw = simde_mm_loadu_ps(s + i);
+			simde__m128 previous = simde_mm_loadu_ps(d->smooth + i);
+			simde__m128 blended =
+			    simde_mm_add_ps(simde_mm_mul_ps(vdecay, previous),
+					    simde_mm_mul_ps(vrest, raw));
+
+			simde_mm_storeu_ps(
+			    d->smooth + i,
+			    simde_mm_and_ps(simde_mm_cmpge_ps(raw, vfloor),
+					    blended));
+		}
+		for (; i < n; i++)
+			d->smooth[i] = s[i] >= 1e-12f
+					   ? (float)(decay * d->smooth[i] +
+						     (1 - decay) * s[i])
+					   : 0;
+		for (i = 10; i + 4 <= n - 10; i += 4) {
+			simde__m128 den = simde_mm_max_ps(
+			    simde_mm_loadu_ps(d->smooth + i - 5),
+			    simde_mm_loadu_ps(d->smooth + i + 5));
+			simde__m128 step = simde_mm_div_ps(
+			    simde_mm_mul_ps(vtwice,
+					    simde_mm_loadu_ps(d->smooth + i)),
+			    den);
+			simde__m128 sum = simde_mm_add_ps(
+			    simde_mm_mul_ps(vpeak,
+					    simde_mm_loadu_ps(d->ratio + i)),
+			    step);
+
+			simde_mm_storeu_ps(
+			    d->ratio + i,
+			    simde_mm_and_ps(simde_mm_cmpgt_ps(den, vzero),
+					    simde_mm_min_ps(vcap, sum)));
+		}
+		for (; i < n - 10; i++) {
+			float den = md_max(d->smooth[i - 5], d->smooth[i + 5]);
+
+			d->ratio[i] =
+			    den > 0 ? (float)md_min(1e20f,
+						    peak_decay * d->ratio[i] +
+							(1 - peak_decay) * 2 *
+							    d->smooth[i] / den)
+				    : 0;
+		}
 	}
 	memset(d->peaks, 0, (size_t)n);
 	if (d->frames > (uint64_t)d->warmup) {
-		for (int i = 10; i < n - 10; i++) {
+		/* Classify four bins at a time, then replay the scalar loop's
+		 * skip of the bin that follows a peak. */
+		simde__m128 vthreshold = simde_mm_set1_ps(3.5f);
+		int i = 10;
+		int skipped = 0;
+
+		for (; i + 4 <= n - 10; i += 4) {
+			simde__m128 r = simde_mm_loadu_ps(d->ratio + i);
+			unsigned int bits =
+			    (unsigned int)simde_mm_movemask_ps(simde_mm_and_ps(
+				simde_mm_cmpgt_ps(r, vthreshold),
+				simde_mm_and_ps(
+				    simde_mm_cmpge_ps(
+					r, simde_mm_loadu_ps(d->ratio + i - 1)),
+				    simde_mm_cmpge_ps(
+					r,
+					simde_mm_loadu_ps(d->ratio + i + 1)))));
+
+			if (skipped)
+				bits &= ~1u;
+			skipped = 0;
+			for (int lane = 0; lane < 4; lane++) {
+				if (!(bits & (1u << lane)))
+					continue;
+				d->peaks[i + lane - 1] = 0;
+				d->peaks[i + lane] = 1;
+				if (lane == 3)
+					skipped = 1;
+				else
+					bits &= ~(1u << (lane + 1));
+			}
+		}
+		if (skipped)
+			i++;
+		for (; i < n - 10; i++) {
 			if (d->ratio[i] > 3.5f &&
 			    d->ratio[i] >= d->ratio[i - 1] &&
 			    d->ratio[i] >= d->ratio[i + 1]) {

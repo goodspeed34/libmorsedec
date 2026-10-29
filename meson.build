@@ -104,7 +104,7 @@ if formatter.found()
     'tools/morsedec-audio.c', 'tools/morsedec-live.c', 'tools/morsedec-iqlive.c',
     'tools/live-common.c', 'tools/audio-common.c', 'tools/tui.c',
     'tools/audio-common.h', 'tools/tui.h', 'examples/decode.c',
-    'benchmarks/check-parallel.c', 'benchmarks/check-patterns.c', 'benchmarks/check-wfst.c', 'benchmarks/parallel-speed.c', 'benchmarks/speed.c')
+    'benchmarks/check-parallel.c', 'benchmarks/check-patterns.c', 'benchmarks/check-wfst.c', 'benchmarks/parallel-speed.c', 'benchmarks/speed.c', 'benchmarks/skim-speed.c')
   run_target('format', command: [formatter, '-i', format_files])
   run_target('format-check', command: [formatter, '--dry-run', '--Werror', format_files])
 endif
@@ -135,6 +135,9 @@ parallel_check = executable('check-parallel', 'benchmarks/check-parallel.c',
 test('parallel', parallel_check, timeout: 120)
 
 executable('parallel-speed', 'benchmarks/parallel-speed.c',
+  dependencies: [morsedec_dep, math], build_by_default: false)
+
+executable('skim-speed', 'benchmarks/skim-speed.c',
   dependencies: [morsedec_dep, math], build_by_default: false)
 
 allocation_args = []

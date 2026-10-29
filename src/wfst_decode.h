@@ -14,6 +14,9 @@
 #endif
 #define MD_WFST_ACQUISITION 4096
 #define MD_WFST_HISTORY 4096
+/* One slot per WFST graph node. wfst_decode.c asserts it against the
+ * generated graph so the two cannot drift apart. */
+#define MD_WFST_NODES 256
 #define MD_WFST_BUCKETS 8192
 #define MD_WFST_AGES 2048
 #define MD_WFST_DEGREE 4
@@ -87,6 +90,13 @@ struct md_wfst_decoder {
 	uint16_t keys[MD_WFST_KEYS], selected[MD_WFST_BEAM];
 	uint16_t candidate_keys[MD_WFST_CANDIDATES];
 	uint16_t bucket_keys[MD_WFST_HISTORY];
+	/* Diversity penalties only apply within one WFST node, so rank
+	 * selection walks a per-node list of candidate indices instead of
+	 * rescanning the whole candidate array. Rebuilt whenever the ranking
+	 * is.
+	 */
+	uint16_t candidate_head[MD_WFST_NODES];
+	uint16_t candidate_next[MD_WFST_CANDIDATES];
 	unsigned int bucket_count;
 	double survival[5];
 	float idle_start, idle_stay, idle_threshold;

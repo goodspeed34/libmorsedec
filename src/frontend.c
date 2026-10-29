@@ -94,6 +94,42 @@ static void md_window_iq(fftwf_complex *restrict out,
 	}
 }
 
+/* Power for four consecutive bins at a time, deinterleaving FFTW's complex
+ * pairs. The guard the scalar loop applies is exactly "not above FLT_MAX":
+ * a finite power is always within it, and NaN or infinity never is. The
+ * tail keeps the original expression verbatim.
+ */
+static void md_bin_power(float *restrict out, const float *restrict fft,
+			 size_t count, float scale)
+{
+	simde__m128 factor = simde_mm_set1_ps(scale);
+	simde__m128 cap = simde_mm_set1_ps(FLT_MAX);
+	size_t i = 0;
+
+	for (; i + 4 <= count; i += 4) {
+		simde__m128 lo = simde_mm_loadu_ps(fft + 2 * i);
+		simde__m128 hi = simde_mm_loadu_ps(fft + 2 * i + 4);
+		simde__m128 re =
+		    simde_mm_shuffle_ps(lo, hi, SIMDE_MM_SHUFFLE(2, 0, 2, 0));
+		simde__m128 im =
+		    simde_mm_shuffle_ps(lo, hi, SIMDE_MM_SHUFFLE(3, 1, 3, 1));
+		simde__m128 power =
+		    simde_mm_mul_ps(simde_mm_add_ps(simde_mm_mul_ps(re, re),
+						    simde_mm_mul_ps(im, im)),
+				    factor);
+
+		simde_mm_storeu_ps(
+		    out + i,
+		    simde_mm_and_ps(simde_mm_cmple_ps(power, cap), power));
+	}
+	for (; i < count; i++) {
+		float re = fft[2 * i], im = fft[2 * i + 1];
+		float power = (re * re + im * im) * scale;
+
+		out[i] = md_finite(power) && power <= FLT_MAX ? power : 0;
+	}
+}
+
 void md_frontend_frame(struct morsedec_decoder *d)
 {
 	size_t n = d->geometry.fft_size;
@@ -111,21 +147,33 @@ void md_frontend_frame(struct morsedec_decoder *d)
 				d->window + split, n - split);
 	}
 	fftwf_execute(d->plan);
-	for (int j = 0; j < d->bins; j++) {
-		int k = d->first_bin + j;
-		/* Signed bins are contiguous in the public spectrum; FFTW
-		 * stores negative frequencies at the end of its complex output.
-		 */
-		if (k < 0)
-			k += (int)n;
-		float re = d->fft_output[k][0], im = d->fft_output[k][1];
-		/* A complex exponential has twice the FFT amplitude of a real
-		 * sinusoid with the same peak amplitude. Match the audio scale.
-		 */
-		float power = (re * re + im * im) * (d->iq ? 0.00025f : 0.001f);
+	/* The whole signed band is the one case where the bins are contiguous:
+	 * FFTW stores the negative frequencies at the end of its complex
+	 * output, so the range splits into exactly two runs. Anything else
+	 * stays scalar.
+	 */
+	if (d->first_bin == -(int)n / 2 && d->bins == (int)n) {
+		const float *fft = (const float *)d->fft_output;
 
-		d->power[j] =
-		    md_finite(power) && power <= FLT_MAX ? (float)power : 0;
+		md_bin_power(d->power, fft + n, n / 2, 0.00025f);
+		md_bin_power(d->power + n / 2, fft, n / 2, 0.00025f);
+	} else {
+		for (int j = 0; j < d->bins; j++) {
+			int k = d->first_bin + j;
+			if (k < 0)
+				k += (int)n;
+			float re = d->fft_output[k][0],
+			      im = d->fft_output[k][1];
+			/* A complex exponential has twice the FFT amplitude of
+			 * a real sinusoid with the same peak amplitude. Match
+			 * the audio scale.
+			 */
+			float power =
+			    (re * re + im * im) * (d->iq ? 0.00025f : 0.001f);
+
+			d->power[j] =
+			    md_finite(power) && power <= FLT_MAX ? power : 0;
+		}
 	}
 	md_band_frame(d, d->power);
 }

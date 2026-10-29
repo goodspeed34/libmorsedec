@@ -8,6 +8,8 @@ _Static_assert(MD_WFST_GRAPH_DEGREE <= MD_WFST_DEGREE,
 	       "WFST candidate capacity is too small");
 _Static_assert(MD_WFST_GRAPH_NODES <= UINT8_MAX + 1,
 	       "History boundary states must fit uint8_t");
+_Static_assert(MD_WFST_NODES == MD_WFST_GRAPH_NODES,
+	       "Rank grouping must cover every WFST graph node");
 
 static int32_t md_wfst_duration(uint64_t frames)
 {
@@ -125,6 +127,11 @@ void md_wfst_init(const struct morsedec_decoder *d, struct md_channel *c)
 	memset(w, 0, sizeof(*w));
 	c->decode_frame = 0;
 	memset(&c->lattice, 0, sizeof(c->lattice));
+	/* The build retires only entries it touched last time, so the mapping
+	 * must start empty rather than zero-initialized. */
+	memset(c->lattice_work.history_nodes, 0xff,
+	       sizeof(c->lattice_work.history_nodes));
+	c->lattice_work.history_touched_count = 0;
 	c->lattice.node_count = 1;
 	for (int i = 0; i < MD_LATTICE_MAX_NODES; i++)
 		c->lattice.nodes[i].first_edge = MD_LATTICE_NONE;
@@ -321,13 +328,10 @@ static void md_wfst_lattice_sort(struct md_channel *c)
 		work->node_order[i] = (uint16_t)i;
 	for (int i = 2; i < l->node_count; i++) {
 		uint16_t value = work->node_order[i];
-		uint64_t time =
-		    md_wfst_boundary(&w->history[work->node_history[value]]);
+		uint64_t time = work->node_key[value].boundary;
 		int j = i;
 		while (j > 1 &&
-		       md_wfst_boundary(
-			   &w->history
-				[work->node_history[work->node_order[j - 1]]]) >
+		       work->node_key[work->node_order[j - 1]].boundary >
 			   time) {
 			work->node_order[j] = work->node_order[j - 1];
 			j--;
@@ -337,17 +341,21 @@ static void md_wfst_lattice_sort(struct md_channel *c)
 	for (int i = 0; i < l->node_count; i++) {
 		uint16_t old = work->node_order[i];
 		work->sorted_nodes[i] = l->nodes[old];
+		work->sorted_keys[i] = work->node_key[old];
 		w->selected[old] = (uint16_t)i;
 		w->trace[i] = work->node_history[old];
 	}
 	memcpy(l->nodes, work->sorted_nodes,
 	       l->node_count * sizeof(l->nodes[0]));
+	memcpy(work->node_key, work->sorted_keys,
+	       l->node_count * sizeof(work->node_key[0]));
 	for (int i = 0; i < l->node_count; i++)
 		work->node_history[i] = w->trace[i];
-	for (int i = 0; i < MD_WFST_HISTORY; i++)
-		if (work->history_nodes[i] != MD_LATTICE_NONE)
-			work->history_nodes[i] =
-			    w->selected[work->history_nodes[i]];
+	for (uint16_t i = 0; i < work->history_touched_count; i++) {
+		uint16_t id = work->history_touched[i];
+
+		work->history_nodes[id] = w->selected[work->history_nodes[id]];
+	}
 	for (int i = 0; i < l->edge_count; i++)
 		l->edges[i].to_node = w->selected[l->edges[i].to_node];
 }
@@ -362,12 +370,20 @@ static int md_wfst_lattice_build(const struct morsedec_decoder *d,
 	struct md_wfst_decoder *w = &c->wfst;
 	struct md_lattice *l = &c->lattice;
 	struct md_lattice_work *work = &c->lattice_work;
-	memset(work->history_nodes, 0xff, sizeof(work->history_nodes));
+
+	/* Retire the previous build's live entries instead of clearing all
+	 * MD_WFST_HISTORY slots, then record every index written below. */
+	for (uint16_t i = 0; i < work->history_touched_count; i++)
+		work->history_nodes[work->history_touched[i]] = MD_LATTICE_NONE;
+	work->history_touched_count = 0;
 	work->history_nodes[0] = 0;
+	work->history_touched[work->history_touched_count++] = 0;
 	work->node_history[0] = 0;
 	l->node_count = 1;
 	l->edge_count = l->max_depth = 0;
 	l->nodes[0] = (struct md_lattice_node){.first_edge = MD_LATTICE_NONE};
+	/* The root is never a dedup candidate, but the sort permutes it too. */
+	work->node_key[0] = (struct md_lattice_key){0};
 	int overflow = 0;
 	for (int i = 0; i < w->count; i++) {
 		const struct md_token *t = &w->tokens[w->bank][i];
@@ -393,18 +409,18 @@ static int md_wfst_lattice_build(const struct morsedec_decoder *d,
 				const struct md_wfst_history *h =
 				    &w->history[id];
 				for (int j = 1; j < l->node_count; j++) {
-					const struct md_wfst_history *other =
-					    &w->history[work->node_history[j]];
 					if (l->nodes[j].max_depth == depth &&
-					    h->state == other->state &&
-					    h->depth == other->depth &&
+					    h->state ==
+						work->node_key[j].state &&
+					    h->depth ==
+						work->node_key[j].depth &&
 					    (md_wfst_nodes[h->state]
 						     .node_type !=
 						 MD_WFST_GAP_NODE ||
 					     h->event.duration ==
-						 other->event.duration) &&
+						 work->node_key[j].duration) &&
 					    md_wfst_boundary(h) ==
-						md_wfst_boundary(other)) {
+						work->node_key[j].boundary) {
 						to = (uint16_t)j;
 						break;
 					}
@@ -418,6 +434,12 @@ static int md_wfst_lattice_build(const struct morsedec_decoder *d,
 					}
 					to = l->node_count++;
 					work->node_history[to] = id;
+					work->node_key[to] =
+					    (struct md_lattice_key){
+						.boundary = md_wfst_boundary(h),
+						.duration = h->event.duration,
+						.depth = h->depth,
+						.state = h->state};
 					l->nodes[to] = (struct md_lattice_node){
 					    .first_edge = MD_LATTICE_NONE,
 					    .max_depth = (uint16_t)depth};
@@ -428,6 +450,8 @@ static int md_wfst_lattice_build(const struct morsedec_decoder *d,
 					break;
 				}
 				work->history_nodes[id] = to;
+				work->history_touched
+				    [work->history_touched_count++] = id;
 				uint16_t edge = l->edge_count++;
 				l->edges[edge] = (struct md_lattice_edge){
 				    .acoustic_score = e->acoustic_score,
@@ -636,12 +660,17 @@ static float md_wfst_word_probability(const struct morsedec_decoder *d,
 				      uint64_t frames)
 {
 	float duration = (float)frames * d->tick_scale;
+	double x;
+	float a, b;
+
 	if (duration > 150)
 		return 2;
-	float a = md_score(&c->stats, 3, duration);
+	/* Both scores share the duration, so evaluate its logarithm once. */
+	x = md_log_frame(d, frames);
+	a = md_score_x(&c->stats, 3, x, duration);
 	/* Calibrate ambiguous boundaries before the word graph amplifies
 	 * their odds. Long silences still force a boundary above. */
-	float b = .5f * md_score(&c->stats, 4, duration);
+	b = .5f * md_score_x(&c->stats, 4, x, duration);
 	return b / (a + b + 1e-12f);
 }
 
@@ -857,15 +886,22 @@ static int md_wfst_rank(const struct morsedec_decoder *d, struct md_channel *c,
 	struct md_wfst_decoder *w = &c->wfst;
 	uint64_t tolerance = (uint64_t)md_frames(d, 2);
 	/* Beam eligibility is invariant during selection. Keep a contiguous
-	 * score bank and update it alongside every diversity penalty.
+	 * score bank and update it alongside every diversity penalty, and index
+	 * the candidates by node so the penalty scan below visits only the node
+	 * the chosen candidate belongs to.
 	 */
+	for (int i = 0; i < MD_WFST_NODES; i++)
+		w->candidate_head[i] = MD_LATTICE_NONE;
 	for (int i = 0; i < w->candidate_count; i++) {
 		const struct md_wfst_candidate *t = &w->candidates[i];
+		uint16_t node = t->current_node_id;
+
 		w->rank_values[i] =
-		    t->accumulated_score <
-			    best - md_wfst_beam(c, t->current_node_id, low)
+		    t->accumulated_score < best - md_wfst_beam(c, node, low)
 			? MD_NEG
 			: t->rank_score;
+		w->candidate_next[i] = w->candidate_head[node];
+		w->candidate_head[node] = (uint16_t)i;
 	}
 	int count = 0;
 	for (; count < MD_WFST_BEAM; count++) {
@@ -880,15 +916,20 @@ static int md_wfst_rank(const struct morsedec_decoder *d, struct md_channel *c,
 			continue;
 		const struct md_token *source =
 		    &w->tokens[w->bank][picked->source];
-		for (int i = 0; i < w->candidate_count; i++) {
+		for (int i = w->candidate_head[picked->current_node_id];
+		     i != MD_LATTICE_NONE; i = w->candidate_next[i]) {
 			struct md_wfst_candidate *other = &w->candidates[i];
-			const struct md_token *t =
-			    &w->tokens[w->bank][other->source];
+			const struct md_token *t;
+			/* The text hash is the cheapest discriminator, so
+			 * reject on it before loading the source token. */
 			if (other->rank_score <= MD_NEG / 2 ||
-			    other->current_node_id != picked->current_node_id ||
+			    other->text_hash != picked->text_hash ||
+			    other->text_depth != picked->text_depth ||
 			    !md_wfst_near(other->frame_age, picked->frame_age,
-					  tolerance) ||
-			    !md_wfst_near(t->character_start,
+					  tolerance))
+				continue;
+			t = &w->tokens[w->bank][other->source];
+			if (!md_wfst_near(t->character_start,
 					  source->character_start, tolerance) ||
 			    !md_wfst_near(t->mark_tick, source->mark_tick,
 					  tolerance))

@@ -57,9 +57,9 @@ void md_stats_init(const struct morsedec_decoder *d, struct md_statistics *s)
 	s->learning = s->dirty = 1;
 }
 
-double md_score(const struct md_statistics *s, int kind, double duration)
+double md_score_x(const struct md_statistics *s, int kind, double x,
+		  double duration)
 {
-	double x = log(fmax(duration, 1e-9));
 	double delta = x - s->mean[kind];
 	double v = fmax(s->variance[kind], 1e-6);
 	double t = weight[kind] * exp(-delta * delta / (2 * v)) /
@@ -79,6 +79,11 @@ double md_score(const struct md_statistics *s, int kind, double duration)
 			t += 0.1 / (300 - lo);
 	}
 	return t;
+}
+
+double md_score(const struct md_statistics *s, int kind, double duration)
+{
+	return md_score_x(s, kind, log(fmax(duration, 1e-9)), duration);
 }
 
 void md_classify(const struct md_statistics *s, struct md_element *e,
